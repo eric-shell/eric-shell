@@ -53,6 +53,17 @@ src/
 - `CascadeItem` wraps a single item inside a `CascadeGroup`. Reads `inView` from context and fades up (`opacity-0 translate-y-[6px]` → visible) with a delay of `Math.min(index, 7) * stagger`. Use `as="li"` inside `<ul>` grids to preserve semantic HTML. The stagger index caps at 7 so long lists don't wait seconds.
 - Import from the barrel: `import { Button, H2, Eyebrow, Pill, CascadeGroup, CascadeItem } from '../ui'`
 
+### Scroll animation requirements
+
+**Every section must use `CascadeGroup` + `CascadeItem`.** This is not optional — it is the standard entrance animation for all page sections.
+
+Pattern:
+1. Wrap each distinct visual block (heading row, body copy, card grid, controls) in its own `CascadeGroup`.
+2. Each block inside a group gets a `CascadeItem` with an ascending `index` (0, 1, 2…).
+3. Card/item grids: use `CascadeGroup as="ul"` on the grid container and `CascadeItem as="li" index={i}` per card.
+4. Above-the-fold Hero only: use `CascadeGroup mountOnly` instead of scroll trigger.
+5. Threshold guidance: `0.15` for headers, `0.1` for body copy, `0.05` for dense grids.
+
 ## Development
 
 ```bash
@@ -78,9 +89,10 @@ Order in `App.tsx`:
 1. `Hero` — name, title, brief tagline, CTAs ✓
 2. `Contributions` — filterable/sortable grid of work and projects ✓
 3. `Testimonials` — two-column: context copy + auto-advancing carousel ✓
-4. `Footer` — social links, resume download, contact ✓
-5. `Projects` — richer project cards with tech tags (planned)
-6. `About` — professional background, expertise areas (planned)
+4. `Creative` — 4-col layout: editorial copy + 6-post Instagram photo grid (static data in `src/data/instagram.ts`) ✓
+5. `Footer` — social links, resume download, contact ✓
+6. `Projects` — richer project cards with tech tags (planned)
+7. `About` — professional background, expertise areas (planned)
 
 ## Deployment
 
@@ -90,7 +102,6 @@ Static site. Final target: **eric.sh** (hosting provider TBD). The `dist/` outpu
 
 | Command | What it does |
 |---|---|
-| `/dev` | Start the Vite dev server |
-| `/build` | Production build + preview |
-| `/new-section` | Scaffold a new page section |
-| `/new-component` | Scaffold a reusable UI component |
+| `/scaffold` | Scaffold a new page section or reusable UI component |
+| `/contact` | Placeholder — Contact section implementation notes |
+| `/chat` | Placeholder — Hero chat input wiring notes |
