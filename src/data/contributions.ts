@@ -7,7 +7,7 @@ export interface ContributionItem {
 
 export const contributions: ContributionItem[] = [
   { url: "https://localfoodie.io/", title: "Local Foodie", solution: "Discover the Best Places to Eat in San Luis Obispo, California", tags: ["AI", "React", "Vite", "Regional"] },
-  { url: "https://isaiah.app.link/", title: "Ask Isaiah AI", solution: "Faith-based AI Assistant Application", tags: ["AI", "React Native", "Expo", "Chatbot"] },
+  { url: "https://isaiah.app.link/", title: "Ask Isaiah", solution: "Faith-based AI Assistant Application", tags: ["AI", "React Native", "Expo", "Chatbot"] },
   { url: "https://www.fws.gov/", title: "U.S. Fish & Wildlife Service", solution: "Multiple Species Management Applications", tags: ["Drupal", "Government"] },
   { url: "https://www.bubbas33.com/", title: "Bubba's 33", solution: "Order Ahead Marketing Application", tags: ["Drupal", "QSR"] },
   { url: "https://www.noodles.com/", title: "Noodles & Company", solution: "Order Ahead Marketing Application", tags: ["Drupal", "QSR"] },
@@ -32,10 +32,10 @@ export const contributions: ContributionItem[] = [
   { url: "https://www.lorealtechincubator.com/colorandco", title: "L'Oreal", solution: "Real-time Beauty Salon Consultation Application", tags: ["React", "Healthcare"] },
   { url: "https://wearehathway.com/", title: "Hathway", solution: "Agency Marketing Platform", tags: ["React", "Agency"] },
   { url: "https://www.kroger.com/", title: "Kroger", solution: "In-store Kiosk Order Application", tags: ["Backbone", "QSR"] },
-  { url: "https://www.dairyqueen.com/en-us/app/", title: "Dairy Queen", solution: "Microsite and Email Campaigns", tags: ["Custom Framework"] },
+  { url: "https://www.dairyqueen.com/en-us/app/", title: "Dairy Queen", solution: "Microsite and Email Campaigns", tags: ["Custom Framework", "QSR"] },
   { url: "https://www.foryourparty.com/", title: "ForYourParty", solution: "Product Designer and Commerce Applications", tags: ["React", "Drupal", "Commerce"] },
   { url: "https://www.amway.com/", title: "Amway", solution: "Internal Documentation Platform", tags: ["Drupal", "Internal"] },
-  { url: "https://coffeebean.com/", title: "Coffee Bean and Tea Leaf", solution: "Order Ahead Application, Microsite and Email Campaigns", tags: ["Drupal", "Custom Framework"] },
+  { url: "https://coffeebean.com/", title: "Coffee Bean and Tea Leaf", solution: "Order Ahead Application, Microsite and Email Campaigns", tags: ["Drupal", "Custom Framework", "QSR"] },
   { url: "https://www.redbull.com/us-en/", title: "Red Bull", solution: "Year in Review Campaign", tags: ["Drupal", "Entertainment"] },
   { url: "https://www.brightview.com/", title: "BrightView", solution: "Marketing Application", tags: ["Drupal", "Landscaping"] },
   { url: "https://www.stubhub.com/", title: "StubHub", solution: "Internal Email Management System", tags: ["Drupal", "Internal"] },

@@ -1,20 +1,27 @@
 import { useState } from 'react'
-import { ArrowUpRight, X } from 'lucide-react'
+import { ArrowDownAZ, ArrowUpRight, ArrowUpZA, CalendarDays } from 'lucide-react'
 import { contributions } from '../../data/contributions'
+import { Button, Eyebrow, H2, Pill } from '../ui'
 
 type SortOrder = 'chronological' | 'asc' | 'desc'
 
-const SORT_OPTIONS: { value: SortOrder; label: string }[] = [
-  { value: 'chronological', label: 'Chronological' },
-  { value: 'asc', label: 'A → Z' },
-  { value: 'desc', label: 'Z → A' },
+const SORT_OPTIONS: { value: SortOrder; label: string; icon: React.ReactNode }[] = [
+  { value: 'chronological', label: 'Chronological', icon: <CalendarDays size={12} /> },
+  { value: 'asc',           label: 'A → Z',         icon: <ArrowDownAZ size={12} /> },
+  { value: 'desc',          label: 'Z → A',         icon: <ArrowUpZA size={12} /> },
 ]
 
 export default function Contributions() {
   const [sort, setSort] = useState<SortOrder>('chronological')
-  const [activeTag, setActiveTag] = useState<string | null>(null)
+  const [activeTags, setActiveTags] = useState<string[]>([])
 
-  let items = activeTag ? contributions.filter(item => item.tags.includes(activeTag)) : [...contributions]
+  function toggleTag(tag: string) {
+    setActiveTags(prev => prev.includes(tag) ? prev.filter(t => t !== tag) : [...prev, tag])
+  }
+
+  let items = activeTags.length > 0
+    ? contributions.filter(item => activeTags.some(t => item.tags.includes(t)))
+    : [...contributions]
   if (sort === 'asc') items = items.sort((a, b) => a.title.localeCompare(b.title))
   if (sort === 'desc') items = items.sort((a, b) => b.title.localeCompare(a.title))
 
@@ -22,52 +29,58 @@ export default function Contributions() {
     <section id="contributions" className="bg-off-white py-24">
       <div className="max-w-[1440px] mx-auto px-6">
 
-        <div className="flex items-start justify-between gap-6 mb-6">
+        <div className="flex items-start justify-between gap-4 pb-10">
           <div>
-            <p
-              className="font-sans font-bold uppercase tracking-wider text-sm text-off-black mb-4"
-              style={{ fontVariationSettings: "'GRAD' 150" }}
-            >
-              Selected Work and Projects
+            <Eyebrow className="text-off-black mb-4 block">Selected Work and Projects</Eyebrow>
+            <H2 className="text-off-black">Contributions</H2>
+          </div>
+          <Button
+            href="https://www.linkedin.com/in/ericshell/details/experience/"
+            target="_blank"
+            rel="noopener noreferrer"
+            size="md"
+            className="shrink-0"
+          >
+            View Work History
+          </Button>
+        </div>
+
+        <div className="flex flex-col gap-5 font-sans text-base leading-relaxed text-off-black/80 pb-10">
+            <p>
+              Over 15 years of practice spanning federal agencies, Fortune 500 brands, financial institutions, and entertainment platforms, I have built software that ships, scales, and endures well beyond the engagement that created it. Each context demanded a different caliber of contextual understanding, technical leadership and creative solutioning.
             </p>
-            <h2 className="font-display text-6xl font-bold uppercase text-off-black">
-              Contributions
-            </h2>
+            <p>
+              What follows is a curated record of that output: client products, internal platforms, open source contributions, and independent projects. Each piece reflects the same standard of precision and accountability I bring to every engagement, regardless of its size or scope.
+            </p>
           </div>
 
-          <div className="flex items-center gap-1.5 pt-1 shrink-0" role="group" aria-label="Sort order">
-            {SORT_OPTIONS.map(({ value, label }) => (
-              <button
+        <div className="flex items-center justify-between gap-2 mb-8">
+          <div className="flex items-center gap-2 flex-wrap">
+            {activeTags.length > 0 && (
+              <>
+                <span className="font-sans text-sm text-off-black/50">Filtering by:</span>
+                {activeTags.map(tag => (
+                  <Pill key={tag} active onDismiss={() => toggleTag(tag)}>
+                    {tag}
+                  </Pill>
+                ))}
+              </>
+            )}
+          </div>
+
+          <div className="flex items-center gap-1.5" role="group" aria-label="Sort order">
+            {SORT_OPTIONS.map(({ value, label, icon }) => (
+              <Pill
                 key={value}
+                active={sort === value}
                 onClick={() => setSort(value)}
-                aria-pressed={sort === value}
-                className={`px-3 py-1.5 rounded-lg font-sans text-xs font-semibold transition cursor-pointer
-                  ${sort === value
-                    ? 'bg-off-black text-white'
-                    : 'border border-off-black/20 text-off-black/60 hover:border-off-black/40 hover:text-off-black'
-                  }`}
+                leftIcon={icon}
               >
                 {label}
-              </button>
+              </Pill>
             ))}
           </div>
         </div>
-
-        {activeTag && (
-          <div className="flex items-center gap-2 mb-8">
-            <span className="font-sans text-sm text-off-black/50">Filtering by:</span>
-            <span className="flex items-center gap-1.5 font-sans text-xs font-semibold bg-off-black text-white px-2.5 py-1 rounded-md">
-              {activeTag}
-              <button
-                onClick={() => setActiveTag(null)}
-                aria-label={`Clear ${activeTag} filter`}
-                className="cursor-pointer opacity-70 hover:opacity-100 transition"
-              >
-                <X size={12} aria-hidden="true" />
-              </button>
-            </span>
-          </div>
-        )}
 
         <ul className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
           {items.map(({ url, title, solution, tags }) => (
@@ -89,17 +102,13 @@ export default function Contributions() {
                 <p className="font-sans text-sm text-off-black/60 leading-snug flex-1">{solution}</p>
                 <div className="flex flex-wrap gap-1.5">
                   {tags.map(tag => (
-                    <button
+                    <Pill
                       key={tag}
-                      onClick={e => { e.preventDefault(); e.stopPropagation(); setActiveTag(tag) }}
-                      className={`font-sans text-xs font-semibold px-2 py-1 rounded-md transition cursor-pointer
-                        ${activeTag === tag
-                          ? 'bg-off-black text-white'
-                          : 'text-off-black/50 bg-off-black/8 hover:bg-off-black/15'
-                        }`}
+                      active={activeTags.includes(tag)}
+                      onClick={() => toggleTag(tag)}
                     >
                       {tag}
-                    </button>
+                    </Pill>
                   ))}
                 </div>
               </a>

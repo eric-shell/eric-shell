@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { ArrowLeft, ArrowRight, Pause, Play } from 'lucide-react'
 import { testimonials } from '../../data/testimonials'
+import { Button, Eyebrow, H2 } from '../ui'
 
 const INTERVAL_MS = 6000
 const FADE_MS = 250
@@ -49,26 +50,20 @@ export default function Testimonials() {
     <section className="bg-off-black text-white py-24">
       <div className="max-w-[1440px] mx-auto px-6">
 
-        <div className="flex items-start justify-between gap-4 mb-12">
+        <div className="flex items-start justify-between gap-4 pb-10">
           <div>
-            <p
-              className="font-sans font-bold uppercase tracking-wider text-sm text-white mb-4"
-              style={{ fontVariationSettings: "'GRAD' 150" }}
-            >
-              Feedback from the Team
-            </p>
-            <h2 className="font-display text-6xl font-bold uppercase italic">
-              Testimonials
-            </h2>
+            <Eyebrow className="text-white mb-4 block">Feedback from the Team</Eyebrow>
+            <H2 className="italic">Testimonials</H2>
           </div>
-          <a
+          <Button
             href="https://www.linkedin.com/in/ericshell/details/recommendations/"
             target="_blank"
             rel="noopener noreferrer"
-            className="shrink-0 px-5 py-2.5 rounded-lg bg-white text-off-black font-sans font-semibold text-sm hover:bg-off-white transition"
+            size="md"
+            className="shrink-0 bg-white text-off-black"
           >
             View Full Endorsements
-          </a>
+          </Button>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-12 lg:gap-20">
@@ -107,30 +102,33 @@ export default function Testimonials() {
               role="region"
               aria-label="Testimonial Controls"
             >
-              <button
+              <Button
+                size="icon"
+                variant="outline"
                 onClick={prev}
                 aria-label="Previous testimonial"
-                className="p-2.5 rounded-lg border border-white/20 text-white/70 hover:text-white hover:border-white/50 transition cursor-pointer"
+                className="border-white/20 text-white/70 hover:text-white hover:border-white/50"
               >
                 <ArrowLeft size={18} aria-hidden="true" />
-              </button>
-              <button
+              </Button>
+              <Button
+                size="icon"
+                variant="outline"
                 onClick={() => setIsPlaying(p => !p)}
                 aria-label={isPlaying ? 'Pause testimonial slider' : 'Play testimonial slider'}
-                className="p-2.5 rounded-lg border border-white/20 text-white/70 hover:text-white hover:border-white/50 transition cursor-pointer"
+                className="border-white/20 text-white/70 hover:text-white hover:border-white/50"
               >
-                {isPlaying
-                  ? <Pause size={18} aria-hidden="true" />
-                  : <Play size={18} aria-hidden="true" />
-                }
-              </button>
-              <button
+                {isPlaying ? <Pause size={18} aria-hidden="true" /> : <Play size={18} aria-hidden="true" />}
+              </Button>
+              <Button
+                size="icon"
+                variant="outline"
                 onClick={next}
                 aria-label="Next testimonial"
-                className="p-2.5 rounded-lg border border-white/20 text-white/70 hover:text-white hover:border-white/50 transition cursor-pointer"
+                className="border-white/20 text-white/70 hover:text-white hover:border-white/50"
               >
                 <ArrowRight size={18} aria-hidden="true" />
-              </button>
+              </Button>
             </div>
           </div>
 
