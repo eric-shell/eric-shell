@@ -2,6 +2,7 @@ import './index.css'
 import Hero from './components/sections/Hero'
 import Contributions from './components/sections/Contributions'
 import Testimonials from './components/sections/Testimonials'
+import Footer from './components/sections/Footer'
 
 export default function App() {
   return (
@@ -10,6 +11,7 @@ export default function App() {
       <Hero />
       <Contributions />
       <Testimonials />
+      <Footer />
     </div>
   )
 }
