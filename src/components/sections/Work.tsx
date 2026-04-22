@@ -1,25 +1,76 @@
-import { ArrowUpRight } from 'lucide-react'
+import { useState } from 'react'
+import { ArrowUpRight, X } from 'lucide-react'
 import { work } from '../../data/work'
 
+type SortOrder = 'chronological' | 'asc' | 'desc'
+
+const SORT_OPTIONS: { value: SortOrder; label: string }[] = [
+  { value: 'chronological', label: 'Chronological' },
+  { value: 'asc', label: 'A → Z' },
+  { value: 'desc', label: 'Z → A' },
+]
+
 export default function Work() {
+  const [sort, setSort] = useState<SortOrder>('chronological')
+  const [activeTag, setActiveTag] = useState<string | null>(null)
+
+  let items = activeTag ? work.filter(item => item.tags.includes(activeTag)) : [...work]
+  if (sort === 'asc') items = items.sort((a, b) => a.title.localeCompare(b.title))
+  if (sort === 'desc') items = items.sort((a, b) => b.title.localeCompare(a.title))
+
   return (
     <section id="work" className="bg-off-white py-24">
       <div className="max-w-[1440px] mx-auto px-6">
 
-        <div className="mb-12">
-          <p
-            className="font-sans font-bold uppercase tracking-wider text-sm text-off-black mb-4"
-            style={{ fontVariationSettings: "'GRAD' 150" }}
-          >
-            Selected Projects
-          </p>
-          <h2 className="font-display text-6xl font-bold uppercase text-off-black">
-            Work
-          </h2>
+        <div className="flex items-start justify-between gap-6 mb-6">
+          <div>
+            <p
+              className="font-sans font-bold uppercase tracking-wider text-sm text-off-black mb-4"
+              style={{ fontVariationSettings: "'GRAD' 150" }}
+            >
+              Selected Work and Projects
+            </p>
+            <h2 className="font-display text-6xl font-bold uppercase text-off-black">
+              Contributions
+            </h2>
+          </div>
+
+          <div className="flex items-center gap-1.5 pt-1 shrink-0" role="group" aria-label="Sort order">
+            {SORT_OPTIONS.map(({ value, label }) => (
+              <button
+                key={value}
+                onClick={() => setSort(value)}
+                aria-pressed={sort === value}
+                className={`px-3 py-1.5 rounded-lg font-sans text-xs font-semibold transition cursor-pointer
+                  ${sort === value
+                    ? 'bg-off-black text-white'
+                    : 'border border-off-black/20 text-off-black/60 hover:border-off-black/40 hover:text-off-black'
+                  }`}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
         </div>
 
+        {activeTag && (
+          <div className="flex items-center gap-2 mb-8">
+            <span className="font-sans text-sm text-off-black/50">Filtering by:</span>
+            <span className="flex items-center gap-1.5 font-sans text-xs font-semibold bg-off-black text-white px-2.5 py-1 rounded-md">
+              {activeTag}
+              <button
+                onClick={() => setActiveTag(null)}
+                aria-label={`Clear ${activeTag} filter`}
+                className="cursor-pointer opacity-70 hover:opacity-100 transition"
+              >
+                <X size={12} aria-hidden="true" />
+              </button>
+            </span>
+          </div>
+        )}
+
         <ul className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
-          {work.map(({ url, title, solution, technology }) => (
+          {items.map(({ url, title, solution, tags }) => (
             <li key={title}>
               <a
                 href={url}
@@ -36,19 +87,25 @@ export default function Work() {
                   />
                 </div>
                 <p className="font-sans text-sm text-off-black/60 leading-snug flex-1">{solution}</p>
-                <span className="self-start font-sans text-xs font-semibold text-off-black/50 bg-off-black/8 px-2 py-1 rounded-md">
-                  {technology}
-                </span>
+                <div className="flex flex-wrap gap-1.5">
+                  {tags.map(tag => (
+                    <button
+                      key={tag}
+                      onClick={e => { e.preventDefault(); e.stopPropagation(); setActiveTag(tag) }}
+                      className={`font-sans text-xs font-semibold px-2 py-1 rounded-md transition cursor-pointer
+                        ${activeTag === tag
+                          ? 'bg-off-black text-white'
+                          : 'text-off-black/50 bg-off-black/8 hover:bg-off-black/15'
+                        }`}
+                    >
+                      {tag}
+                    </button>
+                  ))}
+                </div>
               </a>
             </li>
           ))}
         </ul>
-
-        <div className="mt-12">
-          <button className="px-5 py-2.5 rounded-lg bg-off-black text-white font-sans font-semibold text-sm hover:bg-black transition cursor-pointer">
-            View All Projects
-          </button>
-        </div>
 
       </div>
     </section>
