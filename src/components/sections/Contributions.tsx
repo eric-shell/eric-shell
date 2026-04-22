@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { ArrowUpRight, X } from 'lucide-react'
-import { work } from '../../data/work'
+import { contributions } from '../../data/contributions'
 
 type SortOrder = 'chronological' | 'asc' | 'desc'
 
@@ -10,16 +10,16 @@ const SORT_OPTIONS: { value: SortOrder; label: string }[] = [
   { value: 'desc', label: 'Z → A' },
 ]
 
-export default function Work() {
+export default function Contributions() {
   const [sort, setSort] = useState<SortOrder>('chronological')
   const [activeTag, setActiveTag] = useState<string | null>(null)
 
-  let items = activeTag ? work.filter(item => item.tags.includes(activeTag)) : [...work]
+  let items = activeTag ? contributions.filter(item => item.tags.includes(activeTag)) : [...contributions]
   if (sort === 'asc') items = items.sort((a, b) => a.title.localeCompare(b.title))
   if (sort === 'desc') items = items.sort((a, b) => b.title.localeCompare(a.title))
 
   return (
-    <section id="work" className="bg-off-white py-24">
+    <section id="contributions" className="bg-off-white py-24">
       <div className="max-w-[1440px] mx-auto px-6">
 
         <div className="flex items-start justify-between gap-6 mb-6">

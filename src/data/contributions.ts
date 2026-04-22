@@ -1,12 +1,12 @@
-export interface WorkItem {
+export interface ContributionItem {
   url: string
   title: string
   solution: string
   tags: string[]
 }
 
-export const work: WorkItem[] = [
-  { url: "https://localfoodie.io/", title: "Local Foodie", solution: "Discover the Best Spots to Eat in San Luis Obispo", tags: ["AI", "React", "Vite", "Regional"] },
+export const contributions: ContributionItem[] = [
+  { url: "https://localfoodie.io/", title: "Local Foodie", solution: "Discover the Best Places to Eat in San Luis Obispo, California", tags: ["AI", "React", "Vite", "Regional"] },
   { url: "https://isaiah.app.link/", title: "Ask Isaiah AI", solution: "Faith-based AI Assistant Application", tags: ["AI", "React Native", "Expo", "Chatbot"] },
   { url: "https://www.fws.gov/", title: "U.S. Fish & Wildlife Service", solution: "Multiple Species Management Applications", tags: ["Drupal", "Government"] },
   { url: "https://www.bubbas33.com/", title: "Bubba's 33", solution: "Order Ahead Marketing Application", tags: ["Drupal", "QSR"] },
