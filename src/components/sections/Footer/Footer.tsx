@@ -1,4 +1,4 @@
-import { CascadeGroup, CascadeItem } from '../ui'
+import { CascadeGroup, CascadeItem } from '../../ui'
 
 const NAV_LINKS = [
   { label: 'Work', href: '#contributions' },

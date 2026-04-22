@@ -1,8 +1,9 @@
 import { useState } from 'react'
 import { MessagesSquare } from 'lucide-react'
-import { Button, CascadeGroup, CascadeItem, Eyebrow } from '../ui'
-import { useParallax } from '../../hooks/useParallax'
-import HeroParticles from './HeroParticles'
+import { Button, CascadeGroup, CascadeItem, Eyebrow } from '../../ui'
+import { useParallax } from '../../../hooks'
+import ForestDust from './ForestDust'
+import LensParticles from './LensParticles'
 
 export default function Hero() {
   const [message, setMessage] = useState('')
@@ -40,7 +41,7 @@ export default function Hero() {
         className="absolute inset-0 z-[5] pointer-events-none mix-blend-multiply"
         style={{ background: 'radial-gradient(ellipse 65% 85% at 28% 55%, rgba(0,0,0,0.8) 0%, transparent 70%)' }}
       />
-      <HeroParticles />
+      <ForestDust />
       <img
         ref={subjectRef}
         src="/hero/subject.png"
@@ -49,6 +50,7 @@ export default function Hero() {
         style={{ bottom: '-30px' }}
         className="absolute right-0 h-[85vh] max-h-[900px] w-auto object-bottom object-contain pointer-events-none select-none z-10"
       />
+      <LensParticles />
       <div className="relative z-20 w-full max-w-[1440px] mx-auto px-6 py-24 grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
 
         {/* Left: text content */}

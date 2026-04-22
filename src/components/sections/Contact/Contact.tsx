@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Send } from 'lucide-react'
-import { Button, CascadeGroup, CascadeItem, Eyebrow, H2 } from '../ui'
+import { Button, CascadeGroup, CascadeItem, Eyebrow, H2 } from '../../ui'
 
 type SubmitStatus = 'idle' | 'success' | 'error'
 

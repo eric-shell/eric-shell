@@ -1,10 +1,5 @@
 import './index.css'
-import Hero from './components/sections/Hero'
-import Contributions from './components/sections/Contributions'
-import Testimonials from './components/sections/Testimonials'
-import Creative from './components/sections/Creative'
-import Contact from './components/sections/Contact'
-import Footer from './components/sections/Footer'
+import { Hero, Contributions, Testimonials, Creative, Contact, Footer } from './components/sections'
 
 export default function App() {
   return (

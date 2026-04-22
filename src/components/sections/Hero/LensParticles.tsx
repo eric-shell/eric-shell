@@ -1,19 +1,20 @@
 import { useEffect, useRef } from 'react'
 import * as THREE from 'three'
+import { DEBUG_PARTICLES } from '../../../debug'
 
-const COUNT = 220
+const COUNT = 10
 
 function makeSprite(): THREE.Texture {
-  const sz = 128
+  const sz = 256
   const c = document.createElement('canvas')
   c.width = sz
   c.height = sz
   const ctx = c.getContext('2d')!
   const g = ctx.createRadialGradient(sz / 2, sz / 2, 0, sz / 2, sz / 2, sz / 2)
-  g.addColorStop(0,   'rgba(255,255,255,1)')
-  g.addColorStop(0.25,'rgba(255,255,255,0.85)')
-  g.addColorStop(0.6, 'rgba(255,255,255,0.25)')
-  g.addColorStop(1,   'rgba(255,255,255,0)')
+  g.addColorStop(0,    'rgba(255,255,255,1)')
+  g.addColorStop(0.15, 'rgba(255,255,255,0.6)')
+  g.addColorStop(0.5,  'rgba(255,255,255,0.1)')
+  g.addColorStop(1,    'rgba(255,255,255,0)')
   ctx.fillStyle = g
   ctx.fillRect(0, 0, sz, sz)
   return new THREE.CanvasTexture(c)
@@ -21,13 +22,10 @@ function makeSprite(): THREE.Texture {
 
 const VERT = /* glsl */`
   attribute float aSize;
-  attribute vec3  aColor;
   attribute float aAlpha;
-  varying   vec3  vColor;
   varying   float vAlpha;
   void main() {
-    vColor = aColor;
-    vAlpha = aAlpha;
+    vAlpha       = aAlpha;
     gl_PointSize = aSize;
     gl_Position  = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
   }
@@ -35,25 +33,15 @@ const VERT = /* glsl */`
 
 const FRAG = /* glsl */`
   uniform sampler2D uSprite;
-  varying vec3  vColor;
-  varying float vAlpha;
+  uniform vec3      uColor;
+  varying float     vAlpha;
   void main() {
-    float alpha = texture2D(uSprite, gl_PointCoord).a;
-    gl_FragColor = vec4(vColor, alpha * vAlpha);
+    float a = texture2D(uSprite, gl_PointCoord).a;
+    gl_FragColor = vec4(uColor, a * vAlpha);
   }
 `
 
-// Close/large = warm gold. Far/small = cool forest-white.
-const PALETTE: [number, number, number][] = [
-  [0.89, 0.93, 0.86], // far — cool green-white
-  [1.00, 1.00, 0.93], // near-white
-  [0.96, 0.93, 0.83], // warm white
-  [0.98, 0.92, 0.73], // pale gold
-  [0.97, 0.86, 0.57], // golden amber
-  [0.96, 0.78, 0.46], // close — rich gold
-]
-
-export default function HeroParticles() {
+export default function LensParticles() {
   const canvasRef = useRef<HTMLCanvasElement>(null)
 
   useEffect(() => {
@@ -64,6 +52,7 @@ export default function HeroParticles() {
 
     const W = canvas.offsetWidth  || window.innerWidth
     const H = canvas.offsetHeight || window.innerHeight
+    const baseSize = Math.min(W, H) * 0.30
 
     const renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: false })
     renderer.setSize(W, H, false)
@@ -75,7 +64,6 @@ export default function HeroParticles() {
     const scene = new THREE.Scene()
 
     const pos    = new Float32Array(COUNT * 3)
-    const colors = new Float32Array(COUNT * 3)
     const sizes  = new Float32Array(COUNT)
     const alphas = new Float32Array(COUNT)
     const velY   = new Float32Array(COUNT)
@@ -83,34 +71,32 @@ export default function HeroParticles() {
     const phase  = new Float32Array(COUNT)
 
     for (let i = 0; i < COUNT; i++) {
-      const depth = Math.random()                          // 0 = far, 1 = close
-
-      pos[i * 3]     = (Math.random() - 0.5) * W * 1.4
-      pos[i * 3 + 1] = (Math.random() - 0.5) * H * 1.4
+      pos[i * 3]     = (Math.random() - 0.5) * W
+      pos[i * 3 + 1] = (Math.random() - 0.5) * H
       pos[i * 3 + 2] = 0
 
-      sizes[i]  = 2 + Math.pow(depth, 1.8) * 72            // 2–74 px, non-linear: most tiny, few huge
-      alphas[i] = 0.05 + depth * 0.25                     // far = very faint, close = subtle
-      velY[i]   = -(0.04 + Math.random() * 0.10)          // slow downward drift
-      velX[i]   = (Math.random() - 0.5) * 0.03            // slight lateral bias
+      sizes[i]  = baseSize * (0.7 + Math.random() * 0.8)
+      alphas[i] = DEBUG_PARTICLES ? 0.3 + Math.random() * 0.4 : 0.018 + Math.random() * 0.028
+      velY[i]   = -(0.008 + Math.random() * 0.012)
+      velX[i]   = (Math.random() - 0.5) * 0.006
       phase[i]  = Math.random() * Math.PI * 2
-
-      const ci = Math.round(depth * (PALETTE.length - 1))
-      const [r, g, b] = PALETTE[ci]
-      colors[i * 3]     = r
-      colors[i * 3 + 1] = g
-      colors[i * 3 + 2] = b
     }
 
     const geo = new THREE.BufferGeometry()
     geo.setAttribute('position', new THREE.BufferAttribute(pos,    3))
-    geo.setAttribute('aColor',   new THREE.BufferAttribute(colors, 3))
     geo.setAttribute('aSize',    new THREE.BufferAttribute(sizes,  1))
     geo.setAttribute('aAlpha',   new THREE.BufferAttribute(alphas, 1))
 
     const sprite = makeSprite()
     const mat = new THREE.ShaderMaterial({
-      uniforms:       { uSprite: { value: sprite } },
+      uniforms: {
+        uSprite: { value: sprite },
+        uColor:  { value: new THREE.Vector3(
+          DEBUG_PARTICLES ? 1.0  : 1.0,
+          DEBUG_PARTICLES ? 0.45 : 0.97,
+          DEBUG_PARTICLES ? 0.0  : 0.88,
+        )},
+      },
       vertexShader:   VERT,
       fragmentShader: FRAG,
       transparent:    true,
@@ -125,15 +111,15 @@ export default function HeroParticles() {
 
     function tick() {
       raf = requestAnimationFrame(tick)
-      t += 0.006
+      t += 0.003
 
       for (let i = 0; i < COUNT; i++) {
         pos[i * 3 + 1] += velY[i]
-        pos[i * 3]     += Math.sin(t + phase[i]) * 0.07 + velX[i]
+        pos[i * 3]     += Math.sin(t + phase[i]) * 0.04 + velX[i]
 
-        if (pos[i * 3 + 1] < -H / 2 - 50) {
-          pos[i * 3 + 1] = H / 2 + 50
-          pos[i * 3]     = (Math.random() - 0.5) * W * 1.3
+        if (pos[i * 3 + 1] < -H / 2 - baseSize) {
+          pos[i * 3 + 1] = H / 2 + baseSize
+          pos[i * 3]     = (Math.random() - 0.5) * W
         }
       }
 
@@ -168,7 +154,7 @@ export default function HeroParticles() {
   return (
     <canvas
       ref={canvasRef}
-      className="absolute inset-0 w-full h-full pointer-events-none z-[7]"
+      className="absolute inset-0 w-full h-full pointer-events-none z-[25]"
     />
   )
 }

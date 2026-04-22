@@ -1,14 +1,14 @@
 import { useState } from 'react'
 import { ArrowDownAZ, ArrowUpRight, ArrowUpZA, CalendarDays } from 'lucide-react'
-import { contributions } from '../../data/contributions'
-import { Button, CascadeGroup, CascadeItem, Eyebrow, H2, Pill } from '../ui'
+import { contributions } from '../../../data'
+import { Button, CascadeGroup, CascadeItem, Eyebrow, H2, Pill } from '../../ui'
 
 type SortOrder = 'chronological' | 'asc' | 'desc'
 
 const SORT_OPTIONS: { value: SortOrder; label: string; icon: React.ReactNode }[] = [
   { value: 'chronological', label: 'Chronological', icon: <CalendarDays size={12} /> },
-  { value: 'asc',           label: 'Ascending',         icon: <ArrowDownAZ size={12} /> },
-  { value: 'desc',          label: 'Descending',         icon: <ArrowUpZA size={12} /> },
+  { value: 'asc',           label: 'Ascending',     icon: <ArrowDownAZ size={12} /> },
+  { value: 'desc',          label: 'Descending',    icon: <ArrowUpZA size={12} /> },
 ]
 
 export default function Contributions() {

@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { ArrowLeft, ArrowRight, ArrowUpRight, Pause, Play } from 'lucide-react'
-import { testimonials } from '../../data/testimonials'
-import { Button, CascadeGroup, CascadeItem, Eyebrow, H2 } from '../ui'
+import { testimonials } from '../../../data'
+import { Button, CascadeGroup, CascadeItem, Eyebrow, H2 } from '../../ui'
 
 const INTERVAL_MS = 6000
 const FADE_MS = 250

@@ -1,4 +1,7 @@
 import { ArrowUpRight } from 'lucide-react'
+import type { InstagramPost } from '../../../data'
+import { instagramPosts } from '../../../data'
+import { Button, CascadeGroup, CascadeItem, Eyebrow, H2 } from '../../ui'
 
 function InstagramIcon({ size = 15 }: { size?: number }) {
   return (
@@ -7,9 +10,6 @@ function InstagramIcon({ size = 15 }: { size?: number }) {
     </svg>
   )
 }
-import type { InstagramPost } from '../../data/instagram'
-import { instagramPosts } from '../../data/instagram'
-import { Button, CascadeGroup, CascadeItem, Eyebrow, H2 } from '../ui'
 
 function PostCard({ post }: { post: InstagramPost }) {
   return (
