@@ -44,7 +44,7 @@ export default function Creative() {
             <div className="flex items-start justify-between gap-4 pb-10">
               <div>
                 <Eyebrow className="text-off-black mb-4 block">Life Outside the IDE</Eyebrow>
-                <H2 className="text-off-black">Creations</H2>
+                <H2 className="text-off-black">Creative</H2>
               </div>
               <Button
                 href="https://www.instagram.com/ericshell/"

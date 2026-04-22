@@ -47,7 +47,7 @@ export default function Testimonials() {
   const { review, author } = testimonials[current]
 
   return (
-    <section className="bg-off-black text-white py-24">
+    <section id="testimonials" className="bg-off-black text-white py-24">
       <div className="max-w-[1440px] mx-auto px-6">
 
         <CascadeGroup className="flex items-start justify-between gap-4 pb-10">

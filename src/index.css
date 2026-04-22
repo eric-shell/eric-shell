@@ -31,6 +31,10 @@
     color-scheme: light dark;
   }
 
+  html {
+    scroll-behavior: smooth;
+  }
+
   body {
     margin: 0;
     font-weight: 550;

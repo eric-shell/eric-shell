@@ -11,7 +11,7 @@ export default function Hero() {
   }
 
   return (
-    <section className="relative min-h-screen bg-blue overflow-hidden flex items-center justify-center">
+    <section id="hero" className="relative min-h-screen bg-blue overflow-hidden flex items-center justify-center">
       <CascadeGroup mountOnly className="flex flex-col items-center gap-8 max-w-2xl w-full px-6 py-24 text-center">
         <CascadeItem index={0}>
           <Eyebrow className="text-white">AI Design Systems Engineer</Eyebrow>
