@@ -1,5 +1,15 @@
 @import "tailwindcss";
 
+@theme {
+  --color-white: #ffffff;
+  --color-off-white: #e7f2f6;
+  --color-cyan: #27c2ff;
+  --color-blue: #3c81fd;
+  --color-violet: #6209f8;
+  --color-off-black: #111521;
+  --color-black: #030407;
+}
+
 @layer base {
   :root {
     color-scheme: light dark;
