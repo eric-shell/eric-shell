@@ -49,5 +49,9 @@
       transform: none !important;
       opacity: 1 !important;
     }
+
+    #hero img {
+      transform: none !important;
+    }
   }
 }

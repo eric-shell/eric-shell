@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "defaultMode": "auto",
+    "allow": [
+      "WebSearch",
+      "WebFetch(domain:eric.sh)",
+      "Bash(npm create *)",
+      "Bash(npm install *)",
+      "Bash(git add *)"
+    ]
+  }
+}
