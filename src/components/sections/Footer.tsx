@@ -8,6 +8,7 @@ const NAV_LINKS = [
 
 const CONNECT_LINKS = [
   { label: 'Chat', href: '#hero' },
+  { label: 'Contact', href: '#contact' },
   { label: 'Email', href: 'mailto:ericjshell@gmail.com?subject=New%20Website%20Contact' },
 ]
 

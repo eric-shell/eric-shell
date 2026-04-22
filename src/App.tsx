@@ -3,6 +3,7 @@ import Hero from './components/sections/Hero'
 import Contributions from './components/sections/Contributions'
 import Testimonials from './components/sections/Testimonials'
 import Creative from './components/sections/Creative'
+import Contact from './components/sections/Contact'
 import Footer from './components/sections/Footer'
 
 export default function App() {
@@ -13,6 +14,7 @@ export default function App() {
       <Contributions />
       <Testimonials />
       <Creative />
+      <Contact />
       <Footer />
     </div>
   )
