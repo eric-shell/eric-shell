@@ -1,5 +1,13 @@
 @import "tailwindcss";
 
+@font-face {
+  font-family: 'Display';
+  src: url('/fonts/display.woff2') format('woff2');
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
 @theme {
   --color-white: #ffffff;
   --color-off-white: #e7f2f6;
@@ -8,6 +16,9 @@
   --color-violet: #6209f8;
   --color-off-black: #111521;
   --color-black: #030407;
+
+  --font-sans: 'Source Sans 3', system-ui, sans-serif;
+  --font-display: 'Display', system-ui, sans-serif;
 }
 
 @layer base {
