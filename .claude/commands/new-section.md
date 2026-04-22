@@ -7,8 +7,10 @@ The user will provide a section name (e.g. "Hero", "Projects", "About").
 ```tsx
 export default function <Name>() {
   return (
-    <section id="<id>" className="max-w-4xl mx-auto px-6 py-24">
-      {/* TODO */}
+    <section id="<id>" className="py-24">
+      <div className="max-w-[1440px] mx-auto px-6">
+        {/* TODO */}
+      </div>
     </section>
   )
 }

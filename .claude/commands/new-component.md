@@ -4,6 +4,8 @@ The user will provide a component name (e.g. "Button", "Card", "Tag").
 
 Create `src/components/ui/<Name>.tsx` with typed props and a default export. Keep it minimal — no placeholder logic beyond what the user specifies. Use Tailwind for styling.
 
+Default max width for component containers: `max-w-[1440px]`.
+
 Example structure:
 ```tsx
 interface <Name>Props {

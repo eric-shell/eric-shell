@@ -17,8 +17,13 @@
   --color-off-black: #111521;
   --color-black: #030407;
 
-  --font-sans: 'Source Sans 3', system-ui, sans-serif;
+  --font-sans: 'Google Sans', system-ui, sans-serif;
   --font-display: 'Display', system-ui, sans-serif;
+}
+
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
 
 @layer base {
@@ -28,6 +33,7 @@
 
   body {
     margin: 0;
+    font-weight: 550;
     font-synthesis: none;
     text-rendering: optimizeLegibility;
     -webkit-font-smoothing: antialiased;
