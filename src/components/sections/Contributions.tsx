@@ -42,6 +42,7 @@ export default function Contributions() {
                 rel="noopener noreferrer"
                 size="md"
                 className="shrink-0"
+                rightIcon={<ArrowUpRight size={15} aria-hidden="true" />}
               >
                 View Work History
               </Button>

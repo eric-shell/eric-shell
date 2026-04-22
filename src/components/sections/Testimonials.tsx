@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { ArrowLeft, ArrowRight, Pause, Play } from 'lucide-react'
+import { ArrowLeft, ArrowRight, ArrowUpRight, Pause, Play } from 'lucide-react'
 import { testimonials } from '../../data/testimonials'
 import { Button, CascadeGroup, CascadeItem, Eyebrow, H2 } from '../ui'
 
@@ -64,6 +64,7 @@ export default function Testimonials() {
               rel="noopener noreferrer"
               size="md"
               className="shrink-0 bg-white text-off-black"
+              rightIcon={<ArrowUpRight size={15} aria-hidden="true" />}
             >
               View Full Endorsements
             </Button>

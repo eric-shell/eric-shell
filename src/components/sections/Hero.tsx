@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { MessagesSquare } from 'lucide-react'
 import { Button, CascadeGroup, CascadeItem, Eyebrow } from '../ui'
 
 export default function Hero() {
@@ -42,8 +43,9 @@ export default function Hero() {
               onClick={handleSubmit}
               size="md"
               className="self-end bg-white text-blue hover:bg-off-white"
+              rightIcon={<MessagesSquare size={15} aria-hidden="true" />}
             >
-              Send
+              Start a Chat
             </Button>
           </div>
         </CascadeItem>

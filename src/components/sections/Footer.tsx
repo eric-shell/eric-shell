@@ -63,7 +63,7 @@ export default function Footer() {
           </CascadeGroup>
         </nav>
 
-        <CascadeGroup className="flex flex-col items-end gap-8" threshold={0.2}>
+        <CascadeGroup className="flex flex-col items-end gap-6" threshold={0.2}>
           <CascadeItem index={0}>
             <div className="flex flex-row gap-3">
               <img src="/icon.svg" alt="Eric Shell Icon" className="h-10" />
@@ -90,8 +90,10 @@ export default function Footer() {
             </div>
           </CascadeItem>
 
-          <CascadeItem index={2}>
-            <span className="font-sans text-xs tracking-wider text-white/30">© {year} Eric Shell</span>
+          <CascadeItem index={2} className="leading-none">
+            <span className="font-sans text-xs leading-none tracking-wider text-white/50">
+              <span className="align-baseline font-mono">©</span> {year} Eric Shell. All Rights Reserved.
+            </span>
           </CascadeItem>
         </CascadeGroup>
 
