@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { ArrowLeft, ArrowRight, Pause, Play } from 'lucide-react'
 import { testimonials } from '../../data/testimonials'
-import { Button, Eyebrow, H2 } from '../ui'
+import { Button, CascadeGroup, CascadeItem, Eyebrow, H2 } from '../ui'
 
 const INTERVAL_MS = 6000
 const FADE_MS = 250
@@ -50,26 +50,30 @@ export default function Testimonials() {
     <section className="bg-off-black text-white py-24">
       <div className="max-w-[1440px] mx-auto px-6">
 
-        <div className="flex items-start justify-between gap-4 pb-10">
-          <div>
-            <Eyebrow className="text-white mb-4 block">Feedback from the Team</Eyebrow>
-            <H2 className="italic">Testimonials</H2>
-          </div>
-          <Button
-            href="https://www.linkedin.com/in/ericshell/details/recommendations/"
-            target="_blank"
-            rel="noopener noreferrer"
-            size="md"
-            className="shrink-0 bg-white text-off-black"
-          >
-            View Full Endorsements
-          </Button>
-        </div>
+        <CascadeGroup className="flex items-start justify-between gap-4 pb-10">
+          <CascadeItem index={0}>
+            <div>
+              <Eyebrow className="text-white mb-4 block">Feedback from the Team</Eyebrow>
+              <H2 className="italic">Testimonials</H2>
+            </div>
+          </CascadeItem>
+          <CascadeItem index={1}>
+            <Button
+              href="https://www.linkedin.com/in/ericshell/details/recommendations/"
+              target="_blank"
+              rel="noopener noreferrer"
+              size="md"
+              className="shrink-0 bg-white text-off-black"
+            >
+              View Full Endorsements
+            </Button>
+          </CascadeItem>
+        </CascadeGroup>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-12 lg:gap-20">
+        <CascadeGroup className="grid grid-cols-1 md:grid-cols-2 gap-12 lg:gap-20">
 
           {/* Left: context copy */}
-          <div className="flex flex-col gap-5 font-sans text-base leading-relaxed text-white">
+          <CascadeItem index={0} className="flex flex-col gap-5 font-sans text-base leading-relaxed text-white">
             <p>
               Every piece of feedback comes directly from the architects, product managers, designers, and producers who worked alongside me. Each statement was written and submitted independently on Linkedin, reflecting firsthand experience on massive projects with real deadlines.
             </p>
@@ -79,10 +83,10 @@ export default function Testimonials() {
             <p>
               I take deep pride in every deliverable I put my name on, and I hold myself accountable to the people depending on me to get it right. These statements reflect that standard as seen from the outside and how I intend to contribute as a member of any future team.
             </p>
-          </div>
+          </CascadeItem>
 
           {/* Right: carousel */}
-          <div>
+          <CascadeItem index={1}>
             <div aria-live="polite" aria-atomic="true" className="min-h-56">
               <blockquote
                 className={`transition-opacity duration-[400ms] ${visible ? 'opacity-100' : 'opacity-0'}`}
@@ -130,9 +134,9 @@ export default function Testimonials() {
                 <ArrowRight size={18} aria-hidden="true" />
               </Button>
             </div>
-          </div>
+          </CascadeItem>
 
-        </div>
+        </CascadeGroup>
       </div>
     </section>
   )

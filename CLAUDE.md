@@ -7,7 +7,7 @@ Personal portfolio website for Eric Shell. Successor to https://eric.sh/, which 
 | Layer | Tool |
 |---|---|
 | Build | Vite |
-| UI | React 18 + TypeScript |
+| UI | React 19 + TypeScript |
 | Styling | Tailwind CSS v4 |
 | Package manager | npm |
 
@@ -28,9 +28,12 @@ src/
 │       ├── H1.tsx        # Display heading — text-7xl, font-display, uppercase
 │       ├── H2.tsx        # Section heading — text-5xl, font-display, uppercase
 │       ├── H3.tsx        # Sub-section heading — text-3xl, font-display, uppercase
-│       ├── Dropdown.tsx  # Accessible select w/ click-outside + Escape dismiss
-│       ├── Pill.tsx      # Tag/filter chip — active state, optional dismiss X, renders as <button> when onClick present
-│       └── index.ts      # Barrel export for all ui components
+│       ├── Dropdown.tsx      # Accessible select w/ click-outside + Escape dismiss
+│       ├── Pill.tsx          # Tag/filter chip — active state, optional dismiss X, renders as <button> when onClick present
+│       ├── CascadeGroup.tsx  # Scroll observer — triggers cascade when element enters viewport; mountOnly for Hero
+│       ├── CascadeItem.tsx   # Animated child — fades up with staggered delay based on index
+│       ├── CascadeContext.ts # Shared inView + stagger context (internal, scoped per CascadeGroup)
+│       └── index.ts          # Barrel export for all ui components
 ├── data/           # Typed data files (projects.ts, testimonials.ts, etc.)
 ├── assets/         # Images, fonts, static files
 ├── App.tsx         # Root component — assembles sections in order
@@ -46,7 +49,9 @@ src/
 - `Button` defaults to `solid` variant (off-black fill). Pass `className` to override colors for dark sections (e.g., `className="bg-white text-off-black hover:bg-off-white"`). Pass `href` to render as `<a>`.
 - `Dropdown` is light-theme by default; swap border/bg classes via `className` if needed in a dark section.
 - `Pill` is a tag/filter chip. Set `active` for filled state, `onClick` for interactive use (adds `aria-pressed`), `onDismiss` for a dismissible badge with X icon. Handles `e.preventDefault()` + `e.stopPropagation()` internally — safe inside card links.
-- Import from the barrel: `import { Button, H2, Eyebrow, Pill } from '../ui'`
+- `CascadeGroup` wraps a group of elements and fires when it enters the viewport (`react-intersection-observer`, `triggerOnce: true`). Use `mountOnly` for above-the-fold content (Hero) — animates on mount instead of scroll. Accepts `threshold` (default `0.1`) and `stagger` (default `75ms`). Use `as` to render as any HTML element (e.g. `as="ul"`).
+- `CascadeItem` wraps a single item inside a `CascadeGroup`. Reads `inView` from context and fades up (`opacity-0 translate-y-[6px]` → visible) with a delay of `Math.min(index, 7) * stagger`. Use `as="li"` inside `<ul>` grids to preserve semantic HTML. The stagger index caps at 7 so long lists don't wait seconds.
+- Import from the barrel: `import { Button, H2, Eyebrow, Pill, CascadeGroup, CascadeItem } from '../ui'`
 
 ## Development
 
@@ -67,14 +72,15 @@ Inherited from the existing site and maintained going forward:
 - **Light + dark** — system preference respected via Tailwind's `dark:` variant
 - **Responsive** — mobile-first, 4xl max container width
 
-## Planned Sections
+## Sections
 
 Order in `App.tsx`:
-1. `Hero` — name, title, brief tagline, CTAs
-2. `Projects` — grid of project cards with tech tags
-3. `About` — professional background, expertise areas
-4. `Testimonials` — client/colleague endorsements
-5. `Contact` / `Footer` — social links, email, resume download
+1. `Hero` — name, title, brief tagline, CTAs ✓
+2. `Contributions` — filterable/sortable grid of work and projects ✓
+3. `Testimonials` — two-column: context copy + auto-advancing carousel ✓
+4. `Footer` — social links, resume download, contact ✓
+5. `Projects` — richer project cards with tech tags (planned)
+6. `About` — professional background, expertise areas (planned)
 
 ## Deployment
 

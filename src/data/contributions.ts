@@ -6,9 +6,9 @@ export interface ContributionItem {
 }
 
 export const contributions: ContributionItem[] = [
-  { url: "https://localfoodie.io/", title: "Local Foodie", solution: "Discover the Best Places to Eat in San Luis Obispo, California", tags: ["AI", "React", "Vite", "Regional"] },
-  { url: "https://isaiah.app.link/", title: "Ask Isaiah", solution: "Faith-based AI Assistant Application", tags: ["AI", "React Native", "Expo", "Chatbot"] },
-  { url: "https://www.fws.gov/", title: "U.S. Fish & Wildlife Service", solution: "Multiple Species Management Applications", tags: ["Drupal", "Government"] },
+  { url: "https://localfoodie.io/", title: "Local Foodie", solution: "Discover the best places to eat in San Luis Obispo, California", tags: ["AI", "React", "Vite", "Regional"] },
+  { url: "https://isaiah.app.link/", title: "Ask Isaiah", solution: "Faith-based AI assistant for connection, scripture and guidence", tags: ["AI", "React Native", "Expo", "Chatbot"] },
+  { url: "https://www.fws.gov/", title: "U.S. Fish & Wildlife Service", solution: "Species management and tracking applications", tags: ["Drupal", "Government"] },
   { url: "https://www.bubbas33.com/", title: "Bubba's 33", solution: "Order Ahead Marketing Application", tags: ["Drupal", "QSR"] },
   { url: "https://www.noodles.com/", title: "Noodles & Company", solution: "Order Ahead Marketing Application", tags: ["Drupal", "QSR"] },
   { url: "https://www.redrobin.com/", title: "Red Robin", solution: "Order Ahead Marketing Application", tags: ["Drupal", "QSR"] },

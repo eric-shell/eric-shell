@@ -1,4 +1,6 @@
 export { default as Button } from './Button'
+export { default as CascadeGroup } from './CascadeGroup'
+export { default as CascadeItem } from './CascadeItem'
 export { default as Eyebrow } from './Eyebrow'
 export { default as H1 } from './H1'
 export { default as H2 } from './H2'

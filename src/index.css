@@ -38,4 +38,12 @@
     text-rendering: optimizeLegibility;
     -webkit-font-smoothing: antialiased;
   }
+
+  @media (prefers-reduced-motion: reduce) {
+    .cascade-item {
+      transition: none !important;
+      transform: none !important;
+      opacity: 1 !important;
+    }
+  }
 }
