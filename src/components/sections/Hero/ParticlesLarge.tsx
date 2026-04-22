@@ -1,6 +1,5 @@
 import { useEffect, useRef } from 'react'
 import * as THREE from 'three'
-import { DEBUG_PARTICLES } from '../../../debug'
 
 const COUNT = 7
 
@@ -43,9 +42,7 @@ export default function ParticlesLarge() {
     const scene = new THREE.Scene()
     const sprite = makeSprite()
     const planeGeo = new THREE.PlaneGeometry(1, 1)
-    const baseColor = DEBUG_PARTICLES
-      ? new THREE.Color(1.0, 0.45, 0.0)
-      : new THREE.Color(1.0, 0.97, 0.88)
+    const baseColor = new THREE.Color(1.0, 0.97, 0.88)
 
     const px   = new Float32Array(COUNT)
     const py   = new Float32Array(COUNT)
@@ -64,9 +61,7 @@ export default function ParticlesLarge() {
       velX[i]  = (Math.random() - 0.5) * 0.006
       phase[i] = Math.random() * Math.PI * 2
 
-      const opacity = DEBUG_PARTICLES
-        ? 0.3 + Math.random() * 0.4
-        : 0.018 + Math.random() * 0.2
+      const opacity = 0.018 + Math.random() * 0.2
 
       const mat = new THREE.MeshBasicMaterial({
         map:         sprite,

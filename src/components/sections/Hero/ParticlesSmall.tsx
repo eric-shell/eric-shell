@@ -1,6 +1,5 @@
 import { useEffect, useRef } from 'react'
 import * as THREE from 'three'
-import { DEBUG_PARTICLES } from '../../../debug'
 
 const COUNT = 220
 
@@ -91,13 +90,13 @@ export default function ParticlesSmall() {
       pos[i * 3 + 2] = 0
 
       sizes[i]  = 2 + Math.pow(depth, 1.8) * 72
-      alphas[i] = DEBUG_PARTICLES ? 0.6 + Math.random() * 0.4 : 0.05 + depth * 0.25
+      alphas[i] = 0.05 + depth * 0.25
       velY[i]   = -(0.04 + Math.random() * 0.10)
       velX[i]   = (Math.random() - 0.5) * 0.03
       phase[i]  = Math.random() * Math.PI * 2
 
       const ci = Math.round(depth * (PALETTE.length - 1))
-      const [r, g, b] = DEBUG_PARTICLES ? [1.0, 0.15, 0.15] : PALETTE[ci]
+      const [r, g, b] = PALETTE[ci]
       colors[i * 3]     = r
       colors[i * 3 + 1] = g
       colors[i * 3 + 2] = b
