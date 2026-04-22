@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { MessagesSquare } from 'lucide-react'
 import { Button, CascadeGroup, CascadeItem, Eyebrow } from '../ui'
 import { useParallax } from '../../hooks/useParallax'
+import HeroParticles from './HeroParticles'
 
 export default function Hero() {
   const [message, setMessage] = useState('')
@@ -39,6 +40,7 @@ export default function Hero() {
         className="absolute inset-0 z-[5] pointer-events-none mix-blend-multiply"
         style={{ background: 'radial-gradient(ellipse 65% 85% at 28% 55%, rgba(0,0,0,0.8) 0%, transparent 70%)' }}
       />
+      <HeroParticles />
       <img
         ref={subjectRef}
         src="/hero/subject.png"
