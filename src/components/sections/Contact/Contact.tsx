@@ -1,100 +1,10 @@
 import { useState } from 'react'
 import { Send } from 'lucide-react'
-import { Button, CascadeGroup, CascadeItem, Eyebrow, H2 } from '../../ui'
+import { Button, CascadeGroup, CascadeItem, Eyebrow, H2, Input, Textarea } from '../../ui'
 
 type SubmitStatus = 'idle' | 'success' | 'error'
 
-function InputField({
-  id,
-  label,
-  type = 'text',
-  value,
-  onChange,
-  placeholder,
-  maxLength,
-  disabled,
-  required,
-}: {
-  id: string
-  label: string
-  type?: string
-  value: string
-  onChange: (v: string) => void
-  placeholder?: string
-  maxLength?: number
-  disabled?: boolean
-  required?: boolean
-}) {
-  return (
-    <div className="flex flex-col gap-1.5">
-      <label htmlFor={id} className="font-sans text-sm font-semibold text-off-black">
-        {label}
-      </label>
-      <input
-        id={id}
-        type={type}
-        value={value}
-        onChange={e => onChange(e.target.value)}
-        placeholder={placeholder}
-        maxLength={maxLength}
-        disabled={disabled}
-        required={required}
-        className="w-full rounded-lg border border-off-black/20 bg-transparent px-4 py-3 font-sans text-sm text-off-black placeholder:text-off-black/30 focus:border-off-black/60 focus:outline-none transition disabled:opacity-50"
-      />
-      {maxLength && (
-        <span className="font-sans text-xs text-off-black/30 text-right">
-          {value.length}/{maxLength}
-        </span>
-      )}
-    </div>
-  )
-}
-
-function TextareaField({
-  id,
-  label,
-  value,
-  onChange,
-  placeholder,
-  rows = 6,
-  maxLength,
-  disabled,
-  required,
-}: {
-  id: string
-  label: string
-  value: string
-  onChange: (v: string) => void
-  placeholder?: string
-  rows?: number
-  maxLength?: number
-  disabled?: boolean
-  required?: boolean
-}) {
-  return (
-    <div className="flex flex-col gap-1.5">
-      <label htmlFor={id} className="font-sans text-sm font-semibold text-off-black">
-        {label}
-      </label>
-      <textarea
-        id={id}
-        value={value}
-        onChange={e => onChange(e.target.value)}
-        placeholder={placeholder}
-        rows={rows}
-        maxLength={maxLength}
-        disabled={disabled}
-        required={required}
-        className="w-full resize-none rounded-lg border border-off-black/20 bg-transparent px-4 py-3 font-sans text-sm text-off-black placeholder:text-off-black/30 focus:border-off-black/60 focus:outline-none transition disabled:opacity-50"
-      />
-      {maxLength && (
-        <span className="font-sans text-xs text-off-black/30 text-right">
-          {value.length}/{maxLength}
-        </span>
-      )}
-    </div>
-  )
-}
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
 export default function Contact() {
   const [name, setName] = useState('')
@@ -105,11 +15,15 @@ export default function Contact() {
   const [submitStatus, setSubmitStatus] = useState<SubmitStatus>('idle')
   const [errorMessage, setErrorMessage] = useState('')
 
+  const nameValid = name.trim().length > 0 && name.length <= 100
+  const emailValid = EMAIL_RE.test(email.trim()) && email.length <= 100
+  const messageValid = message.trim().length >= 10 && message.length <= 2000
+
   function validate(): boolean {
     if (!name.trim()) { setErrorMessage('Please enter your name.'); return false }
     if (name.length > 100) { setErrorMessage('Name must be 100 characters or less.'); return false }
     if (!email.trim()) { setErrorMessage('Please enter your email.'); return false }
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { setErrorMessage('Please enter a valid email address.'); return false }
+    if (!emailValid) { setErrorMessage('Please enter a valid email address.'); return false }
     if (!message.trim()) { setErrorMessage('Please enter a message.'); return false }
     if (message.length < 10) { setErrorMessage('Message must be at least 10 characters.'); return false }
     if (message.length > 2000) { setErrorMessage('Message must be 2000 characters or less.'); return false }
@@ -177,12 +91,15 @@ export default function Contact() {
               </p>
             </CascadeItem>
             <CascadeItem index={2}>
-              <a
-                href="mailto:ericjshell@gmail.com"
-                className="font-sans text-sm font-semibold text-off-black hover:text-off-black/60 transition-colors"
-              >
-                ericjshell@gmail.com
-              </a>
+              <p className="font-sans text-base leading-relaxed text-off-black/60 max-w-sm">
+                I read every message and usually reply within a day or two.
+                A little context goes a long way — the more you share, the better I can respond.
+              </p>
+            </CascadeItem>
+            <CascadeItem index={3}>
+              <p className="font-sans text-base leading-relaxed text-off-black/60 max-w-sm">
+                Prefer to skip the form? Email works just as well — you'll find the address in the footer.
+              </p>
             </CascadeItem>
           </CascadeGroup>
 
@@ -200,7 +117,7 @@ export default function Contact() {
               </CascadeItem>
             ) : (
               <CascadeItem index={0}>
-                <form onSubmit={handleSubmit} className="flex flex-col gap-5" noValidate>
+                <form onSubmit={handleSubmit} className="flex flex-col gap-2" noValidate>
                   <div aria-hidden="true" className="sr-only">
                     <label htmlFor="contact-website">Website</label>
                     <input
@@ -213,7 +130,7 @@ export default function Contact() {
                       onChange={e => setWebsite(e.target.value)}
                     />
                   </div>
-                  <InputField
+                  <Input
                     id="contact-name"
                     label="Name"
                     value={name}
@@ -222,8 +139,10 @@ export default function Contact() {
                     maxLength={100}
                     disabled={isSubmitting}
                     required
+                    valid={nameValid}
+                    autoComplete="name"
                   />
-                  <InputField
+                  <Input
                     id="contact-email"
                     label="Email"
                     type="email"
@@ -233,8 +152,11 @@ export default function Contact() {
                     maxLength={100}
                     disabled={isSubmitting}
                     required
+                    valid={emailValid}
+                    autoComplete="email"
+                    inputMode="email"
                   />
-                  <TextareaField
+                  <Textarea
                     id="contact-message"
                     label="Message"
                     value={message}
@@ -244,6 +166,7 @@ export default function Contact() {
                     maxLength={2000}
                     disabled={isSubmitting}
                     required
+                    valid={messageValid}
                   />
 
                   {errorMessage && (
