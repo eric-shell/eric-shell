@@ -28,23 +28,53 @@ export default function Hero() {
       onMouseLeave={handleMouseLeave}
       className="relative min-h-screen overflow-hidden flex items-center"
     >
-      <img
-        ref={bgRef}
-        src="/hero/background.jpg"
-        alt="Sequoia National Forest background"
-        aria-hidden="true"
-        style={{ transform: 'scale(1.04) translate(0px, 0px)' }}
-        className="absolute inset-0 w-full h-full object-cover z-0"
-      />
+      <picture>
+        <source
+          type="image/avif"
+          srcSet="/hero/background-640.avif 640w, /hero/background-1280.avif 1280w, /hero/background-1920.avif 1920w"
+          sizes="100vw"
+        />
+        <source
+          type="image/webp"
+          srcSet="/hero/background-640.webp 640w, /hero/background-1280.webp 1280w, /hero/background-1920.webp 1920w"
+          sizes="100vw"
+        />
+        <img
+          ref={bgRef}
+          src="/hero/background-1280.jpg"
+          srcSet="/hero/background-640.jpg 640w, /hero/background-1280.jpg 1280w, /hero/background-1920.jpg 1920w"
+          sizes="100vw"
+          alt="Sequoia National Forest background"
+          aria-hidden="true"
+          fetchPriority="high"
+          style={{ transform: 'scale(1.04) translate(0px, 0px)' }}
+          className="absolute inset-0 w-full h-full object-cover z-0"
+        />
+      </picture>
       <Suspense fallback={null}><ParticlesSmall /></Suspense>
-      <img
-        ref={subjectRef}
-        src="/hero/subject.png"
-        alt="Eric Shell looking up at a Redwood Tree"
-        aria-hidden="true"
-        style={{ bottom: '-30px' }}
-        className="absolute right-0 h-[85vh] max-h-[900px] w-auto object-bottom object-contain pointer-events-none select-none z-10"
-      />
+      <picture>
+        <source
+          type="image/avif"
+          srcSet="/hero/subject-512.avif 512w, /hero/subject-1024.avif 1024w"
+          sizes="(max-width: 1024px) 100vw, 50vw"
+        />
+        <source
+          type="image/webp"
+          srcSet="/hero/subject-512.webp 512w, /hero/subject-1024.webp 1024w"
+          sizes="(max-width: 1024px) 100vw, 50vw"
+        />
+        <img
+          ref={subjectRef}
+          src="/hero/subject-1024.png"
+          srcSet="/hero/subject-512.png 512w, /hero/subject-1024.png 1024w"
+          sizes="(max-width: 1024px) 100vw, 50vw"
+          alt="Eric Shell looking up at a Redwood Tree"
+          aria-hidden="true"
+          fetchPriority="high"
+          style={{ bottom: '-30px' }}
+          className="absolute right-0 h-[85vh] max-h-[900px] w-auto object-bottom object-contain pointer-events-none select-none z-10"
+        />
+      </picture>
       <Suspense fallback={null}><ParticlesLarge /></Suspense>
       <div
         ref={gradientRef}
