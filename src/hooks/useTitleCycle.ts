@@ -11,6 +11,8 @@ const PHRASES = [
   'UI/UX Designer',
   'Claude Enthusiast',
   'Automotive and Landscape Photographer',
+  'Action Sports Videographer',
+  'Avid Mountian Biker',
 ]
 
 export function useTitleCycle() {

@@ -44,7 +44,7 @@ export default function Chat({
       <div className="glass-blur absolute inset-0 bg-white/10 [animation:blur-in_1s_cubic-bezier(0.16,1,0.3,1)_0.3s_both]" />
       <button
         onClick={() => setIsOpen(false)}
-        className="absolute top-3 right-3 z-10 p-1.5 rounded-lg text-white/50 hover:text-white hover:bg-white/10 transition cursor-pointer"
+        className="absolute top-3 right-3 z-10 p-1.5 rounded-lg text-white hover:bg-off-black/20 transition cursor-pointer"
         aria-label="Close chat"
       >
         <X size={16} aria-hidden="true" />

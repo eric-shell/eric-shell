@@ -1,15 +1,8 @@
 import { useState, useCallback, useEffect, useRef } from 'react'
-import { Briefcase, Quote, Palette, ClipboardList } from 'lucide-react'
 import { CascadeGroup, CascadeItem, Button } from '../../ui'
+import { navLinks } from '../../../data'
 
 const ericAudio = new Audio('/audio/Eeeeeee.wav')
-
-const NAV_LINKS = [
-  { label: 'Work',         href: '#contributions', Icon: Briefcase },
-  { label: 'Testimonials', href: '#testimonials',  Icon: Quote     },
-  { label: 'Creative',     href: '#creative',      Icon: Palette   },
-  { label: 'Contact',      href: '#contact',       Icon: ClipboardList },
-]
 
 export default function Header() {
   const [echoes, setEchoes] = useState<number[]>([])
@@ -69,7 +62,7 @@ export default function Header() {
 
           <nav aria-label="Primary navigation">
             <ul className="flex items-center gap-6">
-              {NAV_LINKS.map(({ label, href, Icon }, i) => (
+              {navLinks.map(({ label, href, Icon }, i) => (
                 <CascadeItem key={label} as="li" index={i + 1}>
                   <Button
                     href={href}
