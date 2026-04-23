@@ -1,8 +1,9 @@
-import { useState } from 'react'
+import { lazy, Suspense, useState } from 'react'
 import { CascadeGroup, CascadeItem, Chat, Eyebrow } from '../../ui'
 import { useParallax } from '../../../hooks'
-import ParticlesSmall from './ParticlesSmall'
-import ParticlesLarge from './ParticlesLarge'
+
+const ParticlesSmall = lazy(() => import('./ParticlesSmall'))
+const ParticlesLarge = lazy(() => import('./ParticlesLarge'))
 
 export default function Hero() {
   const [message, setMessage] = useState('')
@@ -35,7 +36,7 @@ export default function Hero() {
         style={{ transform: 'scale(1.04) translate(0px, 0px)' }}
         className="absolute inset-0 w-full h-full object-cover z-0"
       />
-      <ParticlesSmall />
+      <Suspense fallback={null}><ParticlesSmall /></Suspense>
       <img
         ref={subjectRef}
         src="/hero/subject.png"
@@ -44,7 +45,7 @@ export default function Hero() {
         style={{ bottom: '-30px' }}
         className="absolute right-0 h-[85vh] max-h-[900px] w-auto object-bottom object-contain pointer-events-none select-none z-10"
       />
-      <ParticlesLarge />
+      <Suspense fallback={null}><ParticlesLarge /></Suspense>
       <div
         ref={gradientRef}
         className="absolute inset-0 z-[5] pointer-events-none mix-blend-multiply"
