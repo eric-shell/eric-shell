@@ -1,3 +1,4 @@
+import type { VercelRequest, VercelResponse } from '@vercel/node'
 import { Resend } from 'resend'
 
 type ContactPayload = {
@@ -26,36 +27,30 @@ function validate(body: ContactPayload): { ok: true; name: string; email: string
   return { ok: true, name: name.trim(), email: email.trim(), message: message.trim() }
 }
 
-function json(body: unknown, status: number): Response {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: { 'Content-Type': 'application/json' },
-  })
-}
-
-export default async function handler(req: Request): Promise<Response> {
+export default async function handler(req: VercelRequest, res: VercelResponse): Promise<void> {
   if (req.method !== 'POST') {
-    return json({ error: 'Method not allowed' }, 405)
+    res.status(405).json({ error: 'Method not allowed' })
+    return
   }
 
-  let body: ContactPayload
-  try {
-    body = (await req.json()) as ContactPayload
-  } catch {
-    return json({ error: 'Invalid JSON body.' }, 400)
-  }
+  const body = (req.body ?? {}) as ContactPayload
 
   if (isString(body.website) && body.website.trim() !== '') {
-    return json({ ok: true }, 200)
+    res.status(200).json({ ok: true })
+    return
   }
 
   const result = validate(body)
-  if (!result.ok) return json({ error: result.error }, 400)
+  if (!result.ok) {
+    res.status(400).json({ error: result.error })
+    return
+  }
 
   const apiKey = process.env.RESEND_API_KEY
   if (!apiKey) {
     console.error('RESEND_API_KEY is not set')
-    return json({ error: 'Failed to send message. Please try again.' }, 500)
+    res.status(500).json({ error: 'Failed to send message. Please try again.' })
+    return
   }
 
   const resend = new Resend(apiKey)
@@ -72,12 +67,13 @@ export default async function handler(req: Request): Promise<Response> {
 
     if (error) {
       console.error('Resend error:', error)
-      return json({ error: 'Failed to send message. Please try again.' }, 500)
+      res.status(500).json({ error: 'Failed to send message. Please try again.' })
+      return
     }
 
-    return json({ ok: true }, 200)
+    res.status(200).json({ ok: true })
   } catch (err) {
     console.error('Unexpected error sending email:', err)
-    return json({ error: 'Failed to send message. Please try again.' }, 500)
+    res.status(500).json({ error: 'Failed to send message. Please try again.' })
   }
 }
