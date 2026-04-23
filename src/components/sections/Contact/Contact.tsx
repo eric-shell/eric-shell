@@ -100,6 +100,7 @@ export default function Contact() {
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [message, setMessage] = useState('')
+  const [website, setWebsite] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [submitStatus, setSubmitStatus] = useState<SubmitStatus>('idle')
   const [errorMessage, setErrorMessage] = useState('')
@@ -132,6 +133,7 @@ export default function Contact() {
           name: name.trim(),
           email: email.trim(),
           message: message.trim(),
+          website,
         }),
       })
 
@@ -142,6 +144,7 @@ export default function Contact() {
         setName('')
         setEmail('')
         setMessage('')
+        setWebsite('')
       } else {
         setSubmitStatus('error')
         setErrorMessage(data.error || 'Failed to send message. Please try again.')
@@ -198,6 +201,18 @@ export default function Contact() {
             ) : (
               <CascadeItem index={0}>
                 <form onSubmit={handleSubmit} className="flex flex-col gap-5" noValidate>
+                  <div aria-hidden="true" className="sr-only">
+                    <label htmlFor="contact-website">Website</label>
+                    <input
+                      id="contact-website"
+                      name="website"
+                      type="text"
+                      tabIndex={-1}
+                      autoComplete="off"
+                      value={website}
+                      onChange={e => setWebsite(e.target.value)}
+                    />
+                  </div>
                   <InputField
                     id="contact-name"
                     label="Name"

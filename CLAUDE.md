@@ -85,6 +85,7 @@ npm run dev       # dev server at http://localhost:5173
 npm run build     # production build → dist/
 npm run preview   # preview production build locally
 npm run lint      # ESLint
+npx vercel dev    # run serverless fns (e.g. /api/contact) locally; needs RESEND_API_KEY in .env.local
 ```
 
 ## Design Principles

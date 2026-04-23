@@ -16,6 +16,7 @@
     "react": "^19.2.5",
     "react-dom": "^19.2.5",
     "react-intersection-observer": "^10.0.3",
+    "resend": "^6.12.2",
     "tailwind-merge": "^3.5.0",
     "three": "^0.184.0"
   },
