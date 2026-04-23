@@ -37,8 +37,7 @@
 }
 
 @utility glass-blur {
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+  @apply backdrop-blur-md;
 }
 
 @layer base {

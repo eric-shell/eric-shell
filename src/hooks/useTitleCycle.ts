@@ -26,28 +26,28 @@ export function useTitleCycle() {
       if (phase === 'typing') {
         document.title = BASE + phrase.slice(0, ++charIndex)
         if (charIndex < phrase.length) {
-          timerId = window.setTimeout(tick, 250)
+          timerId = window.setTimeout(tick, 75)
         } else {
           phase = 'pausing'
-          timerId = window.setTimeout(tick, 2000)
+          timerId = window.setTimeout(tick, 1500)
         }
       } else if (phase === 'pausing') {
         phase = 'deleting'
-        timerId = window.setTimeout(tick, 300)
+        timerId = window.setTimeout(tick, 200)
       } else {
         document.title = BASE + phrase.slice(0, --charIndex)
         if (charIndex > 0) {
-          timerId = window.setTimeout(tick, 150)
+          timerId = window.setTimeout(tick, 40)
         } else {
           phraseIndex = (phraseIndex + 1) % PHRASES.length
           phase = 'typing'
-          timerId = window.setTimeout(tick, 400)
+          timerId = window.setTimeout(tick, 250)
         }
       }
     }
 
     document.title = BASE
-    timerId = window.setTimeout(tick, 800)
+    timerId = window.setTimeout(tick, 500)
 
     return () => clearTimeout(timerId)
   }, [])
