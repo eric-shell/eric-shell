@@ -24,7 +24,7 @@ export default function Pill({
   const padding = onDismiss ? 'px-2.5 py-1' : 'px-2 py-1'
   const colors = active
     ? 'bg-off-black text-white'
-    : `text-off-black/50 bg-off-black/8${onClick ? ' hover:bg-off-black/15' : ''}`
+    : `bg-off-white text-off-black/50 bg-off-black/8${onClick ? ' hover:bg-off-black hover:text-white' : ''}`
 
   const classes = `${BASE} ${padding} ${colors} ${className}`
 

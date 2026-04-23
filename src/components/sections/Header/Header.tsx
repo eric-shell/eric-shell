@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect, useRef } from 'react'
-import { Briefcase, Quote, Camera, UserRound } from 'lucide-react'
+import { Briefcase, Quote, Palette, ClipboardList } from 'lucide-react'
 import { CascadeGroup, CascadeItem, Button } from '../../ui'
 
 const ericAudio = new Audio('/audio/Eeeeeee.wav')
@@ -7,8 +7,8 @@ const ericAudio = new Audio('/audio/Eeeeeee.wav')
 const NAV_LINKS = [
   { label: 'Work',         href: '#contributions', Icon: Briefcase },
   { label: 'Testimonials', href: '#testimonials',  Icon: Quote     },
-  { label: 'Creative',     href: '#creative',      Icon: Camera    },
-  { label: 'Contact',      href: '#contact',       Icon: UserRound },
+  { label: 'Creative',     href: '#creative',      Icon: Palette   },
+  { label: 'Contact',      href: '#contact',       Icon: ClipboardList },
 ]
 
 export default function Header() {

@@ -1,4 +1,5 @@
 export { default as Button } from './Button'
+export { Card } from './Card'
 export { CascadeGroup, CascadeItem } from './Cascade'
 export { default as Eyebrow } from './Eyebrow'
 export { H1, H2, H3 } from './Heading'

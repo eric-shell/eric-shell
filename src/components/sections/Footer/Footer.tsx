@@ -1,15 +1,15 @@
-import { Briefcase, Quote, Camera, MessageCircle, UserRound, Mail } from 'lucide-react'
+import { Briefcase, Quote, Palette, MessagesSquare, ClipboardList, Mail } from 'lucide-react'
 import { CascadeGroup, CascadeItem } from '../../ui'
 
 const NAV_LINKS = [
   { label: 'Work',         href: '#contributions', Icon: Briefcase },
   { label: 'Testimonials', href: '#testimonials',  Icon: Quote     },
-  { label: 'Creative',     href: '#creative',      Icon: Camera    },
+  { label: 'Creative',     href: '#creative',      Icon: Palette   },
 ]
 
 const CONNECT_LINKS = [
-  { label: 'Chat',    href: '#hero',                                                     Icon: MessageCircle },
-  { label: 'Contact', href: '#contact',                                                  Icon: UserRound     },
+  { label: 'Chat',    href: '#hero',                                                     Icon: MessagesSquare },
+  { label: 'Contact', href: '#contact',                                                  Icon: ClipboardList  },
   { label: 'Email',   href: 'mailto:ericjshell@gmail.com?subject=New%20Website%20Contact', Icon: Mail        },
 ]
 
