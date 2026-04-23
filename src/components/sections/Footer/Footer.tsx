@@ -1,15 +1,16 @@
+import { Briefcase, Quote, Camera, MessageCircle, UserRound, Mail } from 'lucide-react'
 import { CascadeGroup, CascadeItem } from '../../ui'
 
 const NAV_LINKS = [
-  { label: 'Work', href: '#contributions' },
-  { label: 'Testimonials', href: '#testimonials' },
-  { label: 'Creative', href: '#creative' },
+  { label: 'Work',         href: '#contributions', Icon: Briefcase },
+  { label: 'Testimonials', href: '#testimonials',  Icon: Quote     },
+  { label: 'Creative',     href: '#creative',      Icon: Camera    },
 ]
 
 const CONNECT_LINKS = [
-  { label: 'Chat', href: '#hero' },
-  { label: 'Contact', href: '#contact' },
-  { label: 'Email', href: 'mailto:ericjshell@gmail.com?subject=New%20Website%20Contact' },
+  { label: 'Chat',    href: '#hero',                                                     Icon: MessageCircle },
+  { label: 'Contact', href: '#contact',                                                  Icon: UserRound     },
+  { label: 'Email',   href: 'mailto:ericjshell@gmail.com?subject=New%20Website%20Contact', Icon: Mail        },
 ]
 
 const SOCIAL_LINKS = [
@@ -44,18 +45,20 @@ export default function Footer() {
 
         <nav aria-label="Footer navigation" className="flex gap-12">
           <CascadeGroup as="ul" className="flex flex-col gap-4" threshold={0.2}>
-            {NAV_LINKS.map(({ label, href }, i) => (
+            {NAV_LINKS.map(({ label, href, Icon }, i) => (
               <CascadeItem key={label} as="li" index={i}>
-                <a href={href} className="font-sans text-sm font-semibold text-white/50 hover:text-white transition-colors">
+                <a href={href} className="flex items-center gap-2 font-sans text-sm font-semibold text-white/50 hover:text-white transition-colors">
+                  <Icon size={14} />
                   {label}
                 </a>
               </CascadeItem>
             ))}
           </CascadeGroup>
           <CascadeGroup as="ul" className="flex flex-col gap-4" threshold={0.2}>
-            {CONNECT_LINKS.map(({ label, href }, i) => (
+            {CONNECT_LINKS.map(({ label, href, Icon }, i) => (
               <CascadeItem key={label} as="li" index={i}>
-                <a href={href} className="font-sans text-sm font-semibold text-white/50 hover:text-white transition-colors">
+                <a href={href} className="flex items-center gap-2 font-sans text-sm font-semibold text-white/50 hover:text-white transition-colors">
+                  <Icon size={14} />
                   {label}
                 </a>
               </CascadeItem>
