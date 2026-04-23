@@ -36,6 +36,22 @@
   to   { opacity: 1; backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); }
 }
 
+/* Bottom contracts toward bottom-right first, top follows — approximates macOS genie */
+@keyframes genie-out {
+  0%   { clip-path: polygon(0% 0%, 100% 0%, 100% 100%, 0% 100%);       transform: translate(0,    0)    scale(1);    opacity: 1;   }
+  30%  { clip-path: polygon(0% 0%, 100% 0%, 100% 100%, 42% 100%);      transform: translate(4%,   8%)   scale(0.95); opacity: 1;   }
+  60%  { clip-path: polygon(18% 0%, 100% 0%, 100% 100%, 66% 100%);     transform: translate(14%,  28%)  scale(0.65); opacity: 0.8; }
+  85%  { clip-path: polygon(58% 5%, 100% 5%, 100% 100%, 82% 100%);     transform: translate(30%,  55%)  scale(0.3);  opacity: 0.4; }
+  100% { clip-path: polygon(88% 35%, 100% 35%, 100% 100%, 88% 100%);   transform: translate(46%,  75%)  scale(0.1);  opacity: 0;   }
+}
+
+@keyframes genie-button-in {
+  0%   { transform: scale(0.2); opacity: 0; }
+  55%  { transform: scale(1.12); opacity: 1; }
+  78%  { transform: scale(0.96); }
+  100% { transform: scale(1); opacity: 1; }
+}
+
 @utility glass-blur {
   @apply backdrop-blur-md;
 }
@@ -73,6 +89,13 @@
       opacity: 1 !important;
       backdrop-filter: blur(12px) !important;
       -webkit-backdrop-filter: blur(12px) !important;
+    }
+
+    .genie-panel, .genie-button {
+      animation: none !important;
+      opacity: 1 !important;
+      clip-path: none !important;
+      transform: none !important;
     }
   }
 }

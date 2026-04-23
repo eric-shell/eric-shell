@@ -14,6 +14,8 @@ interface ChatProps {
   className?: string
 }
 
+const GENIE_DURATION_MS = 480
+
 export default function Chat({
   value,
   onChange,
@@ -24,13 +26,22 @@ export default function Chat({
   className,
 }: ChatProps) {
   const [isOpen, setIsOpen] = useState(true)
+  const [isClosing, setIsClosing] = useState(false)
+
+  const handleClose = () => {
+    setIsClosing(true)
+    setTimeout(() => {
+      setIsOpen(false)
+      setIsClosing(false)
+    }, GENIE_DURATION_MS)
+  }
 
   if (!isOpen) {
     return createPortal(
       <Button
         onClick={() => setIsOpen(true)}
         size="md"
-        className="fixed bottom-6 right-6 z-50 bg-white text-blue shadow-xl hover:bg-off-white"
+        className="genie-button fixed bottom-6 right-6 z-50 bg-white text-blue shadow-xl hover:bg-off-white [animation:genie-button-in_350ms_cubic-bezier(0.34,1.56,0.64,1)_both]"
         rightIcon={<MessagesSquare size={15} aria-hidden="true" />}
       >
         Start a Chat
@@ -40,10 +51,17 @@ export default function Chat({
   }
 
   return (
-    <div className={twMerge('relative flex flex-col rounded-2xl border border-white/20 overflow-hidden', className)}>
+    <div
+      className={twMerge(
+        'genie-panel relative flex flex-col rounded-2xl border border-white/20 overflow-hidden',
+        isClosing && '[animation:genie-out_480ms_cubic-bezier(0.4,0,0.9,0.6)_both]',
+        isClosing && 'pointer-events-none',
+        className
+      )}
+    >
       <div className="glass-blur absolute inset-0 bg-white/10 [animation:blur-in_1s_cubic-bezier(0.16,1,0.3,1)_0.3s_both]" />
       <button
-        onClick={() => setIsOpen(false)}
+        onClick={handleClose}
         className="absolute top-3 right-3 z-10 p-1.5 rounded-lg text-white hover:bg-off-black/20 transition cursor-pointer"
         aria-label="Close chat"
       >
