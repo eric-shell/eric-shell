@@ -75,7 +75,7 @@ export default function Hero() {
         <CascadeGroup mountOnly>
           <CascadeItem index={0}>
             <div className="relative flex flex-col rounded-2xl border border-white/20 overflow-hidden">
-              <div className="hero-glass-blur absolute inset-0 bg-white/10 [animation:blur-in_1s_cubic-bezier(0.16,1,0.3,1)_0.3s_both]" />
+              <div className="glass-blur absolute inset-0 bg-white/10 [animation:blur-in_1s_cubic-bezier(0.16,1,0.3,1)_0.3s_both]" />
               <div className="relative flex-1 min-h-[320px] p-6 flex items-end">
                 <p className="font-sans text-sm text-white">
                   Ask me anything about my work, skills, or experience.

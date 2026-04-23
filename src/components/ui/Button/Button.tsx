@@ -1,7 +1,7 @@
 import type { AnchorHTMLAttributes, ButtonHTMLAttributes } from 'react'
 import { twMerge } from 'tailwind-merge'
 
-type Variant = 'solid' | 'outline' | 'ghost'
+type Variant = 'solid' | 'outline' | 'ghost' | 'glass'
 type Size = 'sm' | 'md' | 'icon'
 
 const BASE = 'inline-flex items-center justify-center gap-2 font-sans font-semibold transition cursor-pointer'
@@ -10,6 +10,7 @@ const VARIANT: Record<Variant, string> = {
   solid:   'bg-off-black text-white hover:bg-off-black/90',
   outline: 'border border-off-black/20 text-off-black/60 hover:border-off-black/40 hover:text-off-black',
   ghost:   'text-off-black/60 hover:text-off-black',
+  glass:   'glass-blur bg-white/10 border border-white/20 text-white hover:bg-white/20 hover:border-white/30 transition-all',
 }
 
 const SIZE: Record<Size, string> = {
