@@ -22,7 +22,7 @@ export interface SocialLink {
 export const navLinks: NavLink[] = [
   {
     label: 'Work',
-    href: '#contributions',
+    href: '#work',
     Icon: Briefcase,
   },
   {

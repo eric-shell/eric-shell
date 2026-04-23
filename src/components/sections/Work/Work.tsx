@@ -11,7 +11,7 @@ const SORT_OPTIONS: { value: SortOrder; label: string; icon: React.ReactNode }[]
   { value: 'desc',          label: 'Descending',    icon: <ArrowUpZA size={12} /> },
 ]
 
-export default function Contributions() {
+export default function Work() {
   const [sort, setSort] = useState<SortOrder>('chronological')
   const [activeTags, setActiveTags] = useState<string[]>([])
 
@@ -26,7 +26,7 @@ export default function Contributions() {
   if (sort === 'desc') items = items.sort((a, b) => b.title.localeCompare(a.title))
 
   return (
-    <section id="contributions" className="bg-off-white py-24">
+    <section id="work" className="bg-off-white py-24">
       <div className="max-w-[1440px] mx-auto px-6">
 
         <CascadeGroup threshold={0.15}>
@@ -34,7 +34,7 @@ export default function Contributions() {
             <div className="flex items-start justify-between gap-4 pb-10">
               <div>
                 <Eyebrow className="text-off-black mb-4 block">Selected Work and Projects</Eyebrow>
-                <H2 className="text-off-black">Contributions</H2>
+                <H2 className="text-off-black">Work</H2>
               </div>
               <Button
                 href="https://www.linkedin.com/in/ericshell/details/experience/"
