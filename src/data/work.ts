@@ -1,11 +1,11 @@
-export interface ContributionItem {
+export interface WorkItem {
   url: string
   title: string
   solution: string
   tags: string[]
 }
 
-export const contributions: ContributionItem[] = [
+export const workItems: WorkItem[] = [
   { url: "https://localfoodie.io/", title: "Local Foodie", solution: "Discover the best places to eat in San Luis Obispo, California", tags: ["AI", "React", "Vite", "Regional"] },
   { url: "https://isaiah.app.link/", title: "Ask Isaiah", solution: "Faith-based AI assistant for connection, scripture and guidence", tags: ["AI", "React Native", "Expo", "Chatbot"] },
   { url: "https://www.fws.gov/", title: "U.S. Fish & Wildlife Service", solution: "Species management and tracking applications", tags: ["Drupal", "Government"] },

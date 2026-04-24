@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { ArrowDownAZ, ArrowUpRight, ArrowUpZA, CalendarDays } from 'lucide-react'
-import { contributions } from '../../../data'
+import { workItems } from '../../../data'
 import { Button, Card, CascadeGroup, CascadeItem, Eyebrow, H2, Pill } from '../../ui'
 
 type SortOrder = 'chronological' | 'asc' | 'desc'
@@ -20,8 +20,8 @@ export default function Work() {
   }
 
   let items = activeTags.length > 0
-    ? contributions.filter(item => activeTags.some(t => item.tags.includes(t)))
-    : [...contributions]
+    ? workItems.filter(item => activeTags.some(t => item.tags.includes(t)))
+    : [...workItems]
   if (sort === 'asc') items = items.sort((a, b) => a.title.localeCompare(b.title))
   if (sort === 'desc') items = items.sort((a, b) => b.title.localeCompare(a.title))
 
