@@ -8,15 +8,26 @@ export default function Header() {
   const [echoes, setEchoes] = useState<number[]>([])
   const [hidden, setHidden] = useState(false)
   const [atTop, setAtTop] = useState(true)
+  const [activeSection, setActiveSection] = useState('hero')
   const lastScrollY = useRef(0)
 
   useEffect(() => {
+    const sectionIds = navLinks.filter(l => l.href.startsWith('#')).map(l => l.href.slice(1))
+
     const handleScroll = () => {
       const currentY = window.scrollY
       setAtTop(currentY < 150)
       setHidden(currentY > lastScrollY.current && currentY > 80)
       lastScrollY.current = currentY
+
+      let active = sectionIds[0]
+      for (const id of sectionIds) {
+        const el = document.getElementById(id)
+        if (el && el.getBoundingClientRect().top <= 80) active = id
+      }
+      setActiveSection(active)
     }
+
     window.addEventListener('scroll', handleScroll, { passive: true })
     return () => window.removeEventListener('scroll', handleScroll)
   }, [])
@@ -66,7 +77,7 @@ export default function Header() {
                 <CascadeItem key={label} as="li" index={i + 1}>
                   <Button
                     href={href}
-                    variant="glass-light"
+                    variant={activeSection === href.slice(1) ? 'primary' : 'glass-light'}
                     size="sm"
                     leftIcon={<Icon size={14} />}
                   >

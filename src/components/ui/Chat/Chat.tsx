@@ -91,7 +91,7 @@ export default function Chat({
           onClick={onSubmit}
           variant="primary"
           size="md"
-          className="self-end"
+          className="shadow-md self-end"
           rightIcon={<MessagesSquare size={15} aria-hidden="true" />}
         >
           {submitLabel}

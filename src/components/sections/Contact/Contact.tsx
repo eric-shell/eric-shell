@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Send } from 'lucide-react'
-import { Button, CascadeGroup, CascadeItem, Eyebrow, H2, Input, Textarea } from '../../ui'
+import { Button, CascadeGroup, CascadeItem, Eyebrow, H2, Input, Panel, Textarea } from '../../ui'
 
 type SubmitStatus = 'idle' | 'success' | 'error'
 
@@ -85,7 +85,7 @@ export default function Contact() {
               </div>
             </CascadeItem>
             <CascadeItem index={1}>
-              <p className="font-sans text-base leading-relaxed text-off-black/60 max-w-sm">
+              <p className="font-sans text-base leading-relaxed text-off-black/60 max-w-lg">
                 Have a project in mind, a role to fill, or just want to connect?
                 Drop me a message and I'll get back to you.
               </p>
@@ -117,6 +117,7 @@ export default function Contact() {
               </CascadeItem>
             ) : (
               <CascadeItem index={0}>
+                <Panel variant="glass-white" className="rounded-2xl p-8">
                 <form onSubmit={handleSubmit} className="flex flex-col gap-2" noValidate>
                   <div aria-hidden="true" className="sr-only">
                     <label htmlFor="contact-website">Website</label>
@@ -178,12 +179,14 @@ export default function Contact() {
                   <Button
                     type="submit"
                     disabled={isSubmitting}
-                    className="self-start"
+                    variant="primary"
+                    className="shadow-md self-end"
                     rightIcon={<Send size={14} aria-hidden="true" />}
                   >
                     {isSubmitting ? 'Sending…' : 'Send Message'}
                   </Button>
                 </form>
+                </Panel>
               </CascadeItem>
             )}
 

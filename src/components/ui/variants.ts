@@ -7,6 +7,7 @@ export type Variant =
   | 'ghost'
   | 'glass-light'
   | 'glass-dark'
+  | 'glass-white'
 
 export type Size = 'sm' | 'md' | 'lg'
 
@@ -19,6 +20,7 @@ export const SURFACE: Record<Variant, string> = {
   ghost:   'text-off-black/60',
   'glass-light': 'glass-blur bg-white/10 border border-white/20 text-white',
   'glass-dark':  'glass-blur bg-off-black/20 border border-off-black/20 text-white',
+  'glass-white': 'glass-blur bg-off-white/60 border border-off-black/10 text-off-black',
 }
 
 export const SURFACE_HOVER: Record<Variant, string> = {
@@ -30,4 +32,5 @@ export const SURFACE_HOVER: Record<Variant, string> = {
   ghost:   'hover:text-off-black',
   'glass-light': 'hover:bg-off-black/50 hover:border-off-black/20 transition-all',
   'glass-dark':  'hover:bg-off-black/50 hover:border-off-black/20 transition-all',
+  'glass-white': '',
 }

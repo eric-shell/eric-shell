@@ -110,8 +110,8 @@ export default function Hero() {
               onChange={setMessage}
               onSubmit={handleSubmit}
             >
-              <p className="font-sans text-sm text-white">
-                Ask me anything about my work, skills, or experience.
+              <p className="font-sans text-sm text-black bg-white py-2 px-3 rounded-md shadow-md">
+                Ask me anything about my work, skills, or experience!
               </p>
             </Chat>
           </CascadeItem>
@@ -126,7 +126,7 @@ export default function Hero() {
             variant="glass-light"
             shape="square"
             aria-label="Scroll to work"
-            className="rounded-full animate-bounce"
+            className="rounded-full shadow-md animate-bounce"
           >
             <ChevronDown size={20} aria-hidden="true" />
           </Button>
