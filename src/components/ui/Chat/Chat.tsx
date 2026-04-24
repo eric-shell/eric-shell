@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom'
 import { MessagesSquare, X } from 'lucide-react'
 import { twMerge } from 'tailwind-merge'
 import Button from '../Button'
+import Panel from '../Panel'
 
 interface ChatProps {
   value: string
@@ -40,8 +41,9 @@ export default function Chat({
     return createPortal(
       <Button
         onClick={() => setIsOpen(true)}
+        variant="primary"
         size="md"
-        className="genie-button fixed bottom-6 right-6 z-50 bg-white text-blue shadow-xl hover:bg-off-white [animation:genie-button-in_350ms_cubic-bezier(0.34,1.56,0.64,1)_both]"
+        className="genie-button fixed bottom-6 right-6 z-50 shadow-xl [animation:genie-button-in_350ms_cubic-bezier(0.34,1.56,0.64,1)_both]"
         rightIcon={<MessagesSquare size={15} aria-hidden="true" />}
       >
         Start a Chat
@@ -59,13 +61,16 @@ export default function Chat({
         className
       )}
     >
-      <div className="glass-blur absolute inset-0 bg-white/10 [animation:blur-in_1s_cubic-bezier(0.16,1,0.3,1)_0.3s_both]" />
+      <Panel
+        variant="glass-light"
+        className="absolute inset-0 border-0 [animation:blur-in_1s_cubic-bezier(0.16,1,0.3,1)_0.3s_both]"
+      />
       <Button
         onClick={handleClose}
         variant="glass-dark"
         shape="square"
         size="sm"
-        className="absolute top-3 right-3 z-10"
+        className="absolute top-3 right-3 z-10 border-0"
         aria-label="Close chat"
       >
         <X size={16} aria-hidden="true" />
@@ -84,8 +89,9 @@ export default function Chat({
         />
         <Button
           onClick={onSubmit}
+          variant="primary"
           size="md"
-          className="self-end bg-white text-blue hover:bg-off-white"
+          className="self-end"
           rightIcon={<MessagesSquare size={15} aria-hidden="true" />}
         >
           {submitLabel}

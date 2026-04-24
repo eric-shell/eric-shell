@@ -1,19 +1,10 @@
 import type { AnchorHTMLAttributes, ButtonHTMLAttributes } from 'react'
 import { twMerge } from 'tailwind-merge'
+import { SURFACE, SURFACE_HOVER, type Variant, type Size } from '../variants'
 
-type Variant = 'solid' | 'outline' | 'ghost' | 'glass-light' | 'glass-dark'
-type Size = 'sm' | 'md' | 'lg'
 type Shape = 'pill' | 'square'
 
 const BASE = 'inline-flex items-center justify-center gap-2 font-sans font-semibold transition cursor-pointer'
-
-const VARIANT: Record<Variant, string> = {
-  solid:   'bg-off-black text-white hover:bg-off-black/90',
-  outline: 'border border-off-black/20 text-off-black/60 hover:border-off-black/40 hover:text-off-black',
-  ghost:   'text-off-black/60 hover:text-off-black',
-  'glass-light': 'glass-blur bg-white/10 border border-white/20 text-white hover:bg-off-black/50 hover:border-off-black/20 transition-all',
-  'glass-dark':  'glass-blur bg-off-black/20 border border-off-black/20 text-white hover:bg-off-black/50 hover:border-off-black/20 transition-all',
-}
 
 const SIZE_PILL: Record<Size, string> = {
   sm: 'px-3 py-1.5 rounded-lg text-xs',
@@ -42,7 +33,7 @@ type ButtonAsAnchor = SharedProps & AnchorHTMLAttributes<HTMLAnchorElement> & { 
 type ButtonProps = ButtonAsButton | ButtonAsAnchor
 
 export default function Button({
-  variant = 'solid',
+  variant = 'dark',
   size = 'md',
   shape = 'pill',
   className = '',
@@ -53,7 +44,7 @@ export default function Button({
   ...props
 }: ButtonProps) {
   const sizeClass = shape === 'square' ? SIZE_SQUARE[size] : SIZE_PILL[size]
-  const classes = twMerge(BASE, VARIANT[variant], sizeClass, className)
+  const classes = twMerge(BASE, SURFACE[variant], SURFACE_HOVER[variant], sizeClass, className)
 
   const inner = (
     <>

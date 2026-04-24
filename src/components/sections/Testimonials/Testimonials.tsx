@@ -109,28 +109,25 @@ export default function Testimonials() {
             >
               <Button
                 shape="square"
-                variant="outline"
+                variant="darker"
                 onClick={prev}
                 aria-label="Previous testimonial"
-                className="border-white/20 text-white/70 hover:text-white hover:border-white/50"
               >
                 <ArrowLeft size={18} aria-hidden="true" />
               </Button>
               <Button
                 shape="square"
-                variant="outline"
+                variant="darker"
                 onClick={() => setIsPlaying(p => !p)}
                 aria-label={isPlaying ? 'Pause testimonial slider' : 'Play testimonial slider'}
-                className="border-white/20 text-white/70 hover:text-white hover:border-white/50"
               >
                 {isPlaying ? <Pause size={18} aria-hidden="true" /> : <Play size={18} aria-hidden="true" />}
               </Button>
               <Button
                 shape="square"
-                variant="outline"
+                variant="darker"
                 onClick={next}
                 aria-label="Next testimonial"
-                className="border-white/20 text-white/70 hover:text-white hover:border-white/50"
               >
                 <ArrowRight size={18} aria-hidden="true" />
               </Button>

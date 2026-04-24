@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { ArrowDownAZ, ArrowUpRight, ArrowUpZA, CalendarDays } from 'lucide-react'
 import { contributions } from '../../../data'
-import { Button, Card, CascadeGroup, CascadeItem, Eyebrow, H2, Pill } from '../../ui'
+import { Button, CascadeGroup, CascadeItem, Eyebrow, H2, Panel, Pill } from '../../ui'
 
 type SortOrder = 'chronological' | 'asc' | 'desc'
 
@@ -94,16 +94,40 @@ export default function Work() {
         <CascadeGroup as="ul" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3" threshold={0.05}>
           {items.map(({ url, title, solution, tags }, i) => (
             <CascadeItem as="li" key={title} index={i}>
-              <Card
+              <a
                 href={url}
-                title={title}
-                description={solution}
-                tags={tags}
-                activeTags={activeTags}
-                onTagClick={toggleTag}
                 target="_blank"
                 rel="noopener noreferrer"
-              />
+                className="group block h-full"
+              >
+                <Panel
+                  variant="lighter"
+                  className="flex flex-col gap-3 h-full p-5 rounded-xl border border-off-black/10 group-hover:border-off-black/30 group-hover:shadow-md transition min-h-[151px]"
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <span className="font-sans font-semibold text-off-black leading-snug">{title}</span>
+                    <ArrowUpRight
+                      size={16}
+                      className="shrink-0 mt-0.5 text-off-black/30 group-hover:text-off-black/70 transition"
+                      aria-hidden="true"
+                    />
+                  </div>
+                  <p className="font-sans text-sm text-off-black/60 leading-snug flex-1">{solution}</p>
+                  {tags.length > 0 && (
+                    <div className="flex flex-wrap gap-1.5">
+                      {tags.map(tag => (
+                        <Pill
+                          key={tag}
+                          active={activeTags.includes(tag)}
+                          onClick={() => toggleTag(tag)}
+                        >
+                          {tag}
+                        </Pill>
+                      ))}
+                    </div>
+                  )}
+                </Panel>
+              </a>
             </CascadeItem>
           ))}
         </CascadeGroup>

@@ -1,4 +1,6 @@
 import { X } from 'lucide-react'
+import { twMerge } from 'tailwind-merge'
+import { SURFACE } from '../variants'
 
 interface PillProps {
   children: React.ReactNode
@@ -19,14 +21,14 @@ export default function Pill({
   onDismiss,
   leftIcon,
   rightIcon,
-  className = '',
+  className,
 }: PillProps) {
   const padding = onDismiss ? 'px-2.5 py-1' : 'px-2 py-1'
   const colors = active
-    ? 'bg-off-black text-white'
-    : `bg-off-white text-off-black/50 bg-off-black/8${onClick ? ' hover:bg-off-black hover:text-white' : ''}`
+    ? SURFACE.dark
+    : `${SURFACE.light} text-off-black/50 bg-off-black/8${onClick ? ' hover:bg-off-black hover:text-white' : ''}`
 
-  const classes = `${BASE} ${padding} ${colors} ${className}`
+  const classes = twMerge(BASE, padding, colors, className)
 
   const inner = (
     <>

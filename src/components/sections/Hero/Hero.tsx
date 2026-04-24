@@ -87,7 +87,7 @@ export default function Hero() {
         {/* Left: text content */}
         <CascadeGroup mountOnly className="flex flex-col gap-6">
           <CascadeItem index={0}>
-            <Eyebrow size="lg" className="text-white pb-2">What's up! My name is <span className="sr-only">Eric Shell.</span></Eyebrow>
+            <Eyebrow size="lg" className="text-white text-shadow-md pb-2">What's up! My name is <span className="sr-only">Eric Shell.</span></Eyebrow>
           </CascadeItem>
 
           <CascadeItem index={1}>
@@ -96,7 +96,7 @@ export default function Hero() {
           </CascadeItem>
 
           <CascadeItem index={2}>
-            <p className="font-sans text-3xl text-white leading-relaxed pt-3">
+            <p className="font-sans text-3xl text-white leading-relaxed text-shadow-lg pt-3">
               I'm an AI Design Systems Engineer with over 15 years of professional experience developing modern web and mobile applications.
             </p>
           </CascadeItem>
