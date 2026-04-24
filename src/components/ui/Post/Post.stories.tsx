@@ -42,7 +42,7 @@ export const WithCaption: Story = {
     post: {
       id: 'example',
       url: 'https://www.instagram.com/ericshell/',
-      imageUrl: '/posts/AA2_8841.png',
+      imageUrl: '/posts/AA2_8841.jpg',
       caption: 'A longer caption that will be visible on hover with some additional context about the photo.',
       altText: 'Photo description',
     },
