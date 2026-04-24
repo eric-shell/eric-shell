@@ -10,7 +10,7 @@ export default function Footer() {
 
         <nav aria-label="Footer navigation" className="flex gap-12">
           <CascadeGroup as="ul" className="flex flex-col gap-4" threshold={0.2}>
-            {navLinks.slice(0, 3).map(({ label, href, Icon }, i) => (
+            {navLinks.slice(0, 4).map(({ label, href, Icon }, i) => (
               <CascadeItem key={label} as="li" index={i}>
                 <a href={href} className="flex items-center gap-2 font-sans text-sm font-semibold text-white/50 hover:text-white transition-colors">
                   <Icon size={14} />

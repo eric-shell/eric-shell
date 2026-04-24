@@ -14,7 +14,7 @@ type Story = StoryObj<typeof meta>
 
 export const Default: Story = {
   render: () => (
-    <div className="bg-off-black">
+    <div className="bg-blue-950">
       <Footer />
     </div>
   ),

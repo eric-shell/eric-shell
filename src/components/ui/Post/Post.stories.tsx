@@ -6,6 +6,9 @@ const meta = {
   title: 'UI/Post',
   component: Post,
   tags: ['autodocs'],
+  args: {
+    post: instagramPosts[0],
+  },
 } satisfies Meta<typeof Post>
 
 export default meta

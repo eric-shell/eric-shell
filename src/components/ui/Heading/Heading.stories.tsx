@@ -5,6 +5,9 @@ const meta = {
   title: 'UI/Heading',
   component: H1,
   tags: ['autodocs'],
+  args: {
+    children: 'Heading',
+  },
 } satisfies Meta<typeof H1>
 
 export default meta

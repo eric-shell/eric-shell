@@ -1,5 +1,5 @@
 import type { LucideIcon } from 'lucide-react'
-import { Briefcase, Quote, Palette, ClipboardList, MessagesSquare, Mail } from 'lucide-react'
+import { Briefcase, Quote, Palette, Form, MessagesSquare, Mail, FileText } from 'lucide-react'
 
 export interface NavLink {
   label: string
@@ -43,25 +43,25 @@ export const navLinks: NavLink[] = [
   {
     label: 'Contact',
     href: '#contact',
-    Icon: ClipboardList,
+    Icon: Form,
   },
 ]
 
 export const connectLinks: ConnectLink[] = [
   {
-    label: 'Chat',
-    href: '#hero',
-    Icon: MessagesSquare,
+    label: 'Email',
+    href: 'mailto:ericjshell@gmail.com?subject=New%20Website%20Contact',
+    Icon: Mail,
+  },
+  {
+    label: 'Resume',
+    href: '#',
+    Icon: FileText,
   },
   {
     label: 'Contact',
     href: '#contact',
-    Icon: ClipboardList,
-  },
-  {
-    label: 'Email',
-    href: 'mailto:ericjshell@gmail.com?subject=New%20Website%20Contact',
-    Icon: Mail,
+    Icon: Form,
   },
 ]
 

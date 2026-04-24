@@ -7,6 +7,10 @@ const meta = {
   title: 'UI/Input',
   component: Input,
   tags: ['autodocs'],
+  args: {
+    label: 'Label',
+    onChange: fn(),
+  },
 } satisfies Meta<typeof Input>
 
 export default meta

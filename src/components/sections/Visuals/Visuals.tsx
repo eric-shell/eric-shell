@@ -11,15 +11,15 @@ function InstagramIcon({ size = 15 }: { size?: number }) {
 
 export default function Visuals() {
   return (
-    <section id="visuals" className="bg-off-white py-24">
+    <section id="visuals" className="bg-blue-50 py-24">
       <div className="max-w-[1440px] mx-auto px-6">
 
         <CascadeGroup threshold={0.15}>
           <CascadeItem index={0}>
             <div className="flex items-start justify-between gap-4 pb-10">
               <div>
-                <Eyebrow className="text-off-black mb-4 block">Creative Supplements</Eyebrow>
-                <H2 className="text-off-black">Visuals</H2>
+                <Eyebrow className="text-blue-950 mb-4 block">Creative Supplements</Eyebrow>
+                <H2 className="text-blue-950">Visuals</H2>
               </div>
               <Button
                 href="https://www.instagram.com/ericshell/"
@@ -39,7 +39,7 @@ export default function Visuals() {
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-10 lg:gap-16 items-start">
 
           <CascadeGroup
-            className="flex flex-col gap-5 font-sans text-base leading-relaxed text-off-black/70"
+            className="flex flex-col gap-5 font-sans text-base leading-relaxed text-blue-950/70"
             threshold={0.1}
           >
             <CascadeItem index={0}>

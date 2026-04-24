@@ -8,6 +8,9 @@ const meta = {
   title: 'UI/Pill',
   component: Pill,
   tags: ['autodocs'],
+  args: {
+    children: 'Pill',
+  },
 } satisfies Meta<typeof Pill>
 
 export default meta
@@ -62,7 +65,7 @@ export const Interactive: Story = {
         <Pill active={active} onClick={() => setActive(!active)}>
           Click to toggle
         </Pill>
-        <span className="text-sm text-off-black/60">Active: {active ? 'true' : 'false'}</span>
+        <span className="text-sm text-blue-950/60">Active: {active ? 'true' : 'false'}</span>
       </div>
     )
   },
@@ -108,7 +111,7 @@ export const FilterBarExample: Story = {
         </div>
         {active.length > 0 && (
           <div className="flex flex-wrap gap-2 items-center">
-            <span className="text-xs font-mono text-off-black/60">Active filters:</span>
+            <span className="text-xs font-mono text-blue-950/60">Active filters:</span>
             {active.map((tag) => (
               <Pill key={tag} active onDismiss={() => toggle(tag)}>
                 {tag}

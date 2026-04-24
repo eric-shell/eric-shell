@@ -45,7 +45,7 @@ export default function Header() {
     <header className={`fixed top-0 inset-x-0 z-50 transition-all duration-300 ease-out border-b ${
       hidden ? '-translate-y-full' : 'translate-y-0'
     } ${
-      atTop ? 'bg-transparent border-transparent' : 'bg-off-black/90 backdrop-blur-md border-white/10'
+      atTop ? 'bg-transparent border-transparent' : 'bg-blue-950/90 backdrop-blur-md border-white/10'
     }`}>
       <CascadeGroup mountOnly>
         <div className={`max-w-[1440px] mx-auto px-6 flex items-center justify-between transition-all duration-300 ease-out ${atTop ? 'py-6' : 'py-3'}`}>

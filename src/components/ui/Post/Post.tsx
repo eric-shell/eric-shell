@@ -12,7 +12,7 @@ export default function Post({ post }: PostProps) {
       target="_blank"
       rel="noopener noreferrer"
       aria-label={`View Instagram post: ${post.altText}`}
-      className="group relative block aspect-[4/5] overflow-hidden rounded-xl border border-off-black/10 bg-white hover:border-off-black/30 hover:shadow-md transition"
+      className="group relative block aspect-[4/5] overflow-hidden rounded-xl border border-blue-950/10 bg-white hover:border-blue-950/30 hover:shadow-md transition"
     >
       {(() => {
         const lastDot = post.imageUrl.lastIndexOf('.')
@@ -44,7 +44,7 @@ export default function Post({ post }: PostProps) {
         )
       })()}
       <div
-        className="absolute inset-0 flex flex-col justify-end p-4 bg-gradient-to-t from-off-black/80 via-off-black/20 to-transparent opacity-0 group-hover:opacity-100 transition duration-300"
+        className="absolute inset-0 flex flex-col justify-end p-4 bg-gradient-to-t from-blue-950/80 via-blue-950/20 to-transparent opacity-0 group-hover:opacity-100 transition duration-300"
         aria-hidden="true"
       >
         <div className="flex items-end justify-between gap-2">

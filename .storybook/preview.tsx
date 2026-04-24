@@ -8,8 +8,8 @@ const preview: Preview = {
       default: 'white',
       values: [
         { name: 'white', value: '#ffffff' },
-        { name: 'off-white', value: '#e7f2f6' },
-        { name: 'off-black', value: '#111521' },
+        { name: 'blue-50', value: '#e7f2f6' },
+        { name: 'blue-950', value: '#111521' },
         { name: 'black', value: '#030407' },
       ],
     },

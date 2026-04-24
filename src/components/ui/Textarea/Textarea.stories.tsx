@@ -7,6 +7,10 @@ const meta = {
   title: 'UI/Textarea',
   component: Textarea,
   tags: ['autodocs'],
+  args: {
+    label: 'Label',
+    onChange: fn(),
+  },
 } satisfies Meta<typeof Textarea>
 
 export default meta

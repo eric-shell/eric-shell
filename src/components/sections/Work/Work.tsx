@@ -26,15 +26,15 @@ export default function Work() {
   if (sort === 'desc') items = items.sort((a, b) => b.title.localeCompare(a.title))
 
   return (
-    <section id="work" className="bg-off-white py-24">
+    <section id="work" className="bg-blue-50 py-24">
       <div className="max-w-[1440px] mx-auto px-6">
 
         <CascadeGroup threshold={0.15}>
           <CascadeItem index={0}>
             <div className="flex items-start justify-between gap-4 pb-10">
               <div>
-                <Eyebrow className="text-off-black mb-4 block">Selected Work and Projects</Eyebrow>
-                <H2 className="text-off-black">Work</H2>
+                <Eyebrow className="text-blue-950 mb-4 block">Selected Work and Projects</Eyebrow>
+                <H2 className="text-blue-950">Work</H2>
               </div>
               <Button
                 href="https://www.linkedin.com/in/ericshell/details/experience/"
@@ -51,7 +51,7 @@ export default function Work() {
           </CascadeItem>
 
           <CascadeItem index={1}>
-            <div className="flex flex-col gap-5 font-sans text-base leading-relaxed text-off-black/80 pb-10">
+            <div className="flex flex-col gap-5 font-sans text-base leading-relaxed text-blue-950/80 pb-10">
               <p>
                 Over 15 years of practice spanning federal agencies, Fortune 500 brands, financial institutions, and entertainment platforms, I have built software that ships, scales, and endures well beyond the engagement that created it. Each context demanded a different caliber of contextual understanding, technical leadership and creative solutioning.
               </p>
@@ -66,7 +66,7 @@ export default function Work() {
               <div className="flex items-center gap-2 flex-wrap">
                 {activeTags.length > 0 && (
                   <>
-                    <span className="font-sans text-sm text-off-black/50">Filtering by:</span>
+                    <span className="font-sans text-sm text-blue-950/50">Filtering by:</span>
                     {activeTags.map(tag => (
                       <Pill key={tag} active onDismiss={() => toggleTag(tag)}>
                         {tag}

@@ -47,7 +47,7 @@ export default function Testimonials() {
   const { review, author } = testimonials[current]
 
   return (
-    <section id="testimonials" className="bg-off-black text-white py-24">
+    <section id="testimonials" className="bg-blue-950 text-white py-24">
       <div className="max-w-[1440px] mx-auto px-6">
 
         <CascadeGroup className="flex items-start justify-between gap-4 pb-10">
@@ -64,7 +64,7 @@ export default function Testimonials() {
               rel="noopener noreferrer"
               variant="lighter"
               size="md"
-              className="shrink-0 bg-white text-off-black"
+              className="shrink-0 bg-white text-blue-950"
               rightIcon={<ArrowUpRight size={15} aria-hidden="true" />}
             >
               View Full Endorsements
@@ -93,7 +93,7 @@ export default function Testimonials() {
               <blockquote
                 className={`transition-opacity duration-[400ms] ${visible ? 'opacity-100' : 'opacity-0'}`}
               >
-                <span aria-hidden="true" className="font-display text-5xl text-blue leading-none block mb-2">&ldquo;</span>
+                <span aria-hidden="true" className="font-display text-5xl text-blue-700 leading-none block mb-2">&ldquo;</span>
                 <p className="font-sans text-xl leading-relaxed text-white">
                   {review}
                 </p>

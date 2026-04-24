@@ -7,6 +7,9 @@ const meta = {
   title: 'UI/Button',
   component: Button,
   tags: ['autodocs'],
+  args: {
+    children: 'Button',
+  },
 } satisfies Meta<typeof Button>
 
 export default meta
@@ -109,7 +112,7 @@ export const Disabled: Story = {
 
 export const Glass: Story = {
   parameters: {
-    backgrounds: { default: 'off-black' },
+    backgrounds: { default: 'blue-950' },
   },
   render: () => (
     <div className="flex gap-3">
@@ -127,12 +130,12 @@ export const SizeShapeMatrix: Story = {
   render: () => (
     <div className="grid grid-cols-[auto_1fr_1fr] gap-4 items-center">
       <span />
-      <span className="text-xs font-mono text-off-black/60 uppercase">pill</span>
-      <span className="text-xs font-mono text-off-black/60 uppercase">square</span>
+      <span className="text-xs font-mono text-blue-950/60 uppercase">pill</span>
+      <span className="text-xs font-mono text-blue-950/60 uppercase">square</span>
 
       {sizes.map((size) => (
         <div key={size} className="contents">
-          <span className="text-xs font-mono text-off-black/60 uppercase">{size}</span>
+          <span className="text-xs font-mono text-blue-950/60 uppercase">{size}</span>
           <div>
             <Button size={size} shape="pill">{size}</Button>
           </div>

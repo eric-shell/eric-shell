@@ -46,7 +46,7 @@ export const Dark: Story = {
 
 export const Glass: Story = {
   parameters: {
-    backgrounds: { default: 'off-black' },
+    backgrounds: { default: 'blue-950' },
   },
   render: () => (
     <div className="flex gap-4">
@@ -67,8 +67,8 @@ export const WithContent: Story = {
   },
   render: () => (
     <Panel variant="lighter" className="p-6 rounded-xl max-w-md flex flex-col gap-3">
-      <h3 className="font-sans font-semibold text-off-black">Panel with real content</h3>
-      <p className="font-sans text-sm text-off-black/60 leading-snug">
+      <h3 className="font-sans font-semibold text-blue-950">Panel with real content</h3>
+      <p className="font-sans text-sm text-blue-950/60 leading-snug">
         Panels are simple surface containers. They don't impose layout — you compose padding,
         typography, and children to shape the card.
       </p>
@@ -85,7 +85,7 @@ export const Nested: Story = {
     <Panel variant="light" className="p-6 rounded-xl max-w-md flex flex-col gap-4">
       <span className="font-sans text-sm font-semibold">Outer panel (light)</span>
       <Panel variant="lighter" className="p-4 rounded-lg">
-        <span className="font-sans text-xs text-off-black/60">Nested panel (lighter)</span>
+        <span className="font-sans text-xs text-blue-950/60">Nested panel (lighter)</span>
       </Panel>
       <Panel variant="dark" className="p-4 rounded-lg">
         <span className="font-sans text-xs text-white/80">Nested panel (dark)</span>

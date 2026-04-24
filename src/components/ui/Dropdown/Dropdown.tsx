@@ -47,11 +47,11 @@ export default function Dropdown({
         onClick={() => setOpen((o) => !o)}
         aria-haspopup="listbox"
         aria-expanded={open}
-        className="flex items-center gap-2 rounded-full border border-off-black/10 bg-white px-4 py-1.5 font-sans text-sm font-semibold text-off-black transition hover:border-off-black/30 hover:shadow-sm"
+        className="flex items-center gap-2 rounded-full border border-blue-950/10 bg-white px-4 py-1.5 font-sans text-sm font-semibold text-blue-950 transition hover:border-blue-950/30 hover:shadow-sm"
       >
         <span>{selected?.label ?? placeholder}</span>
         <ChevronDown
-          className={`h-4 w-4 text-off-black/40 transition-transform duration-200 ${open ? 'rotate-180' : ''}`}
+          className={`h-4 w-4 text-blue-950/40 transition-transform duration-200 ${open ? 'rotate-180' : ''}`}
           aria-hidden="true"
         />
       </button>
@@ -59,7 +59,7 @@ export default function Dropdown({
       {open && (
         <ul
           role="listbox"
-          className="absolute left-0 top-full z-20 mt-1.5 min-w-full overflow-hidden rounded-xl border border-off-black/10 bg-white shadow-lg"
+          className="absolute left-0 top-full z-20 mt-1.5 min-w-full overflow-hidden rounded-xl border border-blue-950/10 bg-white shadow-lg"
         >
           {options.map((option) => (
             <li key={option.value} role="option" aria-selected={option.value === value}>
@@ -69,8 +69,8 @@ export default function Dropdown({
                   onChange(option.value)
                   setOpen(false)
                 }}
-                className={`w-full px-4 py-2 text-left font-sans text-sm font-semibold transition hover:bg-off-black/5 ${
-                  option.value === value ? 'text-blue' : 'text-off-black'
+                className={`w-full px-4 py-2 text-left font-sans text-sm font-semibold transition hover:bg-blue-950/5 ${
+                  option.value === value ? 'text-blue-700' : 'text-blue-950'
                 }`}
               >
                 {option.label}

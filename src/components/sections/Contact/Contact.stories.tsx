@@ -38,10 +38,10 @@ export const Default: Story = {
 
 export const OnDarkBackground: Story = {
   parameters: {
-    backgrounds: { default: 'off-black' },
+    backgrounds: { default: 'blue-950' },
   },
   render: () => (
-    <div className="bg-off-black py-16">
+    <div className="bg-blue-950 py-16">
       <Contact />
     </div>
   ),

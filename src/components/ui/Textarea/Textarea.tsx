@@ -11,7 +11,7 @@ type TextareaProps = Omit<TextareaHTMLAttributes<HTMLTextAreaElement>, 'onChange
 }
 
 const FIELD_BASE_LIGHT =
-  'w-full resize-none rounded-lg border bg-transparent px-4 py-3 font-sans text-sm text-off-black placeholder:text-off-black/30 focus:outline-none transition disabled:opacity-50'
+  'w-full resize-none rounded-lg border bg-transparent px-4 py-3 font-sans text-sm text-blue-950 placeholder:text-blue-950/30 focus:outline-none transition disabled:opacity-50'
 
 const FIELD_BASE_DARK =
   'w-full resize-none rounded-lg border bg-white/10 px-4 py-3 font-sans text-sm text-white placeholder:text-white/40 focus:outline-none focus:bg-white/15 transition disabled:opacity-50'
@@ -32,16 +32,16 @@ export default function Textarea({
   const isDark = theme === 'dark'
 
   const borderClass = valid
-    ? isDark ? 'border-white focus:border-white' : 'border-blue focus:border-blue'
-    : isDark ? 'border-white/20 focus:border-white/60' : 'border-off-black/20 focus:border-off-black/60'
+    ? isDark ? 'border-white focus:border-white' : 'border-blue-700 focus:border-blue-700'
+    : isDark ? 'border-white/20 focus:border-white/60' : 'border-blue-950/20 focus:border-blue-950/60'
 
   const labelClass = isDark
     ? 'font-sans text-sm font-semibold text-white text-shadow-md'
-    : 'font-sans text-sm font-semibold text-off-black'
+    : 'font-sans text-sm font-semibold text-blue-950'
 
   const countClass = isDark
     ? 'font-sans text-xs text-white/50 text-right'
-    : 'font-sans text-xs text-off-black/30 text-right'
+    : 'font-sans text-xs text-blue-950/30 text-right'
 
   const shouldShowCount = showCount ?? maxLength !== undefined
   const stringValue = typeof value === 'string' ? value : ''

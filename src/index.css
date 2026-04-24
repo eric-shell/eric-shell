@@ -10,10 +10,18 @@
 
 @theme {
   --color-white: #ffffff;
-  --color-off-white: #e7f2f6;
-  --color-blue: #196b8e;
-  --color-off-black: #111521;
-  --color-black: #030407;
+  --color-blue-50:  oklch(0.954 0.013 221.34);
+  --color-blue-100: oklch(0.911 0.026 221.55);
+  --color-blue-200: oklch(0.842 0.052 224.00);
+  --color-blue-300: oklch(0.770 0.065 226.00);
+  --color-blue-400: oklch(0.685 0.078 229.00);
+  --color-blue-500: oklch(0.595 0.086 230.50);
+  --color-blue-600: oklch(0.546 0.091 231.50);
+  --color-blue-700: oklch(0.497 0.093 232.07);
+  --color-blue-800: oklch(0.390 0.070 245.00);
+  --color-blue-900: oklch(0.280 0.045 260.00);
+  --color-blue-950: oklch(0.198 0.025 269.84);
+  --color-black: oklch(0.107 0.011 266.51);
 
   --font-sans: 'Google Sans', system-ui, sans-serif;
   --font-display: 'Display', system-ui, sans-serif;

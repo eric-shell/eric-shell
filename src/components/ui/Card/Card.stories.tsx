@@ -1,5 +1,4 @@
 import { useState } from 'react'
-import { fn } from 'storybook/test'
 import type { Meta, StoryObj } from '@storybook/react'
 import Card from './Card'
 
@@ -9,6 +8,11 @@ const meta = {
   tags: ['autodocs'],
   parameters: {
     layout: 'padded',
+  },
+  args: {
+    href: '#',
+    title: 'Card Title',
+    description: 'Card description.',
   },
 } satisfies Meta<typeof Card>
 

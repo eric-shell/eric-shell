@@ -6,6 +6,9 @@ const meta = {
   title: 'UI/Eyebrow',
   component: Eyebrow,
   tags: ['autodocs'],
+  args: {
+    children: 'Eyebrow',
+  },
 } satisfies Meta<typeof Eyebrow>
 
 export default meta
@@ -47,7 +50,7 @@ export const InHeadingContext: Story = {
 
 export const OnDarkBackground: Story = {
   parameters: {
-    backgrounds: { default: 'off-black' },
+    backgrounds: { default: 'blue-950' },
     controls: { disable: true },
   },
   render: () => (

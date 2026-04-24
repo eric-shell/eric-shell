@@ -6,6 +6,9 @@ const meta = {
   title: 'UI/Cascade',
   component: CascadeGroup,
   tags: ['autodocs'],
+  args: {
+    children: null,
+  },
 } satisfies Meta<typeof CascadeGroup>
 
 export default meta
@@ -18,13 +21,13 @@ export const MountOnly: Story = {
   render: () => (
     <CascadeGroup mountOnly className="flex flex-col gap-4">
       <CascadeItem index={0}>
-        <div className="p-4 rounded-lg bg-off-white">Item 1</div>
+        <div className="p-4 rounded-lg bg-blue-50">Item 1</div>
       </CascadeItem>
       <CascadeItem index={1}>
-        <div className="p-4 rounded-lg bg-off-white">Item 2</div>
+        <div className="p-4 rounded-lg bg-blue-50">Item 2</div>
       </CascadeItem>
       <CascadeItem index={2}>
-        <div className="p-4 rounded-lg bg-off-white">Item 3</div>
+        <div className="p-4 rounded-lg bg-blue-50">Item 3</div>
       </CascadeItem>
     </CascadeGroup>
   ),
@@ -38,7 +41,7 @@ export const StaggerDemo: Story = {
     <CascadeGroup mountOnly stagger={100} className="flex flex-col gap-3">
       {Array.from({ length: 6 }, (_, i) => (
         <CascadeItem key={i} index={i}>
-          <div className="p-3 rounded-lg bg-gradient-to-r from-blue/10 to-off-white">
+          <div className="p-3 rounded-lg bg-gradient-to-r from-blue-700/10 to-blue-50">
             Item {i + 1}
           </div>
         </CascadeItem>
@@ -56,21 +59,21 @@ export const ScrollTriggered: Story = {
       <div style={{ paddingTop: '150vh' }}>
         <CascadeGroup threshold={0.1} className="flex flex-col gap-4">
           <CascadeItem index={0}>
-            <div className="p-4 rounded-lg bg-off-white">
+            <div className="p-4 rounded-lg bg-blue-50">
               <p className="font-semibold">Scroll-triggered Item 1</p>
-              <p className="text-sm text-off-black/60">This item is hidden until you scroll it into view</p>
+              <p className="text-sm text-blue-950/60">This item is hidden until you scroll it into view</p>
             </div>
           </CascadeItem>
           <CascadeItem index={1}>
-            <div className="p-4 rounded-lg bg-off-white">
+            <div className="p-4 rounded-lg bg-blue-50">
               <p className="font-semibold">Scroll-triggered Item 2</p>
-              <p className="text-sm text-off-black/60">Notice the staggered animation delay</p>
+              <p className="text-sm text-blue-950/60">Notice the staggered animation delay</p>
             </div>
           </CascadeItem>
           <CascadeItem index={2}>
-            <div className="p-4 rounded-lg bg-off-white">
+            <div className="p-4 rounded-lg bg-blue-50">
               <p className="font-semibold">Scroll-triggered Item 3</p>
-              <p className="text-sm text-off-black/60">Each item enters with a delay</p>
+              <p className="text-sm text-blue-950/60">Each item enters with a delay</p>
             </div>
           </CascadeItem>
         </CascadeGroup>
@@ -87,7 +90,7 @@ export const AsGrid: Story = {
     <CascadeGroup as="ul" mountOnly className="grid grid-cols-3 gap-4">
       {Array.from({ length: 9 }, (_, i) => (
         <CascadeItem key={i} as="li" index={i}>
-          <div className="aspect-square rounded-lg bg-gradient-to-br from-off-white to-off-white/50 flex items-center justify-center font-semibold">
+          <div className="aspect-square rounded-lg bg-gradient-to-br from-blue-50 to-blue-50/50 flex items-center justify-center font-semibold">
             {i + 1}
           </div>
         </CascadeItem>

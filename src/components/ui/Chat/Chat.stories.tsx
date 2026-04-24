@@ -9,7 +9,12 @@ const meta = {
   tags: ['autodocs'],
   parameters: {
     layout: 'fullscreen',
-    backgrounds: { default: 'off-black' },
+    backgrounds: { default: 'blue-950' },
+  },
+  args: {
+    value: '',
+    onChange: fn(),
+    onSubmit: fn(),
   },
 } satisfies Meta<typeof Chat>
 
@@ -18,7 +23,7 @@ type Story = StoryObj<typeof meta>
 
 const decorators = [
   (Story: any) => (
-    <div className="min-h-screen bg-gradient-to-br from-off-black via-off-black/80 to-black flex items-center justify-end p-8">
+    <div className="min-h-screen bg-gradient-to-br from-blue-950 via-blue-950/80 to-black flex items-center justify-end p-8">
       <div className="w-[480px]">
         <Story />
       </div>
@@ -81,7 +86,7 @@ export const Interactive: Story = {
           }}
         />
         {submitted && (
-          <div className="fixed bottom-8 left-8 bg-off-white text-off-black px-4 py-2 rounded-lg text-sm font-semibold">
+          <div className="fixed bottom-8 left-8 bg-blue-50 text-blue-950 px-4 py-2 rounded-lg text-sm font-semibold">
             Message sent!
           </div>
         )}
