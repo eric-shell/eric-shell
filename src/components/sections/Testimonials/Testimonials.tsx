@@ -62,6 +62,7 @@ export default function Testimonials() {
               href="https://www.linkedin.com/in/ericshell/details/recommendations/"
               target="_blank"
               rel="noopener noreferrer"
+              variant="lighter"
               size="md"
               className="shrink-0 bg-white text-off-black"
               rightIcon={<ArrowUpRight size={15} aria-hidden="true" />}
