@@ -1,6 +1,6 @@
 import { X } from 'lucide-react'
 import { twMerge } from 'tailwind-merge'
-import { SURFACE } from '../variants'
+import { SURFACE, SURFACE_HOVER } from '../variants'
 
 interface PillProps {
   children: React.ReactNode
@@ -26,7 +26,7 @@ export default function Pill({
   const padding = onDismiss ? 'px-2.5 py-1' : 'px-2 py-1'
   const colors = active
     ? SURFACE.dark
-    : `${SURFACE.light} text-off-black/50 bg-off-black/8${onClick ? ' hover:bg-off-black hover:text-white' : ''}`
+    : twMerge(SURFACE.light, onClick && SURFACE_HOVER.light)
 
   const classes = twMerge(BASE, padding, colors, className)
 

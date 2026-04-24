@@ -9,17 +9,17 @@ function InstagramIcon({ size = 15 }: { size?: number }) {
   )
 }
 
-export default function Creative() {
+export default function Visuals() {
   return (
-    <section id="creative" className="bg-off-white py-24">
+    <section id="visuals" className="bg-off-white py-24">
       <div className="max-w-[1440px] mx-auto px-6">
 
         <CascadeGroup threshold={0.15}>
           <CascadeItem index={0}>
             <div className="flex items-start justify-between gap-4 pb-10">
               <div>
-                <Eyebrow className="text-off-black mb-4 block">Life Outside the IDE</Eyebrow>
-                <H2 className="text-off-black">Creative</H2>
+                <Eyebrow className="text-off-black mb-4 block">Creative Supplements</Eyebrow>
+                <H2 className="text-off-black">Visuals</H2>
               </div>
               <Button
                 href="https://www.instagram.com/ericshell/"

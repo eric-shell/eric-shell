@@ -1,5 +1,5 @@
 import './index.css'
-import { Header, Hero, Work, Testimonials, Creative, Contact, Footer } from './components/sections'
+import { Header, Hero, Work, Testimonials, Visuals, Contact, Footer } from './components/sections'
 import { useTitleCycle } from './hooks'
 
 export default function App() {
@@ -11,7 +11,7 @@ export default function App() {
       <Hero />
       <Work />
       <Testimonials />
-      <Creative />
+      <Visuals />
       <Contact />
       <Footer />
     </div>

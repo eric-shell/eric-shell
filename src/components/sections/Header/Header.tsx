@@ -54,7 +54,7 @@ export default function Header() {
               <img
                 src="/icon.svg"
                 alt="Eric Shell"
-                className="w-6 cursor-pointer relative"
+                className="w-6 cursor-pointer relative hover:scale-[120%] hover:rotate-5 transition"
                 onClick={handleClick}
               />
             </div>

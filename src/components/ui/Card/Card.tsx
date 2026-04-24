@@ -27,7 +27,7 @@ export default function Card({
     <a href={href} target={target} rel={rel} className="group block h-full">
       <Panel
         variant="lighter"
-        className="flex flex-col gap-3 h-full p-5 rounded-xl border border-off-black/10 group-hover:border-off-black/30 group-hover:shadow-md transition min-h-[151px]"
+        className="flex flex-col gap-3 h-full p-5 rounded-xl hover:shadow-sm min-h-[151px] transition"
       >
         <div className="flex items-start justify-between gap-2">
           <span className="font-sans font-semibold text-off-black leading-snug">{title}</span>

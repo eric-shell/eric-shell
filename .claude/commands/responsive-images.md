@@ -59,6 +59,36 @@ Writes `{basename}-{width}.{format}` next to each source. Commit the output — 
 - Full-bleed: `sizes="100vw"`
 - Half-column on lg+: `sizes="(max-width: 1024px) 100vw, 50vw"`
 - Third-column grid: `sizes="(max-width: 768px) 100vw, (max-width: 1280px) 50vw, 33vw"`
+- 2-col/3-col responsive grid (e.g. Visuals posts): `sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 350px"`
+
+### Grid images rendered by a shared component
+
+When images come from a data array and are rendered by a reusable component (e.g. `Post`), derive the base path and extension from `imageUrl` rather than hard-coding paths. Store `imageUrl` as the full path including extension (`/posts/EJS06506.jpg`); the component splits it:
+
+```tsx
+const lastDot = post.imageUrl.lastIndexOf('.')
+const base = post.imageUrl.slice(0, lastDot)  // "/posts/EJS06506"
+const ext  = post.imageUrl.slice(lastDot + 1) // "jpg"
+
+<picture>
+  <source type="image/avif"
+    srcSet={`${base}-320.avif 320w, ${base}-640.avif 640w, ${base}-960.avif 960w`}
+    sizes={sizes} />
+  <source type="image/webp"
+    srcSet={`${base}-320.webp 320w, ${base}-640.webp 640w, ${base}-960.webp 960w`}
+    sizes={sizes} />
+  <img
+    src={`${base}-640.${ext}`}
+    srcSet={`${base}-320.${ext} 320w, ${base}-640.${ext} 640w, ${base}-960.${ext} 960w`}
+    sizes={sizes}
+    alt={...}
+    loading="lazy"
+    decoding="async"
+  />
+</picture>
+```
+
+See `src/components/ui/Post/Post.tsx` for the live example (Visuals section grid).
 
 **`fetchpriority` + `loading`:**
 - Above-the-fold LCP images → `fetchpriority="high"`, `loading="eager"` (default, omit)

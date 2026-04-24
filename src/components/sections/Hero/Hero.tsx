@@ -92,7 +92,7 @@ export default function Hero() {
 
           <CascadeItem index={1}>
             <h1 className="sr-only">Eric Shell | AI Design System Engineer and Software Developer</h1>
-            <img src="/logo.svg" alt="" aria-hidden="true" className="w-125" />
+            <img src="/logo.svg" alt="" aria-hidden="true" className="w-125 hover:scale-[105%] hover:rotate-2 transition" />
           </CascadeItem>
 
           <CascadeItem index={2}>

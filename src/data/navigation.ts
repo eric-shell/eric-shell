@@ -21,6 +21,11 @@ export interface SocialLink {
 
 export const navLinks: NavLink[] = [
   {
+    label: 'Chat',
+    href: '#hero',
+    Icon: MessagesSquare,
+  },
+  {
     label: 'Work',
     href: '#work',
     Icon: Briefcase,
@@ -31,8 +36,8 @@ export const navLinks: NavLink[] = [
     Icon: Quote,
   },
   {
-    label: 'Creative',
-    href: '#creative',
+    label: 'Visuals',
+    href: '#visuals',
     Icon: Palette,
   },
   {
