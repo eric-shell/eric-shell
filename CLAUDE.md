@@ -31,7 +31,7 @@ src/
 │   │   ├── Footer/        # Social links, nav, copyright
 │   │   └── index.ts       # Barrel export for all sections
 │   └── ui/                # Reusable primitives — import from 'components/ui'
-│       ├── Button/        # Polymorphic button/anchor — variant (solid|outline|ghost|glass), size (sm|md|icon)
+│       ├── Button/        # Polymorphic button/anchor — variant (solid|outline|ghost|glass), size (sm|md|lg), shape (pill|square)
 │       ├── Cascade/       # CascadeGroup + CascadeItem + CascadeContext (scroll/mount entrance animation)
 │       ├── Dropdown/      # Accessible select w/ click-outside + Escape dismiss
 │       ├── Eyebrow/       # Small uppercase label above headings (font-sans, GRAD 150)
@@ -52,11 +52,14 @@ src/
 - All components spread `...props` onto the root element and accept `className` for overrides.
 - Headings default to `color: inherit` — set text color on the parent or via `className`.
 - `Eyebrow` applies `fontVariationSettings: "'GRAD' 150"` for the optical weight effect used across the site.
-- `Button` defaults to `solid` variant (off-black fill). Pass `className` to override colors for dark sections (e.g., `className="bg-white text-off-black hover:bg-off-white"`). Pass `href` to render as `<a>`. Variants:
-  - `solid` — off-black fill, white text (default)
-  - `outline` — bordered, muted text
-  - `ghost` — text-only, no border/fill
-  - `glass` — frosted-glass style for dark/image backgrounds. Uses `.glass-blur` CSS class for `backdrop-filter: blur(12px)`. Default: `bg-white/10 border border-white/20 text-white`. Do not combine with Tailwind `backdrop-blur-*` utilities (they won't override the CSS class).
+- `Button` defaults to `solid` variant (off-black fill). Pass `className` to override colors for dark sections (e.g., `className="bg-white text-off-black hover:bg-off-white"`). Pass `href` to render as `<a>`. Two independent style axes:
+  - `size` (`sm` | `md` | `lg`, default `md`) — controls text scale and padding.
+  - `shape` (`pill` | `square`, default `pill`) — `pill` for text buttons (asymmetric horizontal padding); `square` for icon-only buttons (equal padding on all sides). Use `shape="square"` instead of the removed `size="icon"`.
+  - Variants:
+    - `solid` — off-black fill, white text (default)
+    - `outline` — bordered, muted text
+    - `ghost` — text-only, no border/fill
+    - `glass` — frosted-glass style for dark/image backgrounds. Uses `.glass-blur` CSS class for `backdrop-filter: blur(12px)`. Default: `bg-white/10 border border-white/20 text-white`. Do not combine with Tailwind `backdrop-blur-*` utilities (they won't override the CSS class).
 - `Dropdown` is light-theme by default; swap border/bg classes via `className` if needed in a dark section.
 - `Pill` is a tag/filter chip. Set `active` for filled state, `onClick` for interactive use (adds `aria-pressed`), `onDismiss` for a dismissible badge with X icon. Handles `e.preventDefault()` + `e.stopPropagation()` internally — safe inside card links.
 - `CascadeGroup` wraps a group of elements and fires when it enters the viewport (`react-intersection-observer`, `triggerOnce: true`). Use `mountOnly` for above-the-fold content (Header, Hero) — animates on mount instead of scroll. Accepts `threshold` (default `0.1`) and `stagger` (default `75ms`). Use `as` to render as any HTML element (e.g. `as="ul"`).

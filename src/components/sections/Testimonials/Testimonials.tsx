@@ -108,7 +108,7 @@ export default function Testimonials() {
               aria-label="Testimonial Controls"
             >
               <Button
-                size="icon"
+                shape="square"
                 variant="outline"
                 onClick={prev}
                 aria-label="Previous testimonial"
@@ -117,7 +117,7 @@ export default function Testimonials() {
                 <ArrowLeft size={18} aria-hidden="true" />
               </Button>
               <Button
-                size="icon"
+                shape="square"
                 variant="outline"
                 onClick={() => setIsPlaying(p => !p)}
                 aria-label={isPlaying ? 'Pause testimonial slider' : 'Play testimonial slider'}
@@ -126,7 +126,7 @@ export default function Testimonials() {
                 {isPlaying ? <Pause size={18} aria-hidden="true" /> : <Play size={18} aria-hidden="true" />}
               </Button>
               <Button
-                size="icon"
+                shape="square"
                 variant="outline"
                 onClick={next}
                 aria-label="Next testimonial"

@@ -66,7 +66,7 @@ export default function Header() {
                 <CascadeItem key={label} as="li" index={i + 1}>
                   <Button
                     href={href}
-                    variant="glass"
+                    variant="glass-light"
                     size="sm"
                     leftIcon={<Icon size={14} />}
                   >

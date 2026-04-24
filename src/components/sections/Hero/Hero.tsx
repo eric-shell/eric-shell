@@ -1,5 +1,6 @@
 import { lazy, Suspense, useState } from 'react'
-import { CascadeGroup, CascadeItem, Chat, Eyebrow } from '../../ui'
+import { ChevronDown } from 'lucide-react'
+import { Button, CascadeGroup, CascadeItem, Chat, Eyebrow } from '../../ui'
 import { useParallax } from '../../../hooks'
 
 const ParticlesSmall = lazy(() => import('./ParticlesSmall'))
@@ -117,6 +118,20 @@ export default function Hero() {
         </CascadeGroup>
 
       </div>
+
+      <CascadeGroup mountOnly className="absolute bottom-6 left-1/2 -translate-x-1/2 z-30">
+        <CascadeItem index={0}>
+          <Button
+            href="#work"
+            variant="glass-light"
+            shape="square"
+            aria-label="Scroll to work"
+            className="rounded-full animate-bounce"
+          >
+            <ChevronDown size={20} aria-hidden="true" />
+          </Button>
+        </CascadeItem>
+      </CascadeGroup>
     </section>
   )
 }
