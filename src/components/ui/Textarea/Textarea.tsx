@@ -6,11 +6,15 @@ type TextareaProps = Omit<TextareaHTMLAttributes<HTMLTextAreaElement>, 'onChange
   onChange: (value: string) => void
   valid?: boolean
   showCount?: boolean
+  theme?: 'light' | 'dark'
   className?: string
 }
 
-const FIELD_BASE =
+const FIELD_BASE_LIGHT =
   'w-full resize-none rounded-lg border bg-transparent px-4 py-3 font-sans text-sm text-off-black placeholder:text-off-black/30 focus:outline-none transition disabled:opacity-50'
+
+const FIELD_BASE_DARK =
+  'w-full resize-none rounded-lg border bg-white/10 px-4 py-3 font-sans text-sm text-white placeholder:text-white/40 focus:outline-none focus:bg-white/15 transition disabled:opacity-50'
 
 export default function Textarea({
   id,
@@ -21,19 +25,30 @@ export default function Textarea({
   showCount,
   maxLength,
   rows = 6,
+  theme = 'light',
   className = '',
   ...props
 }: TextareaProps) {
+  const isDark = theme === 'dark'
+
   const borderClass = valid
-    ? 'border-blue focus:border-blue'
-    : 'border-off-black/20 focus:border-off-black/60'
+    ? isDark ? 'border-white focus:border-white' : 'border-blue focus:border-blue'
+    : isDark ? 'border-white/20 focus:border-white/60' : 'border-off-black/20 focus:border-off-black/60'
+
+  const labelClass = isDark
+    ? 'font-sans text-sm font-semibold text-white text-shadow-md'
+    : 'font-sans text-sm font-semibold text-off-black'
+
+  const countClass = isDark
+    ? 'font-sans text-xs text-white/50 text-right'
+    : 'font-sans text-xs text-off-black/30 text-right'
 
   const shouldShowCount = showCount ?? maxLength !== undefined
   const stringValue = typeof value === 'string' ? value : ''
 
   return (
     <div className="flex flex-col gap-1.5">
-      <label htmlFor={id} className="font-sans text-sm font-semibold text-off-black">
+      <label htmlFor={id} className={labelClass}>
         {label}
       </label>
       <textarea
@@ -42,11 +57,11 @@ export default function Textarea({
         onChange={e => onChange(e.target.value)}
         rows={rows}
         maxLength={maxLength}
-        className={twMerge(FIELD_BASE, borderClass, className)}
+        className={twMerge(isDark ? FIELD_BASE_DARK : FIELD_BASE_LIGHT, borderClass, className)}
         {...props}
       />
       {shouldShowCount && maxLength !== undefined && (
-        <span className="font-sans text-xs text-off-black/30 text-right">
+        <span className={countClass}>
           {stringValue.length}/{maxLength}
         </span>
       )}

@@ -16,6 +16,11 @@ export default [
     formats: ['avif', 'webp', 'jpg'],
   },
   {
+    src: 'public/contact/EJS01845.jpg',
+    widths: [640, 1280, 1920, 2560],
+    formats: ['avif', 'webp', 'jpg'],
+  },
+  {
     src: 'public/hero/subject.png',
     widths: [512, 1024],
     formats: ['avif', 'webp', 'png'],

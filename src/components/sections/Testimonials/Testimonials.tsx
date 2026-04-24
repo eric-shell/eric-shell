@@ -93,7 +93,7 @@ export default function Testimonials() {
               <blockquote
                 className={`transition-opacity duration-[400ms] ${visible ? 'opacity-100' : 'opacity-0'}`}
               >
-                <span aria-hidden="true" className="font-display text-5xl text-cyan leading-none block mb-2">&ldquo;</span>
+                <span aria-hidden="true" className="font-display text-5xl text-blue leading-none block mb-2">&ldquo;</span>
                 <p className="font-sans text-xl leading-relaxed text-white">
                   {review}
                 </p>
