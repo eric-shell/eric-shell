@@ -73,13 +73,13 @@ export default function Chat({
         aria-label="Toggle high-contrast mode"
         onClick={() => setIsWhite(v => !v)}
         className={twMerge(
-          'absolute top-3 left-3 z-10 flex items-center gap-1.5 rounded-full px-2 py-1 transition-colors',
+          'absolute top-3 left-3 z-10 flex items-center gap-1.5 rounded-full px-2 py-1 cursor-pointer transition-colors',
           isWhite ? 'text-blue-950' : 'text-white'
         )}
       >
         <span className={twMerge(
           'relative inline-flex h-4 w-7 items-center rounded-full transition-colors',
-          isWhite ? 'bg-blue-700' : 'bg-white/30'
+          isWhite ? 'bg-blue-700' : 'bg-black/20'
         )}>
           <span className={twMerge(
             'inline-block h-2.5 w-2.5 rounded-full bg-white shadow transition-transform',
