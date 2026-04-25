@@ -190,7 +190,7 @@ export default function Contact() {
                       isWhite ? 'translate-x-3.5' : 'translate-x-0.5'
                     )} />
                   </span>
-                  <span className="font-sans text-xs font-semibold tracking-wide">AA</span>
+                  <span className="font-sans text-xs font-semibold tracking-wide">WCAG</span>
                 </button>
                 <form onSubmit={handleSubmit} className="flex flex-col pt-5 gap-2" noValidate>
                   <div aria-hidden="true" className="sr-only">

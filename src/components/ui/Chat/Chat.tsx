@@ -86,7 +86,7 @@ export default function Chat({
             isWhite ? 'translate-x-3.5' : 'translate-x-0.5'
           )} />
         </span>
-        <span className="font-sans text-xs font-semibold tracking-wide">AA</span>
+        <span className="font-sans text-xs font-semibold tracking-wide">WCAG</span>
       </button>
       <Button
         onClick={handleClose}

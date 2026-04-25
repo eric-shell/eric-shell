@@ -77,13 +77,13 @@ export default function Testimonials() {
           {/* Left: context copy */}
           <CascadeItem index={0} className="flex flex-col gap-5 font-sans text-base leading-relaxed text-white">
             <p>
-              Every piece of feedback comes directly from the architects, product managers, designers, and producers who worked alongside me. Each statement was written and submitted independently on Linkedin, reflecting firsthand experience on massive projects with real deadlines.
+              Every piece of feedback comes directly from the architects, product managers, designers, and producers who worked alongside me. Each statement was written and submitted independently on Linkedin, reflecting firsthand experience on massive projects with challenging deadlines and complex deliverables.
             </p>
             <p>
-              These team members span internal and external members from QSR brands, federal agencies, financial institutions, and entertainment platforms and more. Each context demanded a different kind of technical and interpersonal leadership, and these are the people who witnessed it directly.
+              These team members include internal and external members from household QSR brands, federal agencies, regional DMOs, financial institutions, entertainment enterprises and more. Each project's context demanded a different kind of technical and interpersonal leadership. These excerpts are from the people who witnessed it directly.
             </p>
             <p>
-              I take deep pride in every deliverable I put my name on, and I hold myself accountable to the people depending on me to get it right. These statements reflect that standard as seen from the outside and how I intend to contribute as a member of any future team.
+              I take deep pride in every project that I put my name on, and I hold myself accountable to the people depending on me to get it right. These statements reflect that standard as seen from the outside and how I intend to contribute as a member of any future team.
             </p>
           </CascadeItem>
 
