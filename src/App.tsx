@@ -1,20 +1,28 @@
 import './index.css'
 import { Header, Footer } from './components/layout'
-import { Hero, Work, Testimonials, Visuals, Contact } from './components/sections'
+import { Hero, Work, Testimonials, Visuals, Contact, Resume } from './components/sections'
 import { Toaster } from './components/ui'
 import { useTitleCycle } from './hooks'
 
 export default function App() {
   useTitleCycle()
 
+  const isResume = typeof window !== 'undefined' && window.location.pathname === '/resume'
+
   return (
     <div>
       <Header />
-      <Hero />
-      <Work />
-      <Testimonials />
-      <Visuals />
-      <Contact />
+      {isResume ? (
+        <Resume />
+      ) : (
+        <>
+          <Hero />
+          <Work />
+          <Testimonials />
+          <Visuals />
+          <Contact />
+        </>
+      )}
       <Footer />
       <Toaster />
     </div>

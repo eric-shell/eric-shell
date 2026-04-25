@@ -22,27 +22,27 @@ export interface SocialLink {
 export const navLinks: NavLink[] = [
   {
     label: 'Chat',
-    href: '#hero',
+    href: '/#hero',
     Icon: MessagesSquare,
   },
   {
     label: 'Work',
-    href: '#work',
+    href: '/#work',
     Icon: Briefcase,
   },
   {
     label: 'Testimonials',
-    href: '#testimonials',
+    href: '/#testimonials',
     Icon: Quote,
   },
   {
     label: 'Visuals',
-    href: '#visuals',
+    href: '/#visuals',
     Icon: Palette,
   },
   {
     label: 'Contact',
-    href: '#contact',
+    href: '/#contact',
     Icon: Form,
   },
 ]
@@ -55,12 +55,12 @@ export const connectLinks: ConnectLink[] = [
   },
   {
     label: 'Resume',
-    href: '#',
+    href: '/resume',
     Icon: FileText,
   },
   {
     label: 'Contact',
-    href: '#contact',
+    href: '/#contact',
     Icon: Form,
   },
 ]

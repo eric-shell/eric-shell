@@ -12,7 +12,7 @@ export default function Header() {
   const lastScrollY = useRef(0)
 
   useEffect(() => {
-    const sectionIds = navLinks.filter(l => l.href.startsWith('#')).map(l => l.href.slice(1))
+    const sectionIds = navLinks.filter(l => l.href.includes('#')).map(l => l.href.split('#')[1])
 
     const handleScroll = () => {
       const currentY = window.scrollY
@@ -73,19 +73,23 @@ export default function Header() {
 
           <nav aria-label="Primary navigation">
             <ul className="flex items-center gap-6">
-              {navLinks.map(({ label, href, Icon }, i) => (
-                <CascadeItem key={label} as="li" index={i + 1}>
-                  <Button
-                    href={activeSection === href.slice(1) ? undefined : href}
-                    variant={activeSection === href.slice(1) ? 'secondary' : 'glass-light'}
-                    size="sm"
-                    leftIcon={<Icon size={14} />}
-                    className={activeSection === href.slice(1) ? 'hover:from-white hover:to-blue-50 hover:text-blue-800 cursor-default' : ''}
-                  >
-                    {label}
-                  </Button>
-                </CascadeItem>
-              ))}
+              {navLinks.map(({ label, href, Icon }, i) => {
+                const sectionId = href.split('#')[1]
+                const isActive = !!sectionId && activeSection === sectionId
+                return (
+                  <CascadeItem key={label} as="li" index={i + 1}>
+                    <Button
+                      href={isActive ? undefined : href}
+                      variant={isActive ? 'secondary' : 'glass-light'}
+                      size="sm"
+                      leftIcon={<Icon size={14} />}
+                      className={isActive ? 'hover:from-white hover:to-blue-50 hover:text-blue-800 cursor-default' : ''}
+                    >
+                      {label}
+                    </Button>
+                  </CascadeItem>
+                )
+              })}
             </ul>
           </nav>
 
