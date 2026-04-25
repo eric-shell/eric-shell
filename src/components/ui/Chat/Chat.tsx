@@ -81,8 +81,8 @@ export default function Chat({
         )}
       >
         <span className={twMerge(
-          'relative inline-flex h-4 w-7 items-center rounded-full transition-colors',
-          isWhite ? 'bg-blue-700' : 'bg-black/20'
+          'relative inline-flex h-4 w-7 items-center rounded-full transition-all',
+          isWhite ? 'bg-blue-700 hover:bg-blue-800' : 'bg-black/20 hover:bg-black/50'
         )}>
           <span className={twMerge(
             'inline-block h-2.5 w-2.5 rounded-full bg-white shadow transition-transform',
