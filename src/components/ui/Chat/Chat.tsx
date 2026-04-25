@@ -41,10 +41,13 @@ export default function Chat({
   if (!isOpen) {
     return createPortal(
       <Button
-        onClick={() => setIsOpen(true)}
+        onClick={() => {
+          setIsOpen(true)
+          document.getElementById('hero')?.scrollIntoView({ behavior: 'smooth' })
+        }}
         variant="primary"
         size="md"
-        className="genie-button fixed bottom-6 right-6 z-50 shadow-xl [animation:genie-button-in_350ms_cubic-bezier(0.34,1.56,0.64,1)_both]"
+        className="genie-button fixed bottom-6 right-6 z-50 shadow-xl [animation:genie-button-in_350ms_cubic-bezier(0.34,1.56,0.64,1)_both] z-[900]"
         rightIcon={<MessagesSquare size={15} strokeWidth={2.5} aria-hidden="true" />}
       >
         Start a Chat

@@ -80,7 +80,7 @@ export default function Header() {
                     variant={activeSection === href.slice(1) ? 'secondary' : 'glass-light'}
                     size="sm"
                     leftIcon={<Icon size={14} />}
-                    className={activeSection === href.slice(1) ? 'hover:bg-white hover:text-blue-800 cursor-default' : ''}
+                    className={activeSection === href.slice(1) ? 'hover:from-white hover:to-blue-50 hover:text-blue-800 cursor-default' : ''}
                   >
                     {label}
                   </Button>
