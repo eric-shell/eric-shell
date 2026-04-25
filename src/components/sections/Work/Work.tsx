@@ -1,11 +1,11 @@
 import { useState } from 'react'
-import { ArrowDownAZ, ArrowUpRight, ArrowUpZA, CalendarDays } from 'lucide-react'
+import { ArrowDownAZ, ArrowUpRight, ArrowUpZA, CalendarDays, X } from 'lucide-react'
 import { workItems } from '../../../data'
-import { Button, Card, CascadeGroup, CascadeItem, Eyebrow, H2, Pill } from '../../ui'
+import { Button, Card, CascadeGroup, CascadeItem, Dropdown, Eyebrow, H2 } from '../../ui'
 
 type SortOrder = 'chronological' | 'asc' | 'desc'
 
-const SORT_OPTIONS: { value: SortOrder; label: string; icon: React.ReactNode }[] = [
+const SORT_OPTIONS = [
   { value: 'chronological', label: 'Chronological', icon: <CalendarDays size={12} /> },
   { value: 'asc',           label: 'Ascending',     icon: <ArrowDownAZ size={12} /> },
   { value: 'desc',          label: 'Descending',    icon: <ArrowUpZA size={12} /> },
@@ -29,7 +29,7 @@ export default function Work() {
     <section id="work" className="bg-blue-50 py-24">
       <div className="max-w-[1440px] mx-auto px-6">
 
-        <CascadeGroup threshold={0.15}>
+        <CascadeGroup threshold={0.15} className='z-[50]'>
           <CascadeItem index={0}>
             <div className="flex items-start justify-between gap-4 pb-10">
               <div>
@@ -40,7 +40,7 @@ export default function Work() {
                 href="https://www.linkedin.com/in/ericshell/details/experience/"
                 target="_blank"
                 rel="noopener noreferrer"
-                variant="dark"
+                variant="primary"
                 size="md"
                 className="shrink-0"
                 rightIcon={<ArrowUpRight size={15} aria-hidden="true" />}
@@ -62,37 +62,35 @@ export default function Work() {
           </CascadeItem>
 
           <CascadeItem index={2}>
-            <div className="flex items-center justify-between gap-2 mb-8">
+            <div className="relative z-10 flex items-center justify-between gap-2 mb-8">
               <div className="flex items-center gap-2 flex-wrap">
                 {activeTags.length > 0 && (
                   <>
-                    <span className="font-sans text-sm text-blue-950/50">Filtering by:</span>
                     {activeTags.map(tag => (
-                      <Pill key={tag} active onDismiss={() => toggleTag(tag)}>
+                      <Button
+                        key={tag}
+                        variant="primary"
+                        size="md"
+                        onClick={() => toggleTag(tag)}
+                        rightIcon={<X size={16} aria-hidden="true" />}
+                      >
                         {tag}
-                      </Pill>
+                      </Button>
                     ))}
                   </>
                 )}
               </div>
 
-              <div className="flex items-center gap-1.5" role="group" aria-label="Sort order">
-                {SORT_OPTIONS.map(({ value, label, icon }) => (
-                  <Pill
-                    key={value}
-                    active={sort === value}
-                    onClick={() => setSort(value)}
-                    leftIcon={icon}
-                  >
-                    {label}
-                  </Pill>
-                ))}
-              </div>
+              <Dropdown
+                options={SORT_OPTIONS}
+                value={sort}
+                onChange={(v) => setSort(v as SortOrder)}
+              />
             </div>
           </CascadeItem>
         </CascadeGroup>
 
-        <CascadeGroup as="ul" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3" threshold={0.05}>
+        <CascadeGroup as="ul" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 z-[40]" threshold={0.05}>
           {items.map(({ url, title, solution, tags }, i) => (
             <CascadeItem as="li" key={title} index={i}>
               <Card

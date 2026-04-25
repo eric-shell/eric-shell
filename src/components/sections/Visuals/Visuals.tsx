@@ -25,7 +25,7 @@ export default function Visuals() {
                 href="https://www.instagram.com/ericshell/"
                 target="_blank"
                 rel="noopener noreferrer"
-                variant="dark"
+                variant="primary"
                 size="md"
                 className="shrink-0"
                 leftIcon={<InstagramIcon size={15} />}

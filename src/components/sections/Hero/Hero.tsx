@@ -110,7 +110,7 @@ export default function Hero() {
               onChange={setMessage}
               onSubmit={handleSubmit}
             >
-              <p className="font-sans text-sm text-black bg-white py-2 px-3 rounded-md shadow-md">
+              <p className="font-sans text-sm text-blue-800 bg-white py-2 px-3 rounded-md shadow-md">
                 Ask me anything about my work, skills, or experience!
               </p>
             </Chat>

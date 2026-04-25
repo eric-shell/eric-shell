@@ -33,7 +33,7 @@ type ButtonAsAnchor = SharedProps & AnchorHTMLAttributes<HTMLAnchorElement> & { 
 type ButtonProps = ButtonAsButton | ButtonAsAnchor
 
 export default function Button({
-  variant = 'dark',
+  variant = 'primary',
   size = 'md',
   shape = 'pill',
   className = '',

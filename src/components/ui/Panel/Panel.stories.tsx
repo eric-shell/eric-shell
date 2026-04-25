@@ -11,11 +11,11 @@ const meta = {
 export default meta
 type Story = StoryObj<typeof meta>
 
-const variants: Variant[] = ['darker', 'dark', 'light', 'lighter', 'primary', 'ghost', 'glass-light', 'glass-dark']
+const variants: Variant[] = ['primary', 'ghost', 'glass-light', 'glass-dark']
 
 export const Default: Story = {
   args: {
-    variant: 'lighter',
+    variant: 'primary',
     children: 'Panel content goes here',
     className: 'p-8 rounded-lg',
   },
@@ -34,14 +34,6 @@ export const AllVariants: Story = {
       ))}
     </div>
   ),
-}
-
-export const Dark: Story = {
-  args: {
-    variant: 'dark',
-    children: 'Dark variant panel',
-    className: 'p-8 rounded-lg',
-  },
 }
 
 export const Glass: Story = {
@@ -66,30 +58,12 @@ export const WithContent: Story = {
     layout: 'padded',
   },
   render: () => (
-    <Panel variant="lighter" className="p-6 rounded-xl max-w-md flex flex-col gap-3">
+    <Panel variant="primary" className="p-6 rounded-xl max-w-md flex flex-col gap-3">
       <h3 className="font-sans font-semibold text-blue-950">Panel with real content</h3>
       <p className="font-sans text-sm text-blue-950/60 leading-snug">
         Panels are simple surface containers. They don't impose layout — you compose padding,
         typography, and children to shape the card.
       </p>
-    </Panel>
-  ),
-}
-
-export const Nested: Story = {
-  parameters: {
-    controls: { disable: true },
-    layout: 'padded',
-  },
-  render: () => (
-    <Panel variant="light" className="p-6 rounded-xl max-w-md flex flex-col gap-4">
-      <span className="font-sans text-sm font-semibold">Outer panel (light)</span>
-      <Panel variant="lighter" className="p-4 rounded-lg">
-        <span className="font-sans text-xs text-blue-950/60">Nested panel (lighter)</span>
-      </Panel>
-      <Panel variant="dark" className="p-4 rounded-lg">
-        <span className="font-sans text-xs text-white/80">Nested panel (dark)</span>
-      </Panel>
     </Panel>
   ),
 }

@@ -62,7 +62,7 @@ export default function Testimonials() {
               href="https://www.linkedin.com/in/ericshell/details/recommendations/"
               target="_blank"
               rel="noopener noreferrer"
-              variant="lighter"
+              variant="primary"
               size="md"
               className="shrink-0 bg-white text-blue-950"
               rightIcon={<ArrowUpRight size={15} aria-hidden="true" />}
@@ -110,7 +110,7 @@ export default function Testimonials() {
             >
               <Button
                 shape="square"
-                variant="darker"
+                variant="primary"
                 onClick={prev}
                 aria-label="Previous testimonial"
               >
@@ -118,7 +118,7 @@ export default function Testimonials() {
               </Button>
               <Button
                 shape="square"
-                variant="darker"
+                variant="primary"
                 onClick={() => setIsPlaying(p => !p)}
                 aria-label={isPlaying ? 'Pause testimonial slider' : 'Play testimonial slider'}
               >
@@ -126,7 +126,7 @@ export default function Testimonials() {
               </Button>
               <Button
                 shape="square"
-                variant="darker"
+                variant="primary"
                 onClick={next}
                 aria-label="Next testimonial"
               >

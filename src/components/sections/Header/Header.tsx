@@ -76,10 +76,11 @@ export default function Header() {
               {navLinks.map(({ label, href, Icon }, i) => (
                 <CascadeItem key={label} as="li" index={i + 1}>
                   <Button
-                    href={href}
+                    href={activeSection === href.slice(1) ? undefined : href}
                     variant={activeSection === href.slice(1) ? 'primary' : 'glass-light'}
                     size="sm"
                     leftIcon={<Icon size={14} />}
+                    className={activeSection === href.slice(1) ? 'hover:bg-white hover:text-blue-800 cursor-default' : ''}
                   >
                     {label}
                   </Button>

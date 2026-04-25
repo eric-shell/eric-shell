@@ -15,13 +15,13 @@ const meta = {
 export default meta
 type Story = StoryObj<typeof meta>
 
-const variants: Variant[] = ['darker', 'dark', 'light', 'lighter', 'primary', 'ghost', 'glass-light', 'glass-dark']
+const variants: Variant[] = ['primary', 'ghost', 'glass-light', 'glass-dark']
 const sizes: Size[] = ['sm', 'md', 'lg']
 
 export const Default: Story = {
   args: {
     children: 'Button',
-    variant: 'dark',
+    variant: 'primary',
     size: 'md',
     shape: 'pill',
   },
@@ -49,7 +49,7 @@ export const Sizes: Story = {
   render: () => (
     <div className="flex gap-4 items-center">
       {sizes.map((size) => (
-        <Button key={size} size={size} variant="dark">
+        <Button key={size} size={size} variant="primary">
           {size}
         </Button>
       ))}
@@ -59,7 +59,7 @@ export const Sizes: Story = {
 
 export const Square: Story = {
   args: {
-    variant: 'dark',
+    variant: 'primary',
     size: 'md',
     shape: 'square',
     children: <Briefcase size={16} />,
