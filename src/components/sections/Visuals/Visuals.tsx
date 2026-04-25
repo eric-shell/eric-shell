@@ -49,12 +49,12 @@ export default function Visuals() {
             </CascadeItem>
             <CascadeItem index={1}>
               <p>
-                While my strongest skilled, given responsibilites and buisness values pushed me further into the softerware engineering path, my passion has always been in the visuals.  Defined aestietics, discipled form, purposeful use of technology and creative problem solving.
+                While my strongest skills opened the path to a fulfilling career, the deliverables pulled me in an adjacent direction. My assumed responsibilites and emploeyers buisness values foreces me further into the softerware engineering path, however, my passion has always been on the visual side of digital media.  Defined aestietics, discipled utility, purposeful use of technology and creative problem solving.
               </p>
             </CascadeItem>
             <CascadeItem index={2}>
               <p>
-                My career path has developed in a way that it is now rooted in technical software solutions but my background carries a passion for creating captivatating visuals across multuple .
+                My career path has developed in a way that it is now rooted in technical software solutions but my background carries a passion for creating captivatating visuals across multuple mediunms.
               </p>
             </CascadeItem>
             <CascadeItem index={3}>
