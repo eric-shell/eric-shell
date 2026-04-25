@@ -6,9 +6,9 @@ import { Button, Card, CascadeGroup, CascadeItem, Dropdown, Eyebrow, H2 } from '
 type SortOrder = 'chronological' | 'asc' | 'desc'
 
 const SORT_OPTIONS = [
-  { value: 'chronological', label: 'Chronological', icon: <CalendarDays size={12} /> },
-  { value: 'asc',           label: 'Ascending',     icon: <ArrowDownAZ size={12} /> },
-  { value: 'desc',          label: 'Descending',    icon: <ArrowUpZA size={12} /> },
+  { value: 'chronological', label: 'Chronological', icon: <CalendarDays size={12} strokeWidth={2.5} /> },
+  { value: 'asc',           label: 'Ascending',     icon: <ArrowDownAZ size={12} strokeWidth={2.5} /> },
+  { value: 'desc',          label: 'Descending',    icon: <ArrowUpZA size={12} strokeWidth={2.5} /> },
 ]
 
 export default function Work() {
@@ -43,7 +43,7 @@ export default function Work() {
                 variant="primary"
                 size="md"
                 className="shrink-0"
-                rightIcon={<ArrowUpRight size={15} aria-hidden="true" />}
+                rightIcon={<ArrowUpRight size={15} strokeWidth={2.5} aria-hidden="true" />}
               >
                 View Work History
               </Button>
@@ -72,7 +72,7 @@ export default function Work() {
                         variant="primary"
                         size="md"
                         onClick={() => toggleTag(tag)}
-                        rightIcon={<X size={16} aria-hidden="true" />}
+                        rightIcon={<X size={16} strokeWidth={2.5} aria-hidden="true" />}
                       >
                         {tag}
                       </Button>

@@ -51,7 +51,7 @@ export default function Post({ post }: PostProps) {
           <p className="font-sans text-xs leading-snug text-white line-clamp-2">
             {post.caption}
           </p>
-          <ArrowUpRight size={16} className="shrink-0 text-white/80" aria-hidden="true" />
+          <ArrowUpRight size={16} strokeWidth={2.5} className="shrink-0 text-white/80" aria-hidden="true" />
         </div>
       </div>
     </a>

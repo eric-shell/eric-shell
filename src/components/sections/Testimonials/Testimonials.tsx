@@ -65,7 +65,7 @@ export default function Testimonials() {
               variant="primary"
               size="md"
               className="shrink-0 bg-white text-blue-950"
-              rightIcon={<ArrowUpRight size={15} aria-hidden="true" />}
+              rightIcon={<ArrowUpRight size={15} strokeWidth={2.5} aria-hidden="true" />}
             >
               View Full Endorsements
             </Button>
@@ -114,7 +114,7 @@ export default function Testimonials() {
                 onClick={prev}
                 aria-label="Previous testimonial"
               >
-                <ArrowLeft size={18} aria-hidden="true" />
+                <ArrowLeft size={18} strokeWidth={2.5} aria-hidden="true" />
               </Button>
               <Button
                 shape="square"
@@ -122,7 +122,7 @@ export default function Testimonials() {
                 onClick={() => setIsPlaying(p => !p)}
                 aria-label={isPlaying ? 'Pause testimonial slider' : 'Play testimonial slider'}
               >
-                {isPlaying ? <Pause size={18} aria-hidden="true" /> : <Play size={18} aria-hidden="true" />}
+                {isPlaying ? <Pause size={18} strokeWidth={2.5} aria-hidden="true" /> : <Play size={18} strokeWidth={2.5} aria-hidden="true" />}
               </Button>
               <Button
                 shape="square"
@@ -130,7 +130,7 @@ export default function Testimonials() {
                 onClick={next}
                 aria-label="Next testimonial"
               >
-                <ArrowRight size={18} aria-hidden="true" />
+                <ArrowRight size={18} strokeWidth={2.5} aria-hidden="true" />
               </Button>
             </div>
           </CascadeItem>

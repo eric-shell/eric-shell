@@ -46,14 +46,14 @@ export const WithDismiss: Story = {
 export const WithLeftIcon: Story = {
   args: {
     children: 'Tagged',
-    leftIcon: <Tag size={12} />,
+    leftIcon: <Tag size={12} strokeWidth={2.5} />,
   },
 }
 
 export const WithRightIcon: Story = {
   args: {
     children: 'Icon on right',
-    rightIcon: <Tag size={12} />,
+    rightIcon: <Tag size={12} strokeWidth={2.5} />,
   },
 }
 

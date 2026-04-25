@@ -42,7 +42,7 @@ export default function Pill({
           aria-label={`Clear ${children} filter`}
           className="cursor-pointer opacity-70 hover:opacity-100 transition"
         >
-          <X size={12} aria-hidden="true" />
+          <X size={12} strokeWidth={2.5} aria-hidden="true" />
         </button>
       )}
     </>

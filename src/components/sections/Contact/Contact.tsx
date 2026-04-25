@@ -1,5 +1,6 @@
 import { lazy, Suspense, useState } from 'react'
 import { Send } from 'lucide-react'
+import { twMerge } from 'tailwind-merge'
 import { Button, CascadeGroup, CascadeItem, Eyebrow, H2, Input, Panel, Textarea } from '../../ui'
 import { useParallax } from '../../../hooks'
 
@@ -18,6 +19,7 @@ export default function Contact() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [submitStatus, setSubmitStatus] = useState<SubmitStatus>('idle')
   const [errorMessage, setErrorMessage] = useState('')
+  const [isWhite, setIsWhite] = useState(false)
 
   const { sectionRef, bgRef, gradientRef, handleMouseMove, handleMouseLeave } = useParallax({
     bgStrength: 15,
@@ -168,7 +170,28 @@ export default function Contact() {
             </CascadeItem>
           ) : (
             <CascadeItem index={0}>
-              <Panel variant="glass-light" className="rounded-2xl p-8">
+              <Panel variant={isWhite ? 'white' : 'glass-light'} className="relative rounded-2xl p-8">
+                <button
+                  role="switch"
+                  aria-checked={isWhite}
+                  aria-label="Toggle high-contrast mode"
+                  onClick={() => setIsWhite(v => !v)}
+                  className={twMerge(
+                    'absolute top-3 left-3 z-10 flex items-center gap-1.5 rounded-full px-2 py-1 transition-colors',
+                    isWhite ? 'text-blue-950' : 'text-white'
+                  )}
+                >
+                  <span className={twMerge(
+                    'relative inline-flex h-4 w-7 items-center rounded-full transition-colors',
+                    isWhite ? 'bg-blue-700' : 'bg-white/30'
+                  )}>
+                    <span className={twMerge(
+                      'inline-block h-2.5 w-2.5 rounded-full bg-white shadow transition-transform',
+                      isWhite ? 'translate-x-3.5' : 'translate-x-0.5'
+                    )} />
+                  </span>
+                  <span className="font-sans text-xs font-semibold tracking-wide">AA</span>
+                </button>
                 <form onSubmit={handleSubmit} className="flex flex-col gap-2" noValidate>
                   <div aria-hidden="true" className="sr-only">
                     <label htmlFor="contact-website">Website</label>
@@ -185,7 +208,7 @@ export default function Contact() {
                   <Input
                     id="contact-name"
                     label="Name"
-                    theme="dark"
+                    theme={isWhite ? 'white' : 'dark'}
                     value={name}
                     onChange={setName}
                     placeholder="Jane Smith"
@@ -198,7 +221,7 @@ export default function Contact() {
                   <Input
                     id="contact-email"
                     label="Email"
-                    theme="dark"
+                    theme={isWhite ? 'white' : 'dark'}
                     type="email"
                     value={email}
                     onChange={setEmail}
@@ -213,7 +236,7 @@ export default function Contact() {
                   <Textarea
                     id="contact-message"
                     label="Message"
-                    theme="dark"
+                    theme={isWhite ? 'white' : 'dark'}
                     value={message}
                     onChange={setMessage}
                     placeholder="Tell me what you're working on..."
@@ -226,7 +249,7 @@ export default function Contact() {
 
                   {errorMessage && (
                     <div className="rounded-lg border border-red-300/40 bg-red-500/15 px-4 py-3">
-                      <p className="font-sans text-sm text-red-100 text-shadow-md">{errorMessage}</p>
+                      <p className={twMerge('font-sans text-sm', isWhite ? 'text-red-700' : 'text-red-100 text-shadow-md')}>{errorMessage}</p>
                     </div>
                   )}
 
@@ -235,7 +258,7 @@ export default function Contact() {
                     disabled={isSubmitting}
                     variant="primary"
                     className="shadow-md self-end"
-                    rightIcon={<Send size={14} aria-hidden="true" />}
+                    rightIcon={<Send size={14} strokeWidth={2.5} aria-hidden="true" />}
                   >
                     {isSubmitting ? 'Sending…' : 'Send Message'}
                   </Button>

@@ -26,13 +26,14 @@ export default function Card({
   return (
     <a href={href} target={target} rel={rel} className="group block h-full">
       <Panel
-        variant="primary"
+        variant="white"
         className="flex flex-col gap-3 h-full p-5 rounded-xl hover:shadow-sm min-h-[151px] transition"
       >
         <div className="flex items-start justify-between gap-2">
           <span className="font-sans font-semibold text-blue-950 leading-snug">{title}</span>
           <ArrowUpRight
             size={16}
+            strokeWidth={2.5}
             className="shrink-0 mt-0.5 text-blue-950/30 group-hover:text-blue-950/70 transition"
             aria-hidden="true"
           />

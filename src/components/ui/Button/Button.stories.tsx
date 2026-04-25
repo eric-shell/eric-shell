@@ -62,14 +62,14 @@ export const Square: Story = {
     variant: 'primary',
     size: 'md',
     shape: 'square',
-    children: <Briefcase size={16} />,
+    children: <Briefcase size={16} strokeWidth={2.5} />,
   },
 }
 
 export const WithLeftIcon: Story = {
   args: {
     children: 'Learn More',
-    leftIcon: <ArrowUpRight size={14} />,
+    leftIcon: <ArrowUpRight size={14} strokeWidth={2.5} />,
     variant: 'primary',
   },
 }
@@ -77,7 +77,7 @@ export const WithLeftIcon: Story = {
 export const WithRightIcon: Story = {
   args: {
     children: 'Visit Site',
-    rightIcon: <ArrowUpRight size={14} />,
+    rightIcon: <ArrowUpRight size={14} strokeWidth={2.5} />,
   },
 }
 
@@ -141,7 +141,7 @@ export const SizeShapeMatrix: Story = {
           </div>
           <div>
             <Button size={size} shape="square">
-              <Briefcase size={size === 'sm' ? 12 : size === 'md' ? 16 : 20} />
+              <Briefcase size={size === 'sm' ? 12 : size === 'md' ? 16 : 20} strokeWidth={2.5} />
             </Button>
           </div>
         </div>

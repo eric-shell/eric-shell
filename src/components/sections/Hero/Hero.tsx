@@ -110,7 +110,7 @@ export default function Hero() {
               onChange={setMessage}
               onSubmit={handleSubmit}
             >
-              <p className="font-sans text-sm text-blue-800 bg-white py-2 px-3 rounded-md shadow-md">
+              <p className="font-sans text-sm text-blue-800 bg-gradient-to-br from-white to-blue-50 py-2 px-3 rounded-md shadow-md">
                 Ask me anything about my work, skills, or experience!
               </p>
             </Chat>
@@ -128,7 +128,7 @@ export default function Hero() {
             aria-label="Scroll to work"
             className="rounded-full shadow-md animate-bounce"
           >
-            <ChevronDown size={20} aria-hidden="true" />
+            <ChevronDown size={20} strokeWidth={2.5} aria-hidden="true" />
           </Button>
         </CascadeItem>
       </CascadeGroup>

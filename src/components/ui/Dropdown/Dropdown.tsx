@@ -65,6 +65,7 @@ export default function Dropdown({
         rightIcon={
           <ChevronDown
             className={`h-5 w-5 text-blue-950 transition-transform duration-200 ${open ? 'rotate-180' : ''}`}
+            strokeWidth={2}
             aria-hidden="true"
           />
         }

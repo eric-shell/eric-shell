@@ -6,12 +6,15 @@ type InputProps = Omit<InputHTMLAttributes<HTMLInputElement>, 'onChange'> & {
   onChange: (value: string) => void
   valid?: boolean
   showCount?: boolean
-  theme?: 'light' | 'dark'
+  theme?: 'light' | 'dark' | 'white'
   className?: string
 }
 
 const FIELD_BASE_LIGHT =
   'w-full rounded-lg border bg-transparent px-4 py-3 font-sans text-sm text-blue-950 placeholder:text-blue-950/30 focus:outline-none transition disabled:opacity-50'
+
+const FIELD_BASE_WHITE =
+  'w-full rounded-lg border bg-white px-4 py-3 font-sans text-sm text-blue-950 placeholder:text-blue-950/30 focus:outline-none transition disabled:opacity-50'
 
 const FIELD_BASE_DARK =
   'w-full rounded-lg border bg-white/10 px-4 py-3 font-sans text-sm text-white placeholder:text-white/40 focus:outline-none focus:bg-white/15 transition disabled:opacity-50'
@@ -29,6 +32,8 @@ export default function Input({
   ...props
 }: InputProps) {
   const isDark = theme === 'dark'
+
+  const baseClass = theme === 'white' ? FIELD_BASE_WHITE : isDark ? FIELD_BASE_DARK : FIELD_BASE_LIGHT
 
   const borderClass = valid
     ? isDark ? 'border-white focus:border-white' : 'border-blue-700 focus:border-blue-700'
@@ -55,7 +60,7 @@ export default function Input({
         value={value}
         onChange={e => onChange(e.target.value)}
         maxLength={maxLength}
-        className={twMerge(isDark ? FIELD_BASE_DARK : FIELD_BASE_LIGHT, borderClass, className)}
+        className={twMerge(baseClass, borderClass, className)}
         {...props}
       />
       {shouldShowCount && maxLength !== undefined && (
