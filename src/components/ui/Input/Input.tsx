@@ -5,6 +5,7 @@ type InputProps = Omit<InputHTMLAttributes<HTMLInputElement>, 'onChange'> & {
   label: string
   onChange: (value: string) => void
   valid?: boolean
+  error?: boolean
   showCount?: boolean
   theme?: 'light' | 'dark' | 'white'
   className?: string
@@ -25,6 +26,7 @@ export default function Input({
   value,
   onChange,
   valid = false,
+  error = false,
   showCount,
   maxLength,
   theme = 'light',
@@ -35,7 +37,9 @@ export default function Input({
 
   const baseClass = theme === 'white' ? FIELD_BASE_WHITE : isDark ? FIELD_BASE_DARK : FIELD_BASE_LIGHT
 
-  const borderClass = valid
+  const borderClass = error
+    ? isDark ? 'border-red-300 focus:border-red-200' : 'border-red-600 focus:border-red-700'
+    : valid
     ? isDark ? 'border-white focus:border-white' : 'border-blue-700 focus:border-blue-700'
     : isDark ? 'border-white/20 focus:border-white/60' : 'border-blue-950/20 focus:border-blue-950/60'
 
@@ -60,6 +64,7 @@ export default function Input({
         value={value}
         onChange={e => onChange(e.target.value)}
         maxLength={maxLength}
+        aria-invalid={error || undefined}
         className={twMerge(baseClass, borderClass, className)}
         {...props}
       />
