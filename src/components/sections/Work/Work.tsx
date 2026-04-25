@@ -26,14 +26,14 @@ export default function Work() {
   if (sort === 'desc') items = items.sort((a, b) => b.title.localeCompare(a.title))
 
   return (
-    <section id="work" className="bg-blue-50 py-24">
-      <div className="max-w-[1440px] mx-auto px-6">
+    <section id="work" className="relative bg-blue-50 skew-section z-50" style={{ marginTop: '-4rem' }}>
+      <div className="max-w-[1440px] mx-auto px-6 unskew-inner">
 
         <CascadeGroup threshold={0.15} className='z-[50]'>
           <CascadeItem index={0}>
             <div className="flex items-start justify-between gap-4 pb-10">
               <div>
-                <Eyebrow className="text-blue-950 mb-4 block">Selected Work and Projects</Eyebrow>
+                <Eyebrow className="text-blue-900 mb-4 block">Selected Work and Projects</Eyebrow>
                 <H2 className="text-blue-950">Work</H2>
               </div>
               <Button
@@ -51,7 +51,7 @@ export default function Work() {
           </CascadeItem>
 
           <CascadeItem index={1}>
-            <div className="flex flex-col gap-5 font-sans text-base leading-relaxed text-blue-950/80 pb-10">
+            <div className="flex flex-col gap-5 font-sans text-base leading-relaxed text-blue-900 pb-10">
               <p>
                 Over 15 years of practice spanning federal agencies, Fortune 500 brands, financial institutions, and entertainment platforms, I have built software that ships, scales, and endures well beyond the engagement that created it. Each context demanded a different caliber of contextual understanding, technical leadership and creative solutioning.
               </p>

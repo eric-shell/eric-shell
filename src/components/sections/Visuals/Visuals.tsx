@@ -11,14 +11,14 @@ function InstagramIcon({ size = 15 }: { size?: number }) {
 
 export default function Visuals() {
   return (
-    <section id="visuals" className="bg-blue-50 py-24">
-      <div className="max-w-[1440px] mx-auto px-6">
+    <section id="visuals" className="relative bg-blue-50 skew-section z-[150]">
+      <div className="max-w-[1440px] mx-auto px-6 unskew-inner">
 
         <CascadeGroup threshold={0.15}>
           <CascadeItem index={0}>
             <div className="flex items-start justify-between gap-4 pb-10">
               <div>
-                <Eyebrow className="text-blue-950 mb-4 block">Creative Supplements</Eyebrow>
+                <Eyebrow className="text-blue-900 mb-4 block">Creative Supplements</Eyebrow>
                 <H2 className="text-blue-950">Visuals</H2>
               </div>
               <Button
@@ -39,21 +39,32 @@ export default function Visuals() {
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-10 lg:gap-16 items-start">
 
           <CascadeGroup
-            className="flex flex-col gap-5 font-sans text-base leading-relaxed text-blue-950/70"
+            className="flex flex-col gap-5 font-sans text-base leading-relaxed text-blue-900"
             threshold={0.1}
           >
             <CascadeItem index={0}>
               <p>
-                When I step away from the terminal, I pick up a camera. Photography
-                is how I stay visually calibrated — studying light, composition, and
-                the moments that don&apos;t wait for a second take.
+                I have a formal education in Design from Lehigh University and I moved across the country to be the Digital Media Director for AccuAir Suspension immediately after graduating.
               </p>
             </CascadeItem>
             <CascadeItem index={1}>
               <p>
-                The same instincts that make a UI feel considered apply here: attention
-                to negative space, the weight of contrast, and the difference between
-                what is present and what is necessary.
+                While my strongest skilled, given responsibilites and buisness values pushed me further into the softerware engineering path, my passion has always been in the visuals.  Defined aestietics, discipled form, purposeful use of technology and creative problem solving.
+              </p>
+            </CascadeItem>
+            <CascadeItem index={2}>
+              <p>
+                My career path has developed in a way that it is now rooted in technical software solutions but my background carries a passion for creating captivatating visuals across multuple .
+              </p>
+            </CascadeItem>
+            <CascadeItem index={3}>
+              <p>
+                My career path has developed in a way that it is now rooted in technical software solutions but my background carries a passion for the creative, visually curated products. 
+              </p>
+            </CascadeItem>
+            <CascadeItem index={4}>
+              <p>
+                I still produce photo and video content to fulfil my creative ambutions and maintain technical expertise in that space.  Plus, I love documenting adventures and projects with the people who are imporant in my life.
               </p>
             </CascadeItem>
           </CascadeGroup>

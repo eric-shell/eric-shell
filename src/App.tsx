@@ -1,5 +1,6 @@
 import './index.css'
-import { Header, Hero, Work, Testimonials, Visuals, Contact, Footer } from './components/sections'
+import { Header, Footer } from './components/layout'
+import { Hero, Work, Testimonials, Visuals, Contact } from './components/sections'
 import { useTitleCycle } from './hooks'
 
 export default function App() {

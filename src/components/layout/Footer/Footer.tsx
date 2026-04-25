@@ -5,8 +5,8 @@ export default function Footer() {
   const year = new Date().getFullYear()
 
   return (
-    <footer className="bg-black text-white border-t border-white/10">
-      <div className="max-w-[1440px] mx-auto px-6 pt-16 pb-24 flex items-center justify-between gap-12 flex-wrap">
+    <footer className="bg-black text-white border-t border-white/10 skew-footer">
+      <div className="max-w-[1440px] mx-auto px-6 pt-24 pb-24 flex items-center justify-between gap-12 flex-wrap unskew-inner">
 
         <nav aria-label="Footer navigation" className="flex gap-12">
           <CascadeGroup as="ul" className="flex flex-col gap-4" threshold={0.2}>

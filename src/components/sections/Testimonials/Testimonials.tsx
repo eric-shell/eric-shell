@@ -47,14 +47,14 @@ export default function Testimonials() {
   const { review, author } = testimonials[current]
 
   return (
-    <section id="testimonials" className="bg-blue-950 text-white py-24">
-      <div className="max-w-[1440px] mx-auto px-6">
+    <section id="testimonials" className="bg-blue-950 text-white skew-section">
+      <div className="max-w-[1440px] mx-auto px-6 unskew-inner">
 
         <CascadeGroup className="flex items-start justify-between gap-4 pb-10">
           <CascadeItem index={0}>
             <div>
-              <Eyebrow className="text-white mb-4 block">Feedback from the Team</Eyebrow>
-              <H2 className="italic">Testimonials</H2>
+              <Eyebrow className="text-blue-50 mb-4 block">Feedback from the Team</Eyebrow>
+              <H2>Testimonials</H2>
             </div>
           </CascadeItem>
           <CascadeItem index={1}>
@@ -64,7 +64,7 @@ export default function Testimonials() {
               rel="noopener noreferrer"
               variant="primary"
               size="md"
-              className="shrink-0 bg-white text-blue-950"
+              className="shrink-0"
               rightIcon={<ArrowUpRight size={15} strokeWidth={2.5} aria-hidden="true" />}
             >
               View Full Endorsements
@@ -93,11 +93,11 @@ export default function Testimonials() {
               <blockquote
                 className={`transition-opacity duration-[400ms] ${visible ? 'opacity-100' : 'opacity-0'}`}
               >
-                <span aria-hidden="true" className="font-display text-5xl text-blue-700 leading-none block mb-2">&ldquo;</span>
+                {/* <span aria-hidden="true" className="font-display text-5xl text-blue-700 leading-none block mb-2">&ldquo;</span> */}
                 <p className="font-sans text-xl leading-relaxed text-white">
-                  {review}
+                  "{review}"
                 </p>
-                <footer className="mt-6 font-sans text-sm font-semibold text-white/70 uppercase tracking-wider">
+                <footer className="mt-6 font-sans text-sm font-semibold text-blue-100 uppercase tracking-wider">
                   {author}
                 </footer>
               </blockquote>
@@ -110,7 +110,7 @@ export default function Testimonials() {
             >
               <Button
                 shape="square"
-                variant="primary"
+                variant="secondary"
                 onClick={prev}
                 aria-label="Previous testimonial"
               >
@@ -118,7 +118,7 @@ export default function Testimonials() {
               </Button>
               <Button
                 shape="square"
-                variant="primary"
+                variant="secondary"
                 onClick={() => setIsPlaying(p => !p)}
                 aria-label={isPlaying ? 'Pause testimonial slider' : 'Play testimonial slider'}
               >
@@ -126,7 +126,7 @@ export default function Testimonials() {
               </Button>
               <Button
                 shape="square"
-                variant="primary"
+                variant="secondary"
                 onClick={next}
                 aria-label="Next testimonial"
               >

@@ -25,8 +25,8 @@ export default function Pill({
 }: PillProps) {
   const padding = onDismiss ? 'px-2.5 py-1' : 'px-2 py-1'
   const colors = active
-    ? SURFACE.dark
-    : twMerge(SURFACE.light, onClick && SURFACE_HOVER.light)
+    ? twMerge(SURFACE.primary, onClick && SURFACE_HOVER.primary)
+    : twMerge(SURFACE.white, onClick && SURFACE_HOVER.white)
 
   const classes = twMerge(BASE, padding, colors, className)
 

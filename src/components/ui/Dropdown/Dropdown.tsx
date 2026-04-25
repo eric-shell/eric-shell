@@ -64,12 +64,11 @@ export default function Dropdown({
         leftIcon={selected?.icon}
         rightIcon={
           <ChevronDown
-            className={`h-5 w-5 text-blue-950 transition-transform duration-200 ${open ? 'rotate-180' : ''}`}
-            strokeWidth={2}
+            className={`h-4 w-4 transition-transform duration-200 ${open ? 'rotate-180' : ''}`}
+            strokeWidth={2.5}
             aria-hidden="true"
           />
         }
-        className="rounded-lg border border-blue-950/10 hover:bg-white hover:border-blue-950/30 hover:shadow-sm"
       >
         {selected?.label ?? placeholder}
       </Button>
@@ -89,8 +88,8 @@ export default function Dropdown({
                   onChange(option.value)
                   setOpen(false)
                 }}
-                className={`flex items-center gap-2 w-full px-4 py-2 text-left font-sans text-sm font-semibold transition hover:bg-blue-950/5 cursor-pointer ${
-                  option.value === value ? 'text-blue-700' : 'text-blue-950'
+                className={`flex items-center gap-2 w-full px-4 py-2 text-left font-sans text-sm font-semibold transition cursor-pointer ${
+                  option.value === value ? 'text-white bg-blue-700' : 'text-blue-950 hover:bg-blue-50'
                 }`}
               >
                 {option.icon && <span aria-hidden="true">{option.icon}</span>}

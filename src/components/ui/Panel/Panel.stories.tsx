@@ -11,11 +11,11 @@ const meta = {
 export default meta
 type Story = StoryObj<typeof meta>
 
-const variants: Variant[] = ['primary', 'ghost', 'glass-light', 'glass-dark']
+const variants: Variant[] = ['secondary', 'ghost', 'glass-light', 'glass-dark']
 
 export const Default: Story = {
   args: {
-    variant: 'primary',
+    variant: 'secondary',
     children: 'Panel content goes here',
     className: 'p-8 rounded-lg',
   },
@@ -58,7 +58,7 @@ export const WithContent: Story = {
     layout: 'padded',
   },
   render: () => (
-    <Panel variant="primary" className="p-6 rounded-xl max-w-md flex flex-col gap-3">
+    <Panel variant="secondary" className="p-6 rounded-xl max-w-md flex flex-col gap-3">
       <h3 className="font-sans font-semibold text-blue-950">Panel with real content</h3>
       <p className="font-sans text-sm text-blue-950/60 leading-snug">
         Panels are simple surface containers. They don't impose layout — you compose padding,

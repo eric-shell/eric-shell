@@ -133,7 +133,7 @@ export default function Contact() {
         <CascadeGroup className="flex flex-col gap-6" threshold={0.15}>
           <CascadeItem index={0}>
             <div>
-              <Eyebrow size="lg" className="text-white text-shadow-md pb-2 block">Say Hello</Eyebrow>
+              <Eyebrow size="lg" className="text-white text-shadow-md pb-2 block">Say What's up</Eyebrow>
               <H2 className="text-white text-shadow-lg">Get in Touch</H2>
             </div>
           </CascadeItem>
@@ -192,7 +192,7 @@ export default function Contact() {
                   </span>
                   <span className="font-sans text-xs font-semibold tracking-wide">AA</span>
                 </button>
-                <form onSubmit={handleSubmit} className="flex flex-col gap-2" noValidate>
+                <form onSubmit={handleSubmit} className="flex flex-col pt-5 gap-2" noValidate>
                   <div aria-hidden="true" className="sr-only">
                     <label htmlFor="contact-website">Website</label>
                     <input

@@ -15,13 +15,13 @@ const meta = {
 export default meta
 type Story = StoryObj<typeof meta>
 
-const variants: Variant[] = ['primary', 'ghost', 'glass-light', 'glass-dark']
+const variants: Variant[] = ['secondary', 'ghost', 'glass-light', 'glass-dark']
 const sizes: Size[] = ['sm', 'md', 'lg']
 
 export const Default: Story = {
   args: {
     children: 'Button',
-    variant: 'primary',
+    variant: 'secondary',
     size: 'md',
     shape: 'pill',
   },
@@ -49,7 +49,7 @@ export const Sizes: Story = {
   render: () => (
     <div className="flex gap-4 items-center">
       {sizes.map((size) => (
-        <Button key={size} size={size} variant="primary">
+        <Button key={size} size={size} variant="secondary">
           {size}
         </Button>
       ))}
@@ -59,7 +59,7 @@ export const Sizes: Story = {
 
 export const Square: Story = {
   args: {
-    variant: 'primary',
+    variant: 'secondary',
     size: 'md',
     shape: 'square',
     children: <Briefcase size={16} strokeWidth={2.5} />,
@@ -70,7 +70,7 @@ export const WithLeftIcon: Story = {
   args: {
     children: 'Learn More',
     leftIcon: <ArrowUpRight size={14} strokeWidth={2.5} />,
-    variant: 'primary',
+    variant: 'secondary',
   },
 }
 
@@ -85,13 +85,13 @@ export const AsAnchor: Story = {
   args: {
     href: 'https://example.com',
     children: 'External Link',
-    variant: 'primary',
+    variant: 'secondary',
   },
 }
 
 export const Primary: Story = {
   args: {
-    variant: 'primary',
+    variant: 'secondary',
     children: 'Primary Action',
   },
 }

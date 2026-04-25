@@ -62,6 +62,21 @@
   @apply backdrop-blur-md;
 }
 
+@utility skew-section {
+  transform: skewY(-1deg);
+  margin-block: -2rem;
+  padding-block: 8rem; /* py-24 (6rem) + 2rem overlap compensation */
+}
+
+@utility skew-footer {
+  transform: skewY(-1deg);
+  margin-top: -2rem;
+}
+
+@utility unskew-inner {
+  transform: skewY(0.5deg);
+}
+
 @layer base {
   :root {
     color-scheme: light dark;

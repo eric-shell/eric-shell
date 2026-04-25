@@ -8,7 +8,7 @@ interface PanelProps extends HTMLAttributes<HTMLDivElement> {
   children?: React.ReactNode
 }
 
-export default function Panel({ variant = 'primary', className, children, ...props }: PanelProps) {
+export default function Panel({ variant = 'secondary', className, children, ...props }: PanelProps) {
   return (
     <div className={twMerge(SURFACE[variant], className)} {...props}>
       {children}

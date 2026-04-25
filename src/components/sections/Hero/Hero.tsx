@@ -119,7 +119,7 @@ export default function Hero() {
 
       </div>
 
-      <CascadeGroup mountOnly className="absolute bottom-6 left-1/2 -translate-x-1/2 z-30">
+      <CascadeGroup mountOnly className="absolute bottom-24 left-1/2 -translate-x-1/2 z-30">
         <CascadeItem index={0}>
           <Button
             href="#work"
