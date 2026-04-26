@@ -86,12 +86,14 @@ Pattern:
 ## Development
 
 ```bash
-npm run dev       # dev server at http://localhost:5173
+npm run dev       # vercel dev + storybook in parallel; site at http://localhost:3000, storybook at :6006
+npm run dev:site  # vercel dev only (site at http://localhost:3000) — runs Vite under the hood and serves /api/* serverless functions
 npm run build     # production build → dist/
 npm run preview   # preview production build locally
 npm run lint      # ESLint
-npx vercel dev    # run serverless fns (e.g. /api/contact) locally; needs RESEND_API_KEY in .env.local
 ```
+
+Env vars for `vercel dev` come from the linked Vercel project (cloud), not `.env.local`. Use `npx vercel env add NAME [development|preview|production]` to add new keys per-environment.
 
 ## Design Principles
 
@@ -127,4 +129,4 @@ Static site. Final target: **eric.sh** (hosting provider TBD). The `dist/` outpu
 | `/scaffold` | Scaffold a new page section or reusable UI component |
 | `/ui` | Reference for the shared UI primitives + `variants.ts` system (Button / Panel / Pill) |
 | `/contact` | Placeholder — Contact section implementation notes |
-| `/chat` | Placeholder — Hero chat input wiring notes |
+| `/chat` | Reference for the Hero chat: file map, prompt structure, streaming protocol, persistence, vercel-dev gotchas |

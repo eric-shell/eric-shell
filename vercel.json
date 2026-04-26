@@ -1,0 +1,7 @@
+{
+  "functions": {
+    "api/chat.ts": {
+      "includeFiles": "data/bio.csv"
+    }
+  }
+}

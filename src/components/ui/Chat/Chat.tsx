@@ -285,7 +285,7 @@ export default function Chat({
             disabled={isLoading}
             style={{ maxHeight: TEXTAREA_MAX_HEIGHT }}
             className={twMerge(
-              'block w-full rounded-full border pl-4 pr-16 py-4 font-sans text-base leading-6 resize-none overflow-y-auto transition-[height] duration-150 ease-out focus:outline-none disabled:opacity-60',
+              'block w-full rounded-full border pl-4 pr-16 py-4 font-sans text-base leading-6 resize-none overflow-y-auto [&::-webkit-scrollbar]:hidden [scrollbar-width:none] transition-[height] duration-150 ease-out focus:outline-none disabled:opacity-60',
               isWhite
                 ? 'bg-white border-blue-950/20 text-blue-950 placeholder:text-blue-950/30 focus:border-blue-700'
                 : 'bg-white/10 border-white/20 text-white placeholder:text-white/40 focus:border-white/60 focus:bg-white/15'

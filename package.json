@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "concurrently -n site,storybook -c cyan,magenta --kill-others-on-fail \"npm:dev:site\" \"npm:dev:storybook\"",
-    "dev:site": "vite",
+    "dev:site": "vercel dev",
     "dev:storybook": "storybook dev -p 6006 --no-open",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
