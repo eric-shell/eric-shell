@@ -1,25 +1,19 @@
-import { lazy, Suspense, useState } from 'react'
+import { lazy, Suspense } from 'react'
 import { ChevronDown } from 'lucide-react'
 import { Button, CascadeGroup, CascadeItem, Chat, Eyebrow } from '../../ui'
-import { useParallax } from '../../../hooks'
+import { useChat, useParallax } from '../../../hooks'
 
 const ParticlesSmall = lazy(() => import('./ParticlesSmall'))
 const ParticlesLarge = lazy(() => import('./ParticlesLarge'))
 
 export default function Hero() {
-  const [message, setMessage] = useState('')
+  const { messages, input, setInput, send, isLoading, reset } = useChat()
   const { sectionRef, bgRef, gradientRef, subjectRef, handleMouseMove, handleMouseLeave } = useParallax({
     bgStrength: 15,
     gradientStrength: 8,
     subjectStrength: 25,
     lerpFactor: 0.08,
   })
-
-  const handleSubmit = () => {
-    if (!message.trim()) return
-    // TODO: wire up chat
-    setMessage('')
-  }
 
   return (
     <section
@@ -106,14 +100,14 @@ export default function Hero() {
         <CascadeGroup mountOnly>
           <CascadeItem index={0}>
             <Chat
-              value={message}
-              onChange={setMessage}
-              onSubmit={handleSubmit}
-            >
-              <p className="font-sans text-sm text-blue-800 bg-gradient-to-br from-white to-blue-50 py-2 px-3 rounded-md shadow-md">
-                Ask me anything about my work, skills, or experience!
-              </p>
-            </Chat>
+              value={input}
+              onChange={setInput}
+              onSubmit={send}
+              messages={messages}
+              isLoading={isLoading}
+              onClear={reset}
+              welcomeMessage="Ask me anything about my work, skills, or experience!"
+            />
           </CascadeItem>
         </CascadeGroup>
 

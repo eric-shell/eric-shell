@@ -37,7 +37,6 @@ export const Open: Story = {
     onChange: fn(),
     onSubmit: fn(),
     placeholder: 'Ask me anything…',
-    submitLabel: 'Send Message',
   },
   decorators,
 }
@@ -47,7 +46,6 @@ export const WithContent: Story = {
     value: 'What technologies do you use?',
     onChange: fn(),
     onSubmit: fn(),
-    submitLabel: 'Send',
   },
   decorators,
 }
