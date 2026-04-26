@@ -1,6 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 import Groq from 'groq-sdk'
-import { buildSystemPrompt } from '../src/data/chat-context'
+import { buildSystemPrompt } from '../src/data/chat-context.js'
 
 type Role = 'user' | 'assistant'
 type Message = { role: Role; content: string }

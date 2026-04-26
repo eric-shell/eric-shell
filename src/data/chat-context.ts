@@ -1,9 +1,9 @@
 import fs from 'fs'
 import path from 'path'
 import { parse } from 'csv-parse/sync'
-import { workItems } from './work'
-import { testimonials } from './testimonials'
-import { certifications, education, headline, jobs, summary, values } from './resume'
+import { workItems } from './work.js'
+import { testimonials } from './testimonials.js'
+import { certifications, education, headline, jobs, summary, values } from './resume.js'
 
 let cachedBio: string | null = null
 
