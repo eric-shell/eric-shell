@@ -49,6 +49,7 @@ These cost time the first time around. Surface them early next time.
 - **`data/bio.csv` is not auto-bundled in production** because the read uses a dynamically-constructed path (`path.join(process.cwd(), 'data/bio.csv')`) that Vercel's NFT can't trace. The fix lives in [vercel.json](vercel.json) — `functions["api/chat.ts"].includeFiles: "data/bio.csv"`. Don't remove that.
 - **Bio CSV cache is module-scoped**. `cachedBio` in [chat-context.ts](src/data/chat-context.ts) is set on first read and never invalidated. Edits to `data/bio.csv` (or to any TS content module) require a server restart — kill `vercel dev` and re-run. Vite HMR does not apply to API runtime modules.
 - **Dev port is 3000**, not 5173. `npm run dev` runs `vercel dev` (which wraps Vite); the function endpoints are at the same origin as the UI.
+- **Production Node ESM requires `.js` extensions on relative imports**, even from `.ts` source. `vercel dev` is permissive about this (won't error), but the deployed function runs strict ESM and will throw `ERR_MODULE_NOT_FOUND` at runtime. When importing across `api/` ↔ `src/data/`, write `from '../src/data/chat-context.js'`, not `'../src/data/chat-context'`. TypeScript handles the `.js`-pointing-at-`.ts` resolution transparently.
 
 ## Common edits
 
