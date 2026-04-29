@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { ArrowDownAZ, ArrowUpRight, ArrowUpZA, CalendarDays, X } from 'lucide-react'
+import { ArrowDownAZ, ArrowUpRight, ArrowUpZA, CalendarDays, RotateCcw, X } from 'lucide-react'
 import { workItems } from '../../../data'
 import { Button, Card, CascadeGroup, CascadeItem, Dropdown, Eyebrow, H2 } from '../../ui'
 
@@ -18,6 +18,13 @@ export default function Work() {
   function toggleTag(tag: string) {
     setActiveTags(prev => prev.includes(tag) ? prev.filter(t => t !== tag) : [...prev, tag])
   }
+
+  function resetFilters() {
+    setActiveTags([])
+    setSort('chronological')
+  }
+
+  const canReset = activeTags.length > 0 || sort !== 'chronological'
 
   let items = activeTags.length > 0
     ? workItems.filter(item => activeTags.some(t => item.tags.includes(t)))
@@ -42,7 +49,7 @@ export default function Work() {
                 rel="noopener noreferrer"
                 variant="primary"
                 size="md"
-                className="shrink-0"
+                className="hidden md:inline-flex shrink-0"
                 rightIcon={<ArrowUpRight size={15} strokeWidth={2.5} aria-hidden="true" />}
               >
                 View Work History
@@ -58,34 +65,51 @@ export default function Work() {
               <p>
                 What follows is a curated record of that output: client products, internal platforms, open source contributions, and independent projects. Each piece reflects the same standard of precision and accountability I bring to every engagement, regardless of its discipline, size or scope.
               </p>
+              <Button
+                href="https://www.linkedin.com/in/ericshell/details/experience/"
+                target="_blank"
+                rel="noopener noreferrer"
+                variant="primary"
+                size="md"
+                className="md:hidden self-start"
+                rightIcon={<ArrowUpRight size={15} strokeWidth={2.5} aria-hidden="true" />}
+              >
+                View Work History
+              </Button>
             </div>
           </CascadeItem>
 
           <CascadeItem index={2}>
-            <div className="relative z-10 flex items-center justify-between gap-2 mb-8">
+            <div className="relative z-10 flex items-center justify-between gap-4 mb-8 flex-wrap">
               <div className="flex items-center gap-2 flex-wrap">
-                {activeTags.length > 0 && (
-                  <>
-                    {activeTags.map(tag => (
-                      <Button
-                        key={tag}
-                        variant="primary"
-                        size="md"
-                        onClick={() => toggleTag(tag)}
-                        rightIcon={<X size={16} strokeWidth={2.5} aria-hidden="true" />}
-                      >
-                        {tag}
-                      </Button>
-                    ))}
-                  </>
-                )}
+                <Dropdown
+                  options={SORT_OPTIONS}
+                  value={sort}
+                  onChange={(v) => setSort(v as SortOrder)}
+                />
+                {activeTags.map(tag => (
+                  <Button
+                    key={tag}
+                    variant="primary"
+                    size="md"
+                    onClick={() => toggleTag(tag)}
+                    rightIcon={<X size={16} strokeWidth={2.5} aria-hidden="true" />}
+                  >
+                    {tag}
+                  </Button>
+                ))}
               </div>
 
-              <Dropdown
-                options={SORT_OPTIONS}
-                value={sort}
-                onChange={(v) => setSort(v as SortOrder)}
-              />
+              {canReset && (
+                <Button
+                  variant="white"
+                  size="md"
+                  onClick={resetFilters}
+                  leftIcon={<RotateCcw size={15} strokeWidth={2.5} aria-hidden="true" />}
+                >
+                  Reset
+                </Button>
+              )}
             </div>
           </CascadeItem>
         </CascadeGroup>

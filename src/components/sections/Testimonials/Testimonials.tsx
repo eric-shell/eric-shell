@@ -57,7 +57,7 @@ export default function Testimonials() {
               <H2>Testimonials</H2>
             </div>
           </CascadeItem>
-          <CascadeItem index={1}>
+          <CascadeItem index={1} className="hidden md:block">
             <Button
               href="https://www.linkedin.com/in/ericshell/details/recommendations/"
               target="_blank"
@@ -85,6 +85,17 @@ export default function Testimonials() {
             <p>
               I take deep pride in every project that I put my name on, and I hold myself accountable to the people depending on me to get it right. These statements reflect that standard as seen from the outside and how I intend to contribute as a member of any future team.
             </p>
+            <Button
+              href="https://www.linkedin.com/in/ericshell/details/recommendations/"
+              target="_blank"
+              rel="noopener noreferrer"
+              variant="primary"
+              size="md"
+              className="md:hidden self-start"
+              rightIcon={<ArrowUpRight size={15} strokeWidth={2.5} aria-hidden="true" />}
+            >
+              View Full Endorsements
+            </Button>
           </CascadeItem>
 
           {/* Right: carousel */}

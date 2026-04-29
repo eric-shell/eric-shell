@@ -27,7 +27,7 @@ export default function Visuals() {
                 rel="noopener noreferrer"
                 variant="primary"
                 size="md"
-                className="shrink-0"
+                className="hidden md:inline-flex shrink-0"
                 leftIcon={<InstagramIcon size={15} />}
               >
                 Follow on Instagram
@@ -66,6 +66,19 @@ export default function Visuals() {
               <p>
                 I still produce photo and video content to fulfil my creative ambutions and maintain technical expertise in that space.  Plus, I love documenting adventures and projects with the people who are imporant in my life.
               </p>
+            </CascadeItem>
+            <CascadeItem index={5} className="md:hidden">
+              <Button
+                href="https://www.instagram.com/ericshell/"
+                target="_blank"
+                rel="noopener noreferrer"
+                variant="primary"
+                size="md"
+                className="self-start"
+                leftIcon={<InstagramIcon size={15} />}
+              >
+                Follow on Instagram
+              </Button>
             </CascadeItem>
           </CascadeGroup>
 

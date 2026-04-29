@@ -3,5 +3,8 @@
     "api/chat.ts": {
       "includeFiles": "data/bio.csv"
     }
-  }
+  },
+  "rewrites": [
+    { "source": "/((?!api/|@|src/|node_modules/|.*\\.).*)", "destination": "/index.html" }
+  ]
 }
