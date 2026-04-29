@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { toast } from '../components/ui'
+import { trackEvent } from '../utils/analytics'
 
 export type ChatMessage = {
   role: 'user' | 'assistant'
@@ -44,11 +45,20 @@ export function useChat() {
     const trimmed = input.trim()
     if (!trimmed || isLoading) return
 
+    const turnIndex = messages.length
+    const startedAt = performance.now()
+    const elapsed = () => Math.round(performance.now() - startedAt)
+
     const userMessage: ChatMessage = { role: 'user', content: trimmed }
     const history = [...messages, userMessage]
     setMessages(history)
     setInput('')
     setIsLoading(true)
+
+    trackEvent('chat_submit', {
+      turn_index: turnIndex,
+      message_length: trimmed.length,
+    })
 
     try {
       const response = await fetch('/api/chat', {
@@ -62,6 +72,11 @@ export function useChat() {
         toast.error(data.error || 'Chat failed. Please try again.')
         setMessages(prev => prev.slice(0, -1))
         setInput(trimmed)
+        trackEvent('chat_error', {
+          turn_index: turnIndex,
+          error_type: 'http_error',
+          duration_ms: elapsed(),
+        })
         return
       }
 
@@ -69,6 +84,11 @@ export function useChat() {
         toast.error('Chat failed. Please try again.')
         setMessages(prev => prev.slice(0, -1))
         setInput(trimmed)
+        trackEvent('chat_error', {
+          turn_index: turnIndex,
+          error_type: 'empty_body',
+          duration_ms: elapsed(),
+        })
         return
       }
 
@@ -76,12 +96,14 @@ export function useChat() {
 
       const reader = response.body.getReader()
       const decoder = new TextDecoder()
+      let accumulated = ''
 
       while (true) {
         const { value, done } = await reader.read()
         if (done) break
         const text = decoder.decode(value, { stream: true })
         if (!text) continue
+        accumulated += text
         setMessages(prev => {
           const next = prev.slice()
           const last = next[next.length - 1]
@@ -90,6 +112,12 @@ export function useChat() {
           return next
         })
       }
+
+      trackEvent('chat_response', {
+        turn_index: turnIndex,
+        response_length: accumulated.length,
+        duration_ms: elapsed(),
+      })
     } catch {
       toast.error('An unexpected error occurred. Please try again.')
       setMessages(prev => {
@@ -100,6 +128,11 @@ export function useChat() {
         return prev.slice(0, -1)
       })
       setInput(trimmed)
+      trackEvent('chat_error', {
+        turn_index: turnIndex,
+        error_type: 'network',
+        duration_ms: elapsed(),
+      })
     } finally {
       setIsLoading(false)
     }
