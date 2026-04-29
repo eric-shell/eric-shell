@@ -8,7 +8,7 @@ import Button from '../Button'
 import Panel from '../Panel'
 import type { ChatMessage } from '../../../hooks/useChat'
 
-const EMAIL_RE = /(?<!\]\(mailto:)([\w.+-]+@[\w-]+\.[\w.-]+)(?!\w)/g
+const EMAIL_RE = /(?<!\]\(mailto:)(?<!\[)([\w.+-]+@[\w-]+\.[\w.-]+)(?!\w)(?!\]\(mailto:)/g
 
 function linkifyEmail(text: string): string {
   return text.replace(EMAIL_RE, '[$1](mailto:$1)')
@@ -116,7 +116,7 @@ export default function Chat({
           </a>
         )
       }
-      const isExternal = /^https?:/.test(href)
+      const isExternal = /^(https?|mailto):/.test(href)
       return (
         <a
           href={href}
