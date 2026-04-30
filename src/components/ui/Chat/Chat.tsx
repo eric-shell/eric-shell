@@ -201,7 +201,7 @@ export default function Chat({
               isWhite ? 'translate-x-3.5' : 'translate-x-0.5'
             )} />
           </span>
-          <span className="font-sans text-xs font-semibold tracking-wide">WCAG</span>
+          <span className="font-sans text-xs font-semibold tracking-wide">ADA / WCAG</span>
         </button>
         <div className="flex items-center gap-1.5">
           {hasMessages && onClear && (

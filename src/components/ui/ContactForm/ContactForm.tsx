@@ -118,7 +118,7 @@ export default function ContactForm({
               isWhite ? 'translate-x-3.5' : 'translate-x-0.5'
             )} />
           </span>
-          <span className="font-sans text-xs font-semibold tracking-wide">WCAG</span>
+          <span className="font-sans text-xs font-semibold tracking-wide">ADA / WCAG</span>
         </button>
       )}
       <form onSubmit={handleSubmit} className="flex flex-col pt-5 gap-2" noValidate>
