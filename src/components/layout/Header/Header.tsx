@@ -1,4 +1,5 @@
 import { useState, useCallback, useEffect, useRef } from 'react'
+import { Menu, X } from 'lucide-react'
 import { CascadeGroup, CascadeItem, Button } from '../../ui'
 import { navLinks } from '../../../data'
 
@@ -9,6 +10,7 @@ export default function Header() {
   const [hidden, setHidden] = useState(false)
   const [atTop, setAtTop] = useState(true)
   const [activeSection, setActiveSection] = useState('hero')
+  const [menuOpen, setMenuOpen] = useState(false)
   const lastScrollY = useRef(0)
 
   useEffect(() => {
@@ -32,6 +34,18 @@ export default function Header() {
     return () => window.removeEventListener('scroll', handleScroll)
   }, [])
 
+  useEffect(() => {
+    if (!menuOpen) return
+    const close = () => setMenuOpen(false)
+    window.addEventListener('scroll', close, { passive: true, once: true })
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setMenuOpen(false) }
+    window.addEventListener('keydown', onKey)
+    return () => {
+      window.removeEventListener('scroll', close)
+      window.removeEventListener('keydown', onKey)
+    }
+  }, [menuOpen])
+
   const handleClick = useCallback(() => {
     ericAudio.currentTime = 0
     ericAudio.play()
@@ -47,7 +61,7 @@ export default function Header() {
     <header className={`fixed top-0 inset-x-0 z-850 transition-all duration-300 ease-out border-b ${
       hidden ? '-translate-y-full' : 'translate-y-0'
     } ${
-      atTop ? 'bg-transparent border-transparent' : 'bg-blue-950/90 backdrop-blur-md border-white/10'
+      atTop && !menuOpen ? 'bg-transparent border-transparent' : 'bg-blue-950/90 backdrop-blur-md border-white/10'
     }`}>
       <CascadeGroup mountOnly>
         <div className={`max-w-[1440px] mx-auto px-6 flex items-center justify-between transition-all duration-300 ease-out ${atTop ? 'py-6' : 'py-3'}`}>
@@ -73,7 +87,7 @@ export default function Header() {
             </div>
           </CascadeItem>
 
-          <nav aria-label="Primary navigation">
+          <nav aria-label="Primary navigation" className="hidden sm:block">
             <ul className="flex items-center gap-6">
               {navLinks.map(({ label, href, Icon }, i) => {
                 const sectionId = href.split('#')[1]
@@ -95,8 +109,49 @@ export default function Header() {
             </ul>
           </nav>
 
+          <CascadeItem index={navLinks.length + 1} className="sm:hidden">
+            <button
+              className="text-white hover:text-white cursor-pointer transition-colors p-1 -mr-1"
+              aria-label={menuOpen ? 'Close menu' : 'Open menu'}
+              aria-expanded={menuOpen}
+              onClick={() => setMenuOpen(o => !o)}
+            >
+              {menuOpen ? <X size={24} strokeWidth={2.5} /> : <Menu size={24} strokeWidth={2.5} />}
+            </button>
+          </CascadeItem>
+
         </div>
       </CascadeGroup>
+
+      <div
+        className={`sm:hidden overflow-hidden transition-[max-height,opacity] duration-300 ease-out ${
+          menuOpen ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0 pointer-events-none'
+        }`}
+        aria-hidden={!menuOpen}
+      >
+        <nav aria-label="Mobile navigation">
+          <ul className="px-6 pb-6 pt-1 flex flex-col gap-2">
+            {navLinks.map(({ label, href, Icon }) => {
+              const sectionId = href.split('#')[1]
+              const isActive = !!sectionId && activeSection === sectionId
+              return (
+                <li key={label}>
+                  <Button
+                    href={isActive ? undefined : href}
+                    variant={isActive ? 'secondary' : 'glass-light'}
+                    size="sm"
+                    leftIcon={<Icon size={14} />}
+                    className={`w-full justify-start ${isActive ? 'hover:from-white hover:to-blue-50 hover:text-blue-800 cursor-default' : ''}`}
+                    onClick={() => setMenuOpen(false)}
+                  >
+                    {label}
+                  </Button>
+                </li>
+              )
+            })}
+          </ul>
+        </nav>
+      </div>
     </header>
   )
 }
