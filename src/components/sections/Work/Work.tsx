@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { ArrowDownAZ, ArrowUpRight, ArrowUpZA, CalendarDays, RotateCcw, X } from 'lucide-react'
+import { ArrowDownAZ, ArrowUpRight, ArrowUpZA, CalendarDays, Plus, RotateCcw, X } from 'lucide-react'
 import { workItems } from '../../../data'
 import { Button, Card, CascadeGroup, CascadeItem, Dropdown, Eyebrow, H2 } from '../../ui'
 
@@ -147,7 +147,7 @@ export default function Work() {
 
         {hasMore && (
           <div className="flex justify-center mt-6">
-            <Button variant="primary" size="md" onClick={() => setShowAll(true)}>
+            <Button variant="primary" size="md" onClick={() => setShowAll(true)} rightIcon={<Plus size={15} strokeWidth={2.5} aria-hidden="true" />}>
               View All Work
             </Button>
           </div>
