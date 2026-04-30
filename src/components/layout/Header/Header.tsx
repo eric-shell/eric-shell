@@ -39,6 +39,8 @@ export default function Header() {
     const id = Date.now()
     setEchoes(prev => [...prev, id])
     setTimeout(() => setEchoes(prev => prev.filter(e => e !== id)), 2000)
+
+    window.scrollTo({ top: 0, behavior: 'smooth' })
   }, [])
 
   return (
