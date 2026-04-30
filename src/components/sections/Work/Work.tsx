@@ -115,12 +115,13 @@ export default function Work() {
         </CascadeGroup>
 
         <CascadeGroup as="ul" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 z-[40]" threshold={0.05}>
-          {items.map(({ url, title, solution, tags }, i) => (
+          {items.map(({ url, title, solution, tags, image }, i) => (
             <CascadeItem as="li" key={title} index={i}>
               <Card
                 href={url}
                 title={title}
                 description={solution}
+                image={image}
                 tags={tags}
                 activeTags={activeTags}
                 onTagClick={toggleTag}
