@@ -11,9 +11,12 @@ const SORT_OPTIONS = [
   { value: 'desc',          label: 'Descending',    icon: <ArrowUpZA size={12} strokeWidth={2.5} /> },
 ]
 
+const INITIAL_COUNT = 8
+
 export default function Work() {
   const [sort, setSort] = useState<SortOrder>('chronological')
   const [activeTags, setActiveTags] = useState<string[]>([])
+  const [showAll, setShowAll] = useState(false)
 
   function toggleTag(tag: string) {
     setActiveTags(prev => prev.includes(tag) ? prev.filter(t => t !== tag) : [...prev, tag])
@@ -31,6 +34,10 @@ export default function Work() {
     : [...workItems]
   if (sort === 'asc') items = items.sort((a, b) => a.title.localeCompare(b.title))
   if (sort === 'desc') items = items.sort((a, b) => b.title.localeCompare(a.title))
+
+  const isExpanded = showAll || activeTags.length > 0
+  const visibleItems = isExpanded ? items : items.slice(0, INITIAL_COUNT)
+  const hasMore = !isExpanded && items.length > INITIAL_COUNT
 
   return (
     <section id="work" className="relative bg-blue-50 skew-section z-50" style={{ marginTop: '-4rem' }}>
@@ -114,23 +121,37 @@ export default function Work() {
           </CascadeItem>
         </CascadeGroup>
 
-        <CascadeGroup as="ul" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 z-[40]" threshold={0.05}>
-          {items.map(({ url, title, solution, tags, image }, i) => (
-            <CascadeItem as="li" key={title} index={i}>
-              <Card
-                href={url}
-                title={title}
-                description={solution}
-                image={image}
-                tags={tags}
-                activeTags={activeTags}
-                onTagClick={toggleTag}
-                target="_blank"
-                rel="noopener noreferrer"
-              />
-            </CascadeItem>
-          ))}
-        </CascadeGroup>
+        <div className="relative">
+          <CascadeGroup as="ul" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 z-[40]" threshold={0.05}>
+            {visibleItems.map(({ url, title, solution, tags, image }, i) => (
+              <CascadeItem as="li" key={title} index={i}>
+                <Card
+                  href={url}
+                  title={title}
+                  description={solution}
+                  image={image}
+                  tags={tags}
+                  activeTags={activeTags}
+                  onTagClick={toggleTag}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                />
+              </CascadeItem>
+            ))}
+          </CascadeGroup>
+
+          {hasMore && (
+            <div className="absolute bottom-0 left-0 right-0 h-48 bg-gradient-to-t from-blue-50 to-transparent pointer-events-none z-10" />
+          )}
+        </div>
+
+        {hasMore && (
+          <div className="flex justify-center mt-6">
+            <Button variant="primary" size="md" onClick={() => setShowAll(true)}>
+              View All Work
+            </Button>
+          </div>
+        )}
 
       </div>
     </section>
