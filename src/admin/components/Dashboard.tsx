@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
-import { ExternalLink, LogOut, RefreshCw } from 'lucide-react'
+import { ExternalLink, LogOut, RefreshCw, Search } from 'lucide-react'
 import { Button, H2, Panel, toast } from '../../components/ui'
 import VisitorList, { type VisitorSummary } from './VisitorList'
 import { Skeleton } from './Skeleton'
@@ -40,6 +40,7 @@ interface DashboardProps {
 export default function Dashboard({ onLogout }: DashboardProps) {
   const [visitors, setVisitors] = useState<VisitorSummary[] | null>(null)
   const [loading, setLoading] = useState(false)
+  const [query, setQuery] = useState('')
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -73,6 +74,13 @@ export default function Dashboard({ onLogout }: DashboardProps) {
     onLogout()
   }
 
+  const q = query.trim().toLowerCase()
+  const filteredVisitors = !q || !visitors ? visitors : visitors.filter(v =>
+    v.id.startsWith(q) ||
+    v.contact_name?.toLowerCase().includes(q) ||
+    v.contact_email?.toLowerCase().includes(q)
+  )
+
   return (
     <div className="mx-auto flex max-w-6xl flex-col gap-6 px-6 py-10">
       <header className="flex items-center justify-between">
@@ -84,13 +92,26 @@ export default function Dashboard({ onLogout }: DashboardProps) {
         </div>
       </header>
 
+      <div className="relative">
+        <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-blue-950/30 pointer-events-none" />
+        <input
+          type="search"
+          value={query}
+          onChange={e => setQuery(e.target.value)}
+          placeholder="Search by name, email, or visitor ID…"
+          className="w-full rounded-xl border border-blue-950/10 bg-white py-2.5 pl-9 pr-4 text-sm text-blue-950 placeholder:text-blue-950/30 outline-none focus:border-blue-950/30 transition-colors"
+        />
+      </div>
+
       <Panel variant="white" className={`rounded-2xl p-6 transition-opacity duration-300 ${loading && visitors !== null ? 'opacity-40' : 'opacity-100'}`}>
-        {visitors === null ? (
+        {filteredVisitors === null ? (
           <VisitorTableSkeleton />
-        ) : visitors.length === 0 ? (
-          <p className="text-sm text-blue-950/50">No visitors yet.</p>
+        ) : filteredVisitors.length === 0 ? (
+          <p className="text-sm text-blue-950/50">
+            {q ? 'No visitors match your search.' : 'No visitors yet.'}
+          </p>
         ) : (
-          <VisitorList visitors={visitors} />
+          <VisitorList visitors={filteredVisitors} />
         )}
       </Panel>
     </div>
