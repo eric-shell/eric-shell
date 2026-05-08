@@ -16,8 +16,8 @@ export const SURFACE: Record<Variant, string> = {
   ghost:     'text-blue-950/60 border border-transparent',
   'glass-light': 'text-white glass-blur bg-white/10 border border-white/20',
   'glass-dark':  'text-white glass-blur bg-blue-950/20 border border-blue-950/20',
-  'error-glass':   'text-white glass-blur bg-red-600/30 border border-red-300/40',
-  'success-glass': 'text-white glass-blur bg-green-700/30 border border-green-300/40',
+  'error-glass':   'text-white glass-blur bg-red-950/85 border border-red-400/50',
+  'success-glass': 'text-white glass-blur bg-green-950/85 border border-green-400/50',
   white:     'bg-white border border-blue-950/10 text-blue-950',
 }
 

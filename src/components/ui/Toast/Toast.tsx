@@ -65,22 +65,22 @@ export default function Toast({ item }: { item: ToastItem }) {
       onMouseEnter={pauseTimer}
       onMouseLeave={() => startTimer(remainingRef.current)}
       className={twMerge(
-        'toast-item pointer-events-auto flex items-start gap-3 rounded-xl px-4 py-3 shadow-lg w-[360px] max-w-[calc(100vw-3rem)]',
+        'toast-item pointer-events-auto flex items-center gap-3 rounded-xl px-4 py-3 shadow-lg w-[360px] max-w-[calc(100vw-3rem)]',
         SURFACE[KIND_VARIANT[item.kind]],
-        item.kind === 'info' && 'border-l-4 border-l-blue-400',
+        item.kind === 'info' && 'bg-blue-950/85 border-blue-400/50 border-l-4 border-l-blue-400',
         exiting
           ? '[animation:toast-out_250ms_cubic-bezier(0.4,0,0.9,0.6)_both]'
           : '[animation:toast-in_300ms_cubic-bezier(0.16,1,0.3,1)_both]',
       )}
     >
-      <Icon size={18} strokeWidth={2.5} aria-hidden="true" className={twMerge('mt-0.5 shrink-0', ICON_COLOR[item.kind])} />
-      <p className="flex-1 font-sans text-sm leading-snug text-white">{item.message}</p>
+      <Icon size={18} strokeWidth={2.5} aria-hidden="true" className={twMerge('shrink-0', ICON_COLOR[item.kind])} />
+      <p className="flex-1 font-sans text-sm font-medium leading-snug text-white">{item.message}</p>
       <Button
         onClick={beginDismiss}
         variant="glass-dark"
         shape="square"
         size="sm"
-        className="-mr-1 -mt-1 border-0 bg-transparent shrink-0"
+        className="-mr-1 border-0 bg-transparent shrink-0"
         aria-label="Dismiss notification"
       >
         <X size={14} strokeWidth={2.5} aria-hidden="true" />
