@@ -44,30 +44,20 @@ export default function Visuals() {
           >
             <CascadeItem index={0}>
               <p>
-                I have a formal education in Design from Lehigh University and I moved across the country to be the Digital Media Director for AccuAir Suspension immediately after graduating.
+                Not many of my peers know that I have a formal education in Design from Lehigh University and a strong professional background in visual arts.  I moved across the country to be the Digital Media Director for AccuAir Suspension immediately after graduating where I expected to pursue this further but my career pulled me in a different direction.
               </p>
             </CascadeItem>
             <CascadeItem index={1}>
               <p>
-                While my strongest skills opened the path to a fulfilling career, the deliverables pulled me in an adjacent direction. My assumed responsibilites and emploeyers buisness values foreces me further into the softerware engineering path, however, my passion has always been on the visual side of digital media.  Defined aestietics, discipled utility, purposeful use of technology and creative problem solving.
+                While my strongest skills opened the path to a fulfilling career, my creative pursuits perfectly aided as a complimentary skillset as a developer. My passion has always been on the visual side of digital media and I find it continues to help me find balance in the technical space and push in regions where my professional peers don't typically navigate.
               </p>
             </CascadeItem>
             <CascadeItem index={2}>
               <p>
-                My career path has developed in a way that it is now rooted in technical software solutions but my background carries a passion for creating captivatating visuals across multuple mediunms.
+                I still produce photo and video content to fulfill my creative ambutions and maintain technical expertise in that space.  Plus, I love documenting adventures and projects with the people who are important in my life.  Please check out some of my latest work and contact me if you have an idea for a shoot!
               </p>
             </CascadeItem>
-            <CascadeItem index={3}>
-              <p>
-                My career path has developed in a way that it is now rooted in technical software solutions but my background carries a passion for the creative, visually curated products. 
-              </p>
-            </CascadeItem>
-            <CascadeItem index={4}>
-              <p>
-                I still produce photo and video content to fulfil my creative ambutions and maintain technical expertise in that space.  Plus, I love documenting adventures and projects with the people who are imporant in my life.
-              </p>
-            </CascadeItem>
-            <CascadeItem index={5} className="md:hidden">
+            <CascadeItem index={3} className="md:hidden">
               <Button
                 href="https://www.instagram.com/ericshell/"
                 target="_blank"

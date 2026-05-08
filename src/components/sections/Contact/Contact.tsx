@@ -73,14 +73,14 @@ export default function Contact() {
             </p>
           </CascadeItem>
           <CascadeItem index={2}>
-            <p className="font-sans text-base leading-relaxed text-white/80 text-shadow-md max-w-sm">
+            <p className="font-sans text-lg leading-relaxed text-white text-shadow-md max-w-sm">
               I read every message and usually reply within a day or two.
-              A little context goes a long way — the more you share, the better I can respond.
+              A little context goes a long way!  The more you can share, the better I can respond.
             </p>
           </CascadeItem>
           <CascadeItem index={3}>
-            <p className="font-sans text-base leading-relaxed text-white/80 text-shadow-md max-w-sm">
-              Prefer to skip the form? Email works just as well — you'll find the address in the footer.
+            <p className="font-sans text-lg leading-relaxed text-white text-shadow-md max-w-sm">
+              Prefer to skip the form? Here's my email:<br/><a href="mailto:ericjshell@gmail.com">ericjshell@gmail.com</a>
             </p>
           </CascadeItem>
         </CascadeGroup>

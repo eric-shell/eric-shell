@@ -77,7 +77,7 @@ export default function Testimonials() {
           {/* Left: context copy */}
           <CascadeItem index={0} className="flex flex-col gap-5 font-sans text-base leading-relaxed text-white">
             <p>
-              Every piece of feedback comes directly from the architects, product managers, designers, and producers who worked alongside me. Each statement was written and submitted independently on Linkedin, reflecting firsthand experience on massive projects with challenging deadlines and complex deliverables.
+              Every piece of feedback comes directly from the team leads, product managers, designers, producers and department heads who worked directly with me. Each statement was written and submitted independently on Linkedin, reflecting firsthand experience on massive projects with challenging deadlines and complex deliverables.
             </p>
             <p>
               These team members include internal and external members from household QSR brands, federal agencies, regional DMOs, financial institutions, entertainment enterprises and more. Each project's context demanded a different kind of technical and interpersonal leadership. These excerpts are from the people who witnessed it directly.
