@@ -130,9 +130,9 @@ export default function Chat({
       )
     },
     p: ({ children }) => <p className="mb-2 last:mb-0">{children}</p>,
-    ul: ({ children }) => <ul className="list-disc pl-5 mb-2 last:mb-0">{children}</ul>,
-    ol: ({ children }) => <ol className="list-decimal pl-5 mb-2 last:mb-0">{children}</ol>,
-    li: ({ children }) => <li className="mb-0.5">{children}</li>,
+    ul: ({ children }) => <ul className="list-disc pl-5 mb-2 last:mb-0 [&_li>p]:mb-0">{children}</ul>,
+    ol: ({ children }) => <ol className="list-decimal pl-5 mb-2 last:mb-0 [&_li>p]:mb-0">{children}</ol>,
+    li: ({ children }) => <li className="mb-1.5 last:mb-0">{children}</li>,
     code: ({ children }) => <code className="px-1 py-0.5 rounded bg-blue-100 font-mono text-xs">{children}</code>,
     strong: ({ children }) => <span className="font-semibold">{children}</span>,
   }
@@ -159,7 +159,7 @@ export default function Chat({
   const showTypingDots = isLoading && (!lastMessage || lastMessage.role === 'user')
   const submitDisabled = isLoading || !value.trim()
 
-  const assistantBubbleClass = 'self-start max-w-[85%] rounded-2xl px-4 py-2.5 font-sans text-sm whitespace-pre-wrap text-blue-800 bg-gradient-to-br from-white to-blue-50 shadow-md'
+  const assistantBubbleClass = 'self-start max-w-[85%] rounded-2xl px-4 py-2.5 font-sans text-sm text-blue-800 bg-gradient-to-br from-white to-blue-50 shadow-md'
   const borderClass = isWhite ? 'border-blue-950/10' : 'border-white/20'
 
   return (

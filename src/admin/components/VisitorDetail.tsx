@@ -39,9 +39,9 @@ const mdComponents: Components = {
     </a>
   ),
   p: ({ children }) => <p className="mb-2 last:mb-0">{children}</p>,
-  ul: ({ children }) => <ul className="list-disc pl-5 mb-2 last:mb-0">{children}</ul>,
-  ol: ({ children }) => <ol className="list-decimal pl-5 mb-2 last:mb-0">{children}</ol>,
-  li: ({ children }) => <li className="mb-0.5">{children}</li>,
+  ul: ({ children }) => <ul className="list-disc pl-5 mb-2 last:mb-0 [&_li>p]:mb-0">{children}</ul>,
+  ol: ({ children }) => <ol className="list-decimal pl-5 mb-2 last:mb-0 [&_li>p]:mb-0">{children}</ol>,
+  li: ({ children }) => <li className="mb-1.5 last:mb-0">{children}</li>,
   code: ({ children }) => <code className="px-1 py-0.5 rounded bg-blue-100 font-mono text-xs">{children}</code>,
   strong: ({ children }) => <span className="font-semibold">{children}</span>,
 }
@@ -209,8 +209,8 @@ export default function VisitorDetail({ id, onClose }: VisitorDetailProps) {
                       <Panel
                         variant={isUser ? 'primary' : 'white'}
                         className={twMerge(
-                          'max-w-[85%] rounded-2xl px-4 py-2.5 font-sans text-sm whitespace-pre-wrap',
-                          isUser ? 'shadow-sm' : 'shadow-sm'
+                          'max-w-[85%] rounded-2xl px-4 py-2.5 font-sans text-sm',
+                          isUser ? 'whitespace-pre-wrap shadow-sm' : 'shadow-sm'
                         )}
                       >
                         {isUser
