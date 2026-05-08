@@ -3,7 +3,8 @@ import { Menu, X } from 'lucide-react'
 import { CascadeGroup, CascadeItem, Button } from '../../ui'
 import { navLinks } from '../../../data'
 
-const ericAudio = new Audio('/audio/Eeeeeee.wav')
+const eAudio = new Audio('/audio/Eeeeeee.wav')
+eAudio.volume = .4
 
 export default function Header() {
   const [echoes, setEchoes] = useState<number[]>([])
@@ -48,8 +49,8 @@ export default function Header() {
   }, [menuOpen])
 
   const handleClick = useCallback(() => {
-    ericAudio.currentTime = 0
-    ericAudio.play()
+    eAudio.currentTime = 0
+    eAudio.play()
 
     const id = Date.now()
     setEchoes(prev => [...prev, id])
