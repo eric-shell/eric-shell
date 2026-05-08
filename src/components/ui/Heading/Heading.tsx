@@ -16,7 +16,7 @@ export function H1({ children, className = '', ...props }: HeadingProps) {
 
 export function H2({ children, className = '', ...props }: HeadingProps) {
   return (
-    <h2 className={`${base} text-3xl md:text-6xl ${className}`} {...props}>
+    <h2 className={`${base} text-4xl md:text-6xl ${className}`} {...props}>
       {children}
     </h2>
   )

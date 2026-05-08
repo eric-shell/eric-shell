@@ -67,7 +67,7 @@ export default function Hero() {
           aria-hidden="true"
           fetchPriority="high"
           style={{ bottom: '-30px' }}
-          className="absolute right-0 h-[85vh] max-h-[900px] w-auto object-bottom object-contain pointer-events-none select-none z-10"
+          className="hidden lg:block absolute right-0 h-[85vh] max-h-[900px] w-auto object-bottom object-contain pointer-events-none select-none z-10"
         />
       </picture>
       <Suspense fallback={null}><ParticlesLarge /></Suspense>
@@ -90,7 +90,7 @@ export default function Hero() {
           </CascadeItem>
 
           <CascadeItem index={2}>
-            <p className="font-sans text-3xl text-white leading-relaxed text-shadow-lg pt-3">
+            <p className="font-sans text-2xl md:text-3xl text-white leading-relaxed text-shadow-lg pt-3">
               I'm an AI Design Systems Engineer with over 15 years of professional experience developing modern web and mobile applications.
             </p>
           </CascadeItem>
@@ -113,7 +113,7 @@ export default function Hero() {
 
       </div>
 
-      <CascadeGroup mountOnly className="absolute bottom-24 left-1/2 -translate-x-1/2 z-30">
+      <CascadeGroup mountOnly className="hidden lg:block absolute bottom-24 left-1/2 -translate-x-1/2 z-30">
         <CascadeItem index={0}>
           <Button
             href="#work"

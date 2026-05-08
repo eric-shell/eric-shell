@@ -99,7 +99,15 @@
 @utility skew-section {
   transform: skewY(-1deg);
   margin-block: -2rem;
-  padding-block: 8rem; /* py-24 (6rem) + 2rem overlap compensation */
+  padding-block: 5rem;
+
+  @media (width >= 768px) {
+    padding-block: 6rem;
+  }
+
+  @media (width >= 1024px) {
+    padding-block: 8rem; /* py-24 (6rem) + 2rem overlap compensation */
+  }
 }
 
 @utility skew-footer {
