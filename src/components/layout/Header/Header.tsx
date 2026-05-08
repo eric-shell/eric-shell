@@ -12,6 +12,7 @@ export default function Header() {
   const [activeSection, setActiveSection] = useState('hero')
   const [menuOpen, setMenuOpen] = useState(false)
   const lastScrollY = useRef(0)
+  const isHomePage = window.location.pathname === '/'
 
   useEffect(() => {
     const sectionIds = navLinks.filter(l => l.href.includes('#')).map(l => l.href.split('#')[1])
@@ -91,7 +92,7 @@ export default function Header() {
             <ul className="flex items-center gap-6">
               {navLinks.map(({ label, href, Icon }, i) => {
                 const sectionId = href.split('#')[1]
-                const isActive = !!sectionId && activeSection === sectionId
+                const isActive = isHomePage && !!sectionId && activeSection === sectionId
                 return (
                   <CascadeItem key={label} as="li" index={i + 1}>
                     <Button
@@ -133,7 +134,7 @@ export default function Header() {
           <ul className="px-6 pb-6 pt-1 flex flex-col gap-2">
             {navLinks.map(({ label, href, Icon }) => {
               const sectionId = href.split('#')[1]
-              const isActive = !!sectionId && activeSection === sectionId
+              const isActive = isHomePage && !!sectionId && activeSection === sectionId
               return (
                 <li key={label}>
                   <Button
