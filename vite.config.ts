@@ -10,7 +10,7 @@ export default defineConfig({
     rollupOptions: {
       input: {
         main: resolve(__dirname, 'index.html'),
-        crm: resolve(__dirname, 'crm.html'),
+        dashboard: resolve(__dirname, 'dashboard.html'),
       },
     },
   },

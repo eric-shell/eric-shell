@@ -5,7 +5,7 @@
     }
   },
   "rewrites": [
-    { "source": "/crm", "destination": "/crm.html" },
+    { "source": "/dashboard", "destination": "/dashboard.html" },
     { "source": "/((?!api/|@|src/|node_modules/|.*\\.).*)", "destination": "/index.html" }
   ]
 }

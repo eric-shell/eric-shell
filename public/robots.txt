@@ -1,6 +1,6 @@
 User-agent: *
 Allow: /
-Disallow: /crm
+Disallow: /dashboard
 Disallow: /api/admin/
 
 Sitemap: https://eric.sh/sitemap.xml
