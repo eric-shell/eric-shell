@@ -217,7 +217,7 @@ export default function VisitorDetail({ id, onClose }: VisitorDetailProps) {
                           ? m.content
                           : <ReactMarkdown components={mdComponents}>{linkifyEmail(m.content)}</ReactMarkdown>}
                       </Panel>
-                      <span className="mt-1.5 px-2 text-[10px] uppercase tracking-wide text-blue-950/40">
+                      <span className="mt-1.5 px-2 text-[10px] uppercase tracking-wide text-blue-950/70">
                         {formatDate(m.created_at)}
                       </span>
                     </li>
@@ -236,7 +236,7 @@ export default function VisitorDetail({ id, onClose }: VisitorDetailProps) {
                   <li key={s.id} className="rounded-lg border border-blue-950/10 bg-white p-3 text-sm">
                     <div className="mb-1 flex items-center justify-between text-[10px] text-blue-950/50">
                       <span><span className="font-semibold text-blue-950">{s.name}</span> · {s.email}</span>
-                      <span>{formatDate(s.created_at)}</span>
+                      <span className="text-blue-950/70">{formatDate(s.created_at)}</span>
                     </div>
                     <div className="whitespace-pre-wrap text-blue-950/80">{s.message}</div>
                   </li>
