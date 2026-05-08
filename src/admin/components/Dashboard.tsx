@@ -9,7 +9,7 @@ function VisitorTableSkeleton() {
     <table className="w-full table-fixed text-sm animate-pulse">
       <thead>
         <tr className="border-b border-blue-950/10 text-left text-xs uppercase tracking-wide text-blue-950/50">
-          <th className="py-2 pr-4 font-semibold w-28">Visitor</th>
+          <th className="py-2 px-4 font-semibold w-28">Visitor</th>
           <th className="py-2 pr-4 font-semibold w-36">Last seen</th>
           <th className="py-2 pr-4 font-semibold w-36">Name</th>
           <th className="py-2 pr-4 font-semibold">Email</th>
@@ -20,7 +20,7 @@ function VisitorTableSkeleton() {
       <tbody>
         {Array.from({ length: 6 }).map((_, i) => (
           <tr key={i} className="border-b border-blue-950/5">
-            <td className="py-3 pr-4"><Skeleton className="h-3 w-20" /></td>
+            <td className="py-3 px-4"><Skeleton className="h-3 w-20" /></td>
             <td className="py-3 pr-4"><Skeleton className="h-3 w-28" /></td>
             <td className="py-3 pr-4"><Skeleton className="h-3 w-20" /></td>
             <td className="py-3 pr-4"><Skeleton className="h-3 w-36" /></td>
@@ -84,7 +84,7 @@ export default function Dashboard({ onLogout }: DashboardProps) {
         </div>
       </header>
 
-      <Panel variant="white" className="rounded-2xl p-6">
+      <Panel variant="white" className={`rounded-2xl p-6 transition-opacity duration-300 ${loading && visitors !== null ? 'opacity-40' : 'opacity-100'}`}>
         {visitors === null ? (
           <VisitorTableSkeleton />
         ) : visitors.length === 0 ? (

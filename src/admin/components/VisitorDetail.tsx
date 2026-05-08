@@ -130,7 +130,7 @@ export default function VisitorDetail({ id, onClose }: VisitorDetailProps) {
   const contact = data?.submissions[0]
 
   return (
-    <Panel variant="secondary" className="rounded-xl p-5">
+    <Panel variant="white" className="rounded-b-xl rounded-t-none p-5">
       {/* Meta grid */}
       <div className="mb-5 flex items-start justify-between gap-6">
         <div className="grid grid-cols-2 gap-x-8 gap-y-3 sm:grid-cols-3 flex-1 min-w-0">

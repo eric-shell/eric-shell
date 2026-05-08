@@ -36,7 +36,7 @@ export default function VisitorList({ visitors }: VisitorListProps) {
     <table className="w-full table-fixed text-sm">
       <thead>
         <tr className="border-b border-blue-950/10 text-left text-xs uppercase tracking-wide text-blue-950/50">
-          <th className="py-2 pr-4 font-semibold w-28">Visitor</th>
+          <th className="py-2 px-4 font-semibold w-28">Visitor</th>
           <th className="py-2 pr-4 font-semibold w-36">Last seen</th>
           <th className="py-2 pr-4 font-semibold w-36">Name</th>
           <th className="py-2 pr-4 font-semibold">Email</th>
@@ -56,7 +56,7 @@ export default function VisitorList({ visitors }: VisitorListProps) {
                   isOpen ? 'bg-blue-50' : 'hover:bg-blue-50/60'
                 )}
               >
-                <td className="py-3 pr-4 font-mono text-xs text-blue-950">{shortId(v.id)}</td>
+                <td className="py-3 px-4 font-mono text-xs text-blue-950">{shortId(v.id)}</td>
                 <td className="py-3 pr-4 text-blue-950/70">{formatDate(v.last_activity_at)}</td>
                 <td className="py-3 pr-4 text-blue-950/80 truncate">{v.contact_name ?? <span className="text-blue-950/25">—</span>}</td>
                 <td className="py-3 pr-4 text-blue-950/80 truncate">{v.contact_email ?? <span className="text-blue-950/25">—</span>}</td>
@@ -65,7 +65,7 @@ export default function VisitorList({ visitors }: VisitorListProps) {
               </tr>
               {isOpen && (
                 <tr>
-                  <td colSpan={6} className="pb-4 pt-2">
+                  <td colSpan={6} className="pb-3 pt-0">
                     <VisitorDetail id={v.id} onClose={() => setSelectedId(null)} />
                   </td>
                 </tr>
