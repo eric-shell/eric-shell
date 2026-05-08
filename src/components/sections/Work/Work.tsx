@@ -67,10 +67,10 @@ export default function Work() {
           <CascadeItem index={1}>
             <div className="flex flex-col gap-5 font-sans text-base leading-relaxed text-blue-900 pb-10">
               <p>
-                Over 15 years of practice spanning federal agencies, Fortune 500 brands, financial institutions, and entertainment platforms, I have built software that ships, scales, and endures well beyond the engagement that created it. Each context demanded a different caliber of contextual understanding, technical leadership and creative solutioning.
+                Over 15 years of practice spanning Fortune 500 brands, financial institutions, federal agencies, DMOs, QSRs and more I have built web-based applications that performs, ships, scales, and outlasts the engagement that built it. Each product demanded a different caliber of contextual understanding, technical leadership and creative solutioning which all culminated into an extensive portfolio that I am very proud of.
               </p>
               <p>
-                What follows is a curated record of that output: client products, internal platforms, open source contributions, and independent projects. Each piece reflects the same standard of precision and accountability I bring to every engagement, regardless of its discipline, size or scope.
+                What follows is a historical record of my contributions and completed projects. Each piece reflects the same standard of precision and accountability I bring to every engagement, regardless of its discipline, size or scope.
               </p>
               <Button
                 href="https://www.linkedin.com/in/ericshell/details/experience/"
