@@ -73,8 +73,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
       return
     }
 
-    res.status(200).json({ ok: true })
-
+    // Persist BEFORE responding. Vercel can freeze the function container
+    // as soon as the response is flushed, dropping any trailing async work.
     try {
       const visitorId = await upsertVisitor(req)
       const db = sql()
@@ -85,6 +85,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
     } catch (err) {
       console.error('Contact persistence failed:', err)
     }
+
+    res.status(200).json({ ok: true })
   } catch (err) {
     console.error('Unexpected error sending email:', err)
     res.status(500).json({ error: 'Failed to send message. Please try again.' })
