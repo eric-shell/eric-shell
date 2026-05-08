@@ -32,7 +32,7 @@ export function buildSystemPrompt(): string {
     .map(t => `- "${t.review}" — ${t.author}`)
     .join('\n')
   const experience = jobs
-    .map(j => `- ${j.company} (${j.role}, ${j.dates}):\n${j.bullets.map(b => `  • ${b}`).join('\n')}`)
+    .map(j => `- ${j.company} (${j.role}, ${j.dates}): ${j.description}`)
     .join('\n')
   const howIWork = values
     .map(v => `- ${v.label}: ${v.description}`)
