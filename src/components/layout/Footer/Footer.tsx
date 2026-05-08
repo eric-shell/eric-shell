@@ -6,32 +6,9 @@ export default function Footer() {
 
   return (
     <footer className="bg-black text-white border-t border-white/10 skew-footer">
-      <div className="max-w-[1440px] mx-auto px-6 pt-24 pb-24 flex items-center justify-between gap-12 flex-wrap unskew-inner">
+      <div className="max-w-[1440px] mx-auto px-6 pt-12 pb-12 md:pt-24 md:pb-24 flex flex-col items-center gap-10 md:flex-row md:items-center md:justify-between md:gap-12 unskew-inner">
 
-        <nav aria-label="Footer navigation" className="flex gap-12">
-          <CascadeGroup as="ul" className="flex flex-col gap-4" threshold={0.2}>
-            {navLinks.slice(0, 4).map(({ label, href, Icon }, i) => (
-              <CascadeItem key={label} as="li" index={i}>
-                <a href={href} className="flex items-center gap-2 font-sans text-sm font-semibold text-white/50 hover:text-white transition-colors">
-                  <Icon size={14} />
-                  {label}
-                </a>
-              </CascadeItem>
-            ))}
-          </CascadeGroup>
-          <CascadeGroup as="ul" className="flex flex-col gap-4" threshold={0.2}>
-            {connectLinks.map(({ label, href, Icon }, i) => (
-              <CascadeItem key={label} as="li" index={i}>
-                <a href={href} className="flex items-center gap-2 font-sans text-sm font-semibold text-white/50 hover:text-white transition-colors">
-                  <Icon size={14} />
-                  {label}
-                </a>
-              </CascadeItem>
-            ))}
-          </CascadeGroup>
-        </nav>
-
-        <CascadeGroup className="flex flex-col items-end gap-6" threshold={0.2}>
+        <CascadeGroup className="flex flex-col items-center gap-6 order-1 md:order-2 md:items-end" threshold={0.2}>
           <CascadeItem index={0}>
             <div className="flex flex-row gap-3">
               <img src="/icon.svg" alt="Eric Shell Icon" className="h-10" />
@@ -64,6 +41,29 @@ export default function Footer() {
             </span>
           </CascadeItem>
         </CascadeGroup>
+
+        <nav aria-label="Footer navigation" className="flex gap-12 order-2 md:order-1">
+          <CascadeGroup as="ul" className="flex flex-col gap-4" threshold={0.2}>
+            {navLinks.slice(0, 4).map(({ label, href, Icon }, i) => (
+              <CascadeItem key={label} as="li" index={i}>
+                <a href={href} className="flex items-center gap-2 font-sans text-sm font-semibold text-white/50 hover:text-white transition-colors">
+                  <Icon size={14} />
+                  {label}
+                </a>
+              </CascadeItem>
+            ))}
+          </CascadeGroup>
+          <CascadeGroup as="ul" className="flex flex-col gap-4" threshold={0.2}>
+            {connectLinks.map(({ label, href, Icon }, i) => (
+              <CascadeItem key={label} as="li" index={i}>
+                <a href={href} className="flex items-center gap-2 font-sans text-sm font-semibold text-white/50 hover:text-white transition-colors">
+                  <Icon size={14} />
+                  {label}
+                </a>
+              </CascadeItem>
+            ))}
+          </CascadeGroup>
+        </nav>
 
       </div>
     </footer>
