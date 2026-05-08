@@ -244,7 +244,7 @@ export default function VisitorDetail({ id, onClose }: VisitorDetailProps) {
               timeline.push({ kind: 'cleared', created_at: data.clearEvents[ci++].created_at })
             }
             return (
-              <ul className="flex flex-col gap-3">
+              <ul className="flex flex-col gap-3 max-h-96 overflow-y-auto pr-1">
                 {timeline.map((item, i) =>
                   item.kind === 'cleared' ? (
                     <ConversationDivider key={`clear-${i}`} timestamp={item.created_at} />
@@ -278,7 +278,7 @@ export default function VisitorDetail({ id, onClose }: VisitorDetailProps) {
             data.submissions.length === 0 ? (
               <p className="text-sm text-blue-950/50">No contact submissions.</p>
             ) : (
-              <ul className="flex flex-col gap-3">
+              <ul className="flex flex-col gap-3 max-h-96 overflow-y-auto pr-1">
                 {data.submissions.map(s => (
                   <li key={s.id} className="rounded-lg border border-blue-950/10 bg-white p-3 text-sm">
                     <div className="mb-1 flex items-center justify-between text-[10px] text-blue-950/50">
