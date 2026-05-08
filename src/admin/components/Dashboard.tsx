@@ -4,6 +4,67 @@ import { Button, H2, Panel, toast } from '../../components/ui'
 import VisitorList, { type VisitorSummary } from './VisitorList'
 import { Skeleton } from './Skeleton'
 
+type StatDay = { date: string; visitors: number }
+
+function StatCard({ label, value, sub }: { label: string; value: number | string; sub: string }) {
+  return (
+    <Panel variant="white" className="flex flex-col justify-between rounded-2xl p-4 min-w-[110px]">
+      <p className="text-[10px] font-semibold uppercase tracking-wide text-blue-950/50">{label}</p>
+      <p className="text-2xl font-bold text-blue-950 mt-1">{value}</p>
+      <p className="text-xs text-blue-950/40 mt-0.5">{sub}</p>
+    </Panel>
+  )
+}
+
+function BarChart({ days }: { days: StatDay[] }) {
+  const W = 300
+  const H = 48
+  const gap = 2
+  const barW = (W - gap * (days.length - 1)) / days.length
+  const maxV = Math.max(...days.map(d => d.visitors), 1)
+  const minBarH = 2
+
+  const fmt = (iso: string) => {
+    const d = new Date(iso)
+    return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
+  }
+
+  return (
+    <div className="flex flex-col gap-1 w-full h-full justify-between">
+      <svg
+        width="100%"
+        height="100%"
+        viewBox={`0 0 ${W} ${H}`}
+        preserveAspectRatio="none"
+        className="flex-1"
+      >
+        {days.map((d, i) => {
+          const barH = Math.max(minBarH, (d.visitors / maxV) * H)
+          const x = i * (barW + gap)
+          const y = H - barH
+          return (
+            <rect
+              key={d.date}
+              x={x}
+              y={y}
+              width={barW}
+              height={barH}
+              rx={1}
+              className="fill-blue-600/60 hover:fill-blue-700 transition-colors cursor-default"
+            >
+              <title>{fmt(d.date)}: {d.visitors} visitor{d.visitors !== 1 ? 's' : ''}</title>
+            </rect>
+          )
+        })}
+      </svg>
+      <div className="flex justify-between text-[9px] text-blue-950/40 shrink-0">
+        <span>{fmt(days[0].date)}</span>
+        <span>{fmt(days[days.length - 1].date)}</span>
+      </div>
+    </div>
+  )
+}
+
 function VisitorTableSkeleton() {
   return (
     <table className="w-full table-fixed text-sm animate-pulse">
@@ -37,25 +98,32 @@ interface DashboardProps {
   onLogout: () => void
 }
 
+function pct(n: number, total: number) {
+  if (!total) return 0
+  return Math.round((n / total) * 100)
+}
+
 export default function Dashboard({ onLogout }: DashboardProps) {
   const [visitors, setVisitors] = useState<VisitorSummary[] | null>(null)
+  const [stats, setStats] = useState<StatDay[] | null>(null)
   const [loading, setLoading] = useState(false)
   const [query, setQuery] = useState('')
 
   const load = useCallback(async () => {
     setLoading(true)
     try {
-      const res = await fetch('/api/admin/visitors')
-      if (!res.ok) {
-        if (res.status === 401) {
-          onLogout()
-          return
-        }
+      const [vRes, sRes] = await Promise.all([
+        fetch('/api/admin/visitors'),
+        fetch('/api/admin/stats'),
+      ])
+      if (!vRes.ok) {
+        if (vRes.status === 401) { onLogout(); return }
         toast.error('Failed to load visitors.')
         return
       }
-      const data = await res.json()
+      const data = await vRes.json()
       setVisitors(data.visitors ?? [])
+      if (sRes.ok) setStats((await sRes.json()).days)
     } catch {
       toast.error('Network error.')
     } finally {
@@ -66,11 +134,7 @@ export default function Dashboard({ onLogout }: DashboardProps) {
   useEffect(() => { load() }, [load])
 
   async function logout() {
-    try {
-      await fetch('/api/admin/logout', { method: 'POST' })
-    } catch {
-      // ignore — we still flip the local state
-    }
+    try { await fetch('/api/admin/logout', { method: 'POST' }) } catch { /* ignore */ }
     onLogout()
   }
 
@@ -80,6 +144,11 @@ export default function Dashboard({ onLogout }: DashboardProps) {
     v.contact_name?.toLowerCase().includes(q) ||
     v.contact_email?.toLowerCase().includes(q)
   )
+
+  const totalVisitors = visitors?.length ?? 0
+  const engaged = visitors?.filter(v => v.chat_message_count > 0).length ?? 0
+  const converted = visitors?.filter(v => v.contact_count > 0).length ?? 0
+  const totalMessages = visitors?.reduce((s, v) => s + v.chat_message_count, 0) ?? 0
 
   return (
     <div className="mx-auto flex max-w-6xl flex-col gap-6 px-6 py-10">
@@ -92,6 +161,37 @@ export default function Dashboard({ onLogout }: DashboardProps) {
         </div>
       </header>
 
+      {/* Metrics row */}
+      <div className="flex gap-3 items-stretch min-h-[88px]">
+        {visitors === null ? (
+          <>
+            {Array.from({ length: 4 }).map((_, i) => (
+              <Panel key={i} variant="white" className="flex flex-col gap-2 rounded-2xl p-4 min-w-[110px] animate-pulse">
+                <Skeleton className="h-2 w-12" />
+                <Skeleton className="h-7 w-10" />
+                <Skeleton className="h-2 w-20" />
+              </Panel>
+            ))}
+            <Panel variant="white" className="flex-1 rounded-2xl p-4 animate-pulse">
+              <Skeleton className="h-full w-full min-h-[48px]" />
+            </Panel>
+          </>
+        ) : (
+          <>
+            <StatCard label="Visitors" value={totalVisitors} sub="total" />
+            <StatCard label="Engaged" value={engaged} sub={`chatted · ${pct(engaged, totalVisitors)}%`} />
+            <StatCard label="Converted" value={converted} sub={`submitted · ${pct(converted, totalVisitors)}%`} />
+            <StatCard label="Messages" value={totalMessages} sub="across all visitors" />
+            <Panel variant="white" className="flex-1 rounded-2xl p-4">
+              {stats
+                ? <BarChart days={stats} />
+                : <Skeleton className="h-full w-full min-h-[48px]" />}
+            </Panel>
+          </>
+        )}
+      </div>
+
+      {/* Search */}
       <div className="relative">
         <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-blue-950/30 pointer-events-none" />
         <input
