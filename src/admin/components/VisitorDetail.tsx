@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import ReactMarkdown from 'react-markdown'
 import type { Components } from 'react-markdown'
 import { twMerge } from 'tailwind-merge'
@@ -136,6 +136,13 @@ function ConversationDivider({ timestamp }: { timestamp: string }) {
 export default function VisitorDetail({ id, onClose }: VisitorDetailProps) {
   const [data, setData] = useState<DetailPayload | null>(null)
   const [tab, setTab] = useState<Tab>('chat')
+  const chatListRef = useRef<HTMLUListElement>(null)
+
+  useEffect(() => {
+    const el = chatListRef.current
+    if (!el) return
+    el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' })
+  }, [tab, data])
 
   useEffect(() => {
     let cancelled = false
@@ -244,7 +251,7 @@ export default function VisitorDetail({ id, onClose }: VisitorDetailProps) {
               timeline.push({ kind: 'cleared', created_at: data.clearEvents[ci++].created_at })
             }
             return (
-              <ul className="flex flex-col gap-3 max-h-96 overflow-y-auto pr-1">
+              <ul ref={chatListRef} className="flex flex-col gap-3 max-h-[28rem] overflow-y-auto pr-1">
                 {timeline.map((item, i) =>
                   item.kind === 'cleared' ? (
                     <ConversationDivider key={`clear-${i}`} timestamp={item.created_at} />
@@ -278,7 +285,7 @@ export default function VisitorDetail({ id, onClose }: VisitorDetailProps) {
             data.submissions.length === 0 ? (
               <p className="text-sm text-blue-950/50">No contact submissions.</p>
             ) : (
-              <ul className="flex flex-col gap-3 max-h-96 overflow-y-auto pr-1">
+              <ul className="flex flex-col gap-3 max-h-[28rem] overflow-y-auto pr-1">
                 {data.submissions.map(s => (
                   <li key={s.id} className="rounded-lg border border-blue-950/10 bg-white p-3 text-sm">
                     <div className="mb-1 flex items-center justify-between text-[10px] text-blue-950/50">
