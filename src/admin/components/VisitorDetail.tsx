@@ -116,12 +116,13 @@ function ConversationDivider({ timestamp }: { timestamp: string }) {
   return (
     <li className="flex flex-col items-center gap-1.5 py-1 select-none" aria-label="Conversation cleared">
       <div className="w-full text-blue-950/20" aria-hidden="true">
-        <svg width="100%" height="14" viewBox="0 0 300 14" preserveAspectRatio="none" fill="none">
+        <svg width="100%" height="30" viewBox="0 0 300 30" preserveAspectRatio="none" fill="none">
           <path
-            d="M0 7 Q15 1 30 7 Q45 13 60 7 Q75 1 90 7 Q105 13 120 7 Q135 1 150 7 Q165 13 180 7 Q195 1 210 7 Q225 13 240 7 Q255 1 270 7 Q285 13 300 7"
+            d="M0 15 Q5 1 10 15 Q15 29 20 15 Q25 1 30 15 Q35 29 40 15 Q45 1 50 15 Q55 29 60 15 Q65 1 70 15 Q75 29 80 15 Q85 1 90 15 Q95 29 100 15 Q105 1 110 15 Q115 29 120 15 Q125 1 130 15 Q135 29 140 15 Q145 1 150 15 Q155 29 160 15 Q165 1 170 15 Q175 29 180 15 Q185 1 190 15 Q195 29 200 15 Q205 1 210 15 Q215 29 220 15 Q225 1 230 15 Q235 29 240 15 Q245 1 250 15 Q255 29 260 15 Q265 1 270 15 Q275 29 280 15 Q285 1 290 15 Q295 29 300 15"
             stroke="currentColor"
             strokeWidth="1.5"
             strokeLinecap="round"
+            vectorEffect="non-scaling-stroke"
           />
         </svg>
       </div>
