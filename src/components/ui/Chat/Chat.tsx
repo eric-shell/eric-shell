@@ -7,6 +7,7 @@ import type { Components } from 'react-markdown'
 import Button from '../Button'
 import Panel from '../Panel'
 import type { ChatMessage } from '../../../hooks/useChat'
+import { getVisitorId } from '../../../lib/visitorId'
 
 const EMAIL_RE = /(?<!\]\(mailto:)(?<!\[)([\w.+-]+@[\w-]+\.[\w.-]+)(?!\w)(?!\]\(mailto:)/g
 
@@ -71,6 +72,7 @@ export default function Chat({
   const [isWhite, setIsWhite] = useState(false)
   const threadRef = useRef<HTMLDivElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
+  const adaFirstMount = useRef(true)
 
   const hasMessages = messages.length > 0
   const animateWelcome =
@@ -92,6 +94,17 @@ export default function Chat({
     el.style.height = Math.min(el.scrollHeight, TEXTAREA_MAX_HEIGHT) + 'px'
   }, [value])
 
+  useEffect(() => {
+    if (adaFirstMount.current) { adaFirstMount.current = false; return }
+    const vid = getVisitorId()
+    if (!vid) return
+    fetch('/api/events', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ visitorId: vid, type: 'ada_toggle', metadata: { enabled: isWhite } }),
+    }).catch(() => {})
+  }, [isWhite])
+
   const handleClose = () => {
     setIsClosing(true)
     setTimeout(() => {
@@ -99,6 +112,18 @@ export default function Chat({
       setIsClosing(false)
       onClose?.()
     }, GENIE_DURATION_MS)
+  }
+
+  const handleClear = () => {
+    const vid = getVisitorId()
+    if (vid) {
+      fetch('/api/events', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ visitorId: vid, type: 'chat_cleared' }),
+      }).catch(() => {})
+    }
+    onClear?.()
   }
 
   const mdComponents: Components = {
@@ -206,7 +231,7 @@ export default function Chat({
         <div className="flex items-center gap-1.5">
           {hasMessages && onClear && (
             <Button
-              onClick={onClear}
+              onClick={handleClear}
               variant={isWhite ? 'white' : 'glass-dark'}
               shape="square"
               size="sm"
@@ -285,7 +310,7 @@ export default function Chat({
             disabled={isLoading}
             style={{ maxHeight: TEXTAREA_MAX_HEIGHT }}
             className={twMerge(
-              'block w-full rounded-[28px] border pl-4 pr-16 py-4 font-sans text-base leading-6 resize-none overflow-y-auto [&::-webkit-scrollbar]:hidden [scrollbar-width:none] transition-[height] duration-150 ease-out focus:outline-none disabled:opacity-60',
+              'block w-full rounded-[28px] border pl-5 pr-16 py-4 font-sans text-base leading-6 resize-none overflow-y-auto [&::-webkit-scrollbar]:hidden [scrollbar-width:none] transition-[height] duration-150 ease-out focus:outline-none disabled:opacity-60',
               isWhite
                 ? 'bg-white border-blue-950/20 text-blue-950 placeholder:text-blue-950/30 focus:border-blue-700'
                 : 'bg-white/10 border-white/20 text-white placeholder:text-white/40 focus:border-white/60 focus:bg-white/15'

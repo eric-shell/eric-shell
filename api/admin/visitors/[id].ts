@@ -42,10 +42,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
       where visitor_id = ${id}
       order by created_at desc
     `) as Record<string, unknown>[]
+    const eventRows = (await db`
+      select type, count(*)::int as count
+      from visitor_events
+      where visitor_id = ${id}
+      group by type
+    `) as { type: string; count: number }[]
+    const events = Object.fromEntries(eventRows.map(r => [r.type, r.count]))
     res.status(200).json({
       visitor: visitorRows[0],
       messages,
       submissions,
+      events,
     })
   } catch (err) {
     console.error('Admin visitor detail error:', err)

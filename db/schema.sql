@@ -28,3 +28,13 @@ create table if not exists contact_submissions (
 );
 create index if not exists contact_submissions_created_idx
   on contact_submissions (created_at desc);
+
+create table if not exists visitor_events (
+  id          bigserial primary key,
+  visitor_id  uuid not null references visitors(id) on delete cascade,
+  type        text not null check (type in ('ada_toggle', 'chat_cleared')),
+  metadata    jsonb,
+  created_at  timestamptz not null default now()
+);
+create index if not exists visitor_events_visitor_created_idx
+  on visitor_events (visitor_id, created_at desc);

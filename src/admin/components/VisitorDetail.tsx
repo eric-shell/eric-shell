@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import ReactMarkdown from 'react-markdown'
 import type { Components } from 'react-markdown'
 import { twMerge } from 'tailwind-merge'
-import { type LucideIcon, CalendarDays, Clock, Fingerprint, Mail, Monitor, User, X } from 'lucide-react'
+import { type LucideIcon, CalendarDays, Clock, Eye, Fingerprint, Mail, Monitor, RotateCcw, User, X } from 'lucide-react'
 import { Button, Panel, toast } from '../../components/ui'
 import { Skeleton } from './Skeleton'
 
@@ -77,6 +77,7 @@ interface DetailPayload {
   visitor: Visitor
   messages: ChatMessage[]
   submissions: ContactSubmission[]
+  events: Record<string, number>
 }
 
 type Tab = 'chat' | 'contact'
@@ -159,6 +160,12 @@ export default function VisitorDetail({ id, onClose }: VisitorDetailProps) {
               )}
               {data.visitor?.user_agent && (
                 <MetaField icon={Monitor} label="User agent" value={data.visitor.user_agent} />
+              )}
+              {(data.events.ada_toggle ?? 0) > 0 && (
+                <MetaField icon={Eye} label="High-contrast" value={`${data.events.ada_toggle}×`} />
+              )}
+              {(data.events.chat_cleared ?? 0) > 0 && (
+                <MetaField icon={RotateCcw} label="Chats cleared" value={`${data.events.chat_cleared}×`} />
               )}
             </>
           )}
