@@ -1,5 +1,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 import { Resend } from 'resend'
+import { sql } from './_lib/db.js'
+import { upsertVisitor } from './_lib/visitor.js'
 
 type ContactPayload = {
   name?: unknown
@@ -72,6 +74,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
     }
 
     res.status(200).json({ ok: true })
+
+    try {
+      const visitorId = await upsertVisitor(req)
+      const db = sql()
+      await db`
+        insert into contact_submissions (visitor_id, name, email, message)
+        values (${visitorId}, ${name}, ${email}, ${message})
+      `
+    } catch (err) {
+      console.error('Contact persistence failed:', err)
+    }
   } catch (err) {
     console.error('Unexpected error sending email:', err)
     res.status(500).json({ error: 'Failed to send message. Please try again.' })

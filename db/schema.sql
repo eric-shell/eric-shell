@@ -1,0 +1,30 @@
+-- eric.sh CRM schema
+-- Apply once via the Neon SQL editor or `psql $POSTGRES_URL -f db/schema.sql`.
+
+create table if not exists visitors (
+  id            uuid primary key,
+  first_seen_at timestamptz not null default now(),
+  last_seen_at  timestamptz not null default now(),
+  user_agent    text
+);
+
+create table if not exists chat_messages (
+  id          bigserial primary key,
+  visitor_id  uuid not null references visitors(id) on delete cascade,
+  role        text not null check (role in ('user', 'assistant')),
+  content     text not null,
+  created_at  timestamptz not null default now()
+);
+create index if not exists chat_messages_visitor_created_idx
+  on chat_messages (visitor_id, created_at);
+
+create table if not exists contact_submissions (
+  id          bigserial primary key,
+  visitor_id  uuid references visitors(id) on delete set null,
+  name        text not null,
+  email       text not null,
+  message     text not null,
+  created_at  timestamptz not null default now()
+);
+create index if not exists contact_submissions_created_idx
+  on contact_submissions (created_at desc);

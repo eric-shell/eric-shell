@@ -1,6 +1,8 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 import Groq from 'groq-sdk'
 import { buildSystemPrompt } from '../src/data/chat-context.js'
+import { sql } from './_lib/db.js'
+import { upsertVisitor } from './_lib/visitor.js'
 
 type Role = 'user' | 'assistant'
 type Message = { role: Role; content: string }
@@ -61,6 +63,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
 
   const groq = new Groq({ apiKey })
 
+  let visitorId: string | null = null
+  try {
+    visitorId = await upsertVisitor(req)
+  } catch (err) {
+    console.error('Visitor upsert failed:', err)
+  }
+
   let stream
   try {
     stream = await groq.chat.completions.create({
@@ -84,14 +93,33 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
   res.setHeader('X-Accel-Buffering', 'no')
   res.status(200)
 
+  let assistantReply = ''
   try {
     for await (const chunk of stream) {
       const delta = chunk.choices[0]?.delta?.content
-      if (delta) res.write(delta)
+      if (delta) {
+        assistantReply += delta
+        res.write(delta)
+      }
     }
   } catch (err) {
     console.error('Groq error (mid-stream):', err)
   } finally {
     res.end()
+  }
+
+  if (visitorId && assistantReply) {
+    const lastUser = result.messages[result.messages.length - 1].content
+    try {
+      const db = sql()
+      await db`
+        insert into chat_messages (visitor_id, role, content)
+        values
+          (${visitorId}, 'user', ${lastUser}),
+          (${visitorId}, 'assistant', ${assistantReply})
+      `
+    } catch (err) {
+      console.error('Chat persistence failed:', err)
+    }
   }
 }

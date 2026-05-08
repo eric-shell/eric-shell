@@ -15,6 +15,7 @@
     "build-storybook": "storybook build"
   },
   "dependencies": {
+    "@neondatabase/serverless": "^1.1.0",
     "@types/three": "^0.184.0",
     "csv-parse": "^6.2.1",
     "groq-sdk": "^1.1.2",

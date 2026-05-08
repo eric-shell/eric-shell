@@ -6,6 +6,7 @@ import Input from '../Input'
 import Panel from '../Panel'
 import Textarea from '../Textarea'
 import { toast } from '../Toast'
+import { getVisitorId } from '../../../lib/visitorId'
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
@@ -68,7 +69,10 @@ export default function ContactForm({
     try {
       const response = await fetch('/api/contact', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Visitor-Id': getVisitorId(),
+        },
         body: JSON.stringify({
           name: name.trim(),
           email: email.trim(),
