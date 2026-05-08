@@ -11,9 +11,9 @@ export type Variant =
 export type Size = 'sm' | 'md' | 'lg'
 
 export const SURFACE: Record<Variant, string> = {
-  primary:   'text-white bg-gradient-to-br from-blue-600 to-blue-700',
-  secondary: 'text-blue-800 bg-gradient-to-br from-white to-blue-50',
-  ghost:     'text-blue-950/60',
+  primary:   'text-white bg-gradient-to-br from-blue-600 to-blue-700 border border-transparent',
+  secondary: 'text-blue-800 bg-gradient-to-br from-white to-blue-50 border border-transparent',
+  ghost:     'text-blue-950/60 border border-transparent',
   'glass-light': 'text-white glass-blur bg-white/10 border border-white/20',
   'glass-dark':  'text-white glass-blur bg-blue-950/20 border border-blue-950/20',
   'error-glass':   'text-white glass-blur bg-red-600/30 border border-red-300/40',
