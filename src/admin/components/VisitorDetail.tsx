@@ -78,6 +78,7 @@ interface DetailPayload {
   messages: ChatMessage[]
   submissions: ContactSubmission[]
   events: Record<string, number>
+  clearEvents: { created_at: string }[]
 }
 
 type Tab = 'chat' | 'contact'
@@ -104,6 +105,30 @@ function MetaField({ icon: Icon, label, value, mono = false }: {
         <p className={twMerge('text-xs font-semibold text-blue-950/80', mono && 'font-mono')}>{value}</p>
       </div>
     </div>
+  )
+}
+
+type TimelineItem =
+  | { kind: 'message'; data: ChatMessage }
+  | { kind: 'cleared'; created_at: string }
+
+function ConversationDivider({ timestamp }: { timestamp: string }) {
+  return (
+    <li className="flex flex-col items-center gap-1.5 py-1 select-none" aria-label="Conversation cleared">
+      <div className="w-full text-blue-950/20" aria-hidden="true">
+        <svg width="100%" height="8" viewBox="0 0 300 8" preserveAspectRatio="none" fill="none">
+          <path
+            d="M0 4 Q15 0 30 4 Q45 8 60 4 Q75 0 90 4 Q105 8 120 4 Q135 0 150 4 Q165 8 180 4 Q195 0 210 4 Q225 8 240 4 Q255 0 270 4 Q285 8 300 4"
+            stroke="currentColor"
+            strokeWidth="1.5"
+            strokeLinecap="round"
+          />
+        </svg>
+      </div>
+      <span className="text-[10px] uppercase tracking-wide text-blue-950/35">
+        Conversation cleared · {formatDate(timestamp)}
+      </span>
+    </li>
   )
 }
 
@@ -201,38 +226,52 @@ export default function VisitorDetail({ id, onClose }: VisitorDetailProps) {
           </div>
 
           {/* Tab panels */}
-          {tab === 'chat' && (
-            data.messages.length === 0 ? (
-              <p className="text-sm text-blue-950/50">No chat messages.</p>
-            ) : (
+          {tab === 'chat' && (() => {
+            if (data.messages.length === 0) {
+              return <p className="text-sm text-blue-950/50">No chat messages.</p>
+            }
+            const timeline: TimelineItem[] = []
+            let ci = 0
+            for (const msg of data.messages) {
+              while (ci < data.clearEvents.length && data.clearEvents[ci].created_at <= msg.created_at) {
+                timeline.push({ kind: 'cleared', created_at: data.clearEvents[ci].created_at })
+                ci++
+              }
+              timeline.push({ kind: 'message', data: msg })
+            }
+            while (ci < data.clearEvents.length) {
+              timeline.push({ kind: 'cleared', created_at: data.clearEvents[ci++].created_at })
+            }
+            return (
               <ul className="flex flex-col gap-3">
-                {data.messages.map(m => {
-                  const isUser = m.role === 'user'
-                  return (
+                {timeline.map((item, i) =>
+                  item.kind === 'cleared' ? (
+                    <ConversationDivider key={`clear-${i}`} timestamp={item.created_at} />
+                  ) : (
                     <li
-                      key={m.id}
-                      className={twMerge('flex flex-col', isUser ? 'items-end' : 'items-start')}
+                      key={item.data.id}
+                      className={twMerge('flex flex-col', item.data.role === 'user' ? 'items-end' : 'items-start')}
                     >
                       <Panel
-                        variant={isUser ? 'primary' : 'white'}
+                        variant={item.data.role === 'user' ? 'primary' : 'white'}
                         className={twMerge(
                           'max-w-[85%] rounded-2xl px-4 py-2.5 font-sans text-sm',
-                          isUser ? 'whitespace-pre-wrap shadow-sm' : 'shadow-sm'
+                          item.data.role === 'user' ? 'whitespace-pre-wrap shadow-sm' : 'shadow-sm'
                         )}
                       >
-                        {isUser
-                          ? m.content
-                          : <ReactMarkdown components={mdComponents}>{linkifyEmail(m.content)}</ReactMarkdown>}
+                        {item.data.role === 'user'
+                          ? item.data.content
+                          : <ReactMarkdown components={mdComponents}>{linkifyEmail(item.data.content)}</ReactMarkdown>}
                       </Panel>
                       <span className="mt-1.5 px-2 text-[10px] uppercase tracking-wide text-blue-950/70">
-                        {formatDate(m.created_at)}
+                        {formatDate(item.data.created_at)}
                       </span>
                     </li>
                   )
-                })}
+                )}
               </ul>
             )
-          )}
+          })()}
 
           {tab === 'contact' && (
             data.submissions.length === 0 ? (
