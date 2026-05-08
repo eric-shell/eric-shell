@@ -1,6 +1,6 @@
 # Admin CRM — Reference
 
-A password-gated admin page at `/admin.html` for viewing every chat thread and contact form submission, keyed by an anonymous client-generated visitor UUID. Persistence runs alongside the existing chat stream and contact email — they are best-effort and never block the public response.
+A password-gated admin page at `/crm.html` for viewing every chat thread and contact form submission, keyed by an anonymous client-generated visitor UUID. Persistence runs alongside the existing chat stream and contact email — they are best-effort and never block the public response.
 
 ## File map
 
@@ -15,10 +15,10 @@ A password-gated admin page at `/admin.html` for viewing every chat thread and c
 | Contact persistence wiring | [api/contact.ts](api/contact.ts) (after Resend send) |
 | Client visitor ID generator | [src/lib/visitorId.ts](src/lib/visitorId.ts) — `localStorage['eric.sh:vid']` |
 | Visitor ID is sent on | [src/hooks/useChat.ts](src/hooks/useChat.ts), [src/components/ui/ContactForm/ContactForm.tsx](src/components/ui/ContactForm/ContactForm.tsx) — `X-Visitor-Id` header |
-| Admin SPA entry | [admin.html](admin.html) → [src/admin/main.tsx](src/admin/main.tsx) → [src/admin/App.tsx](src/admin/App.tsx) |
+| Admin SPA entry | [crm.html](crm.html) → [src/admin/main.tsx](src/admin/main.tsx) → [src/admin/App.tsx](src/admin/App.tsx) |
 | Admin SPA components | [src/admin/components/](src/admin/components/) — Login, Dashboard, VisitorList, VisitorDetail |
 | Multi-page Vite config | [vite.config.ts](vite.config.ts) — `rollupOptions.input` includes both `main` and `admin` |
-| Indexer hint | [public/robots.txt](public/robots.txt) — disallows `/admin.html` and `/api/admin/` |
+| Indexer hint | [public/robots.txt](public/robots.txt) — disallows `/crm` and `/api/admin/` |
 
 ## Architecture facts
 
@@ -27,7 +27,7 @@ A password-gated admin page at `/admin.html` for viewing every chat thread and c
 - **Visitor identity**: client generates `crypto.randomUUID()` on first interaction, stores at `localStorage['eric.sh:vid']`, sends as `X-Visitor-Id` on every `/api/chat` and `/api/contact` POST. Server validates the format with a UUID regex before any DB write. **Trust model: anonymous, best-effort attribution.** Anyone with someone else's UUID could write to that visitor's thread; UUIDs are random so this is impractical to exploit but worth knowing.
 - **Persistence is best-effort and order matters.** Both handlers wrap DB writes in try/catch so a Postgres outage can't break the public surface. **`contact.ts` persists BEFORE `res.json()`** — Vercel can freeze the function container as soon as a discrete response is flushed, silently dropping any trailing async work (we hit this on first deploy: chat persisted, contact didn't). **`chat.ts` persists AFTER `res.end()`** because the assistant reply isn't known until the stream completes; this works in practice (the streaming socket keeps the function alive long enough for the trailing DB write to land), but if it ever stops working, switch to `waitUntil()` from `@vercel/functions`.
 - **Admin auth**: shared password (`ADMIN_PASSWORD` env) → HMAC-SHA256-signed timestamp cookie (`ADMIN_SESSION_SECRET` env, 30-day max-age, `HttpOnly` + `Secure` + `SameSite=Lax`). Verified with `timingSafeEqual`. Login endpoint sleeps a constant `LOGIN_DELAY_MS` (1500ms) on every attempt regardless of outcome — invisible to a human, lethal to brute-force. Single user only; no multi-account support.
-- **Admin SPA is a separate Vite entry point** (`admin.html` at project root) so the admin bundle never ships with the public site (~7KB vs the main 60KB+). Login state is detected by probing `/api/admin/visitors` on mount; 401 → show login, 200 → show dashboard.
+- **Admin SPA is a separate Vite entry point** (`crm.html` at project root) so the admin bundle never ships with the public site (~7KB vs the main 60KB+). Login state is detected by probing `/api/admin/visitors` on mount; 401 → show login, 200 → show dashboard.
 - **No analytics on the admin path** — admin is internal-only and shouldn't fire gtag events.
 
 ## Adding a new admin endpoint
@@ -50,7 +50,7 @@ A password-gated admin page at `/admin.html` for viewing every chat thread and c
 | Name | Where set | Purpose |
 |---|---|---|
 | `POSTGRES_URL` | Auto-populated by the Neon ↔ Vercel integration. **Verify it's not empty** in each environment via `npx vercel env pull` — the integration sometimes creates the names without values. | Connection string for the Neon HTTP driver. |
-| `ADMIN_PASSWORD` | Set per-environment with `npx vercel env add ADMIN_PASSWORD <env>`. | The password typed into `/admin.html`. |
+| `ADMIN_PASSWORD` | Set per-environment with `npx vercel env add ADMIN_PASSWORD <env>`. | The password typed into `/crm.html`. |
 | `ADMIN_SESSION_SECRET` | Set per-environment; 32+ random chars, e.g. `openssl rand -base64 48`. Rotating this invalidates all admin sessions immediately. | HMAC key for the admin session cookie. |
 
 All three must exist in `development` for `vercel dev` to work, and in `production` for the live site. Add to `preview` if you want preview deploys to function.
@@ -64,9 +64,9 @@ curl -s http://localhost:3000/api/admin/visitors -i | head -1
 # Expect: HTTP/1.1 401 (no cookie set)
 ```
 
-Then visit http://localhost:3000/admin.html, sign in, and confirm the visitor row shows up with the right chat-message count.
+Then visit http://localhost:3000/crm.html, sign in, and confirm the visitor row shows up with the right chat-message count.
 
-In production: same flow at `https://<your-vercel-url>/admin.html`.
+In production: same flow at `https://<your-vercel-url>/crm.html`.
 
 If `/api/admin/visitors` returns 500, check `vercel dev` terminal output for the actual error. The most common one is `POSTGRES_URL is not set` — the integration didn't populate the value despite the name appearing in `npx vercel env ls`.
 
@@ -79,7 +79,7 @@ If `/api/admin/visitors` returns 500, check `vercel dev` terminal output for the
 | Change the login throttle | `LOGIN_DELAY_MS` constant in [api/admin/login.ts](api/admin/login.ts) |
 | Bump cookie lifetime | `MAX_AGE_SECONDS` in [api/_lib/auth.ts](api/_lib/auth.ts) |
 | Force everyone to re-login | Rotate `ADMIN_SESSION_SECRET` in Vercel env (any environment) |
-| Change the URL of the admin page | Rename `admin.html` and update `rollupOptions.input.admin` in [vite.config.ts](vite.config.ts); update `robots.txt` `Disallow` line |
+| Change the URL of the admin page | Rename `crm.html` and update `rollupOptions.input.admin` in [vite.config.ts](vite.config.ts); update `robots.txt` `Disallow` line |
 
 ## Things deliberately NOT built
 

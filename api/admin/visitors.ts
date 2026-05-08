@@ -23,7 +23,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
           v.last_seen_at,
           coalesce(c.last_chat_at, v.last_seen_at),
           coalesce(s.last_contact_at, v.last_seen_at)
-        ) as last_activity_at
+        ) as last_activity_at,
+        s.latest_name  as contact_name,
+        s.latest_email as contact_email
       from visitors v
       left join (
         select visitor_id,
@@ -35,7 +37,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
       left join (
         select visitor_id,
                count(*) as contact_count,
-               max(created_at) as last_contact_at
+               max(created_at) as last_contact_at,
+               (array_agg(name order by created_at desc))[1] as latest_name,
+               (array_agg(email order by created_at desc))[1] as latest_email
         from contact_submissions
         where visitor_id is not null
         group by visitor_id

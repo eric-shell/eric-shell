@@ -130,17 +130,17 @@ Order in `App.tsx`:
 
 ## Admin CRM
 
-A password-gated admin page at `/admin.html` records every chat thread and contact submission to Neon Postgres, keyed by an anonymous client-generated visitor UUID. Persistence is best-effort (wrapped in try/catch after the user-visible response) — DB outages can never break the public chat or contact form.
+A password-gated admin page at `/crm.html` records every chat thread and contact submission to Neon Postgres, keyed by an anonymous client-generated visitor UUID. Persistence is best-effort (wrapped in try/catch after the user-visible response) — DB outages can never break the public chat or contact form.
 
 - Reference: run `/crm` for the full file map, schema, auth model, security caveats, and gotchas.
 - Schema lives in [db/schema.sql](db/schema.sql) (apply manually via Neon SQL editor).
 - Required env vars: `POSTGRES_URL` (auto-set by Neon ↔ Vercel integration; **always verify the value isn't empty** with `npx vercel env pull`), `ADMIN_PASSWORD`, `ADMIN_SESSION_SECRET`.
 - Adding admin endpoints: first line of every handler under `api/admin/` must be `if (!requireAdmin(req, res)) return`.
-- The admin SPA is a separate Vite entry (`admin.html`); admin code never ships to public visitors.
+- The admin SPA is a separate Vite entry (`crm.html`); admin code never ships to public visitors.
 
 ## Deployment
 
-Static site + serverless functions on Vercel. `npm run build` produces `dist/` (with both `index.html` and `admin.html` entries) plus the `api/` functions. Final target: **eric.sh**.
+Static site + serverless functions on Vercel. `npm run build` produces `dist/` (with both `index.html` and `crm.html` entries) plus the `api/` functions. Final target: **eric.sh**.
 
 ## Claude Commands
 
