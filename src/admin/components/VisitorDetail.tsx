@@ -116,9 +116,9 @@ function ConversationDivider({ timestamp }: { timestamp: string }) {
   return (
     <li className="flex flex-col items-center gap-1.5 py-1 select-none" aria-label="Conversation cleared">
       <div className="w-full text-blue-950/20" aria-hidden="true">
-        <svg width="100%" height="8" viewBox="0 0 300 8" preserveAspectRatio="none" fill="none">
+        <svg width="100%" height="14" viewBox="0 0 300 14" preserveAspectRatio="none" fill="none">
           <path
-            d="M0 4 Q15 0 30 4 Q45 8 60 4 Q75 0 90 4 Q105 8 120 4 Q135 0 150 4 Q165 8 180 4 Q195 0 210 4 Q225 8 240 4 Q255 0 270 4 Q285 8 300 4"
+            d="M0 7 Q15 1 30 7 Q45 13 60 7 Q75 1 90 7 Q105 13 120 7 Q135 1 150 7 Q165 13 180 7 Q195 1 210 7 Q225 13 240 7 Q255 1 270 7 Q285 13 300 7"
             stroke="currentColor"
             strokeWidth="1.5"
             strokeLinecap="round"
