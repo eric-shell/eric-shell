@@ -41,7 +41,7 @@ export default function VisitorList({ visitors }: VisitorListProps) {
           <th className="py-2 pr-4 font-semibold w-36">Name</th>
           <th className="py-2 pr-4 font-semibold">Email</th>
           <th className="py-2 pr-4 font-semibold text-right w-16">Chat</th>
-          <th className="py-2 pr-4 font-semibold text-right w-16">Contact</th>
+          <th className="py-2 pr-4 font-semibold text-right w-24">Contact</th>
         </tr>
       </thead>
       <tbody>

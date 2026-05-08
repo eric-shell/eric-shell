@@ -94,11 +94,13 @@ function MetaField({ icon: Icon, label, value, mono = false }: {
   mono?: boolean
 }) {
   return (
-    <div className="flex items-start gap-2.5 min-w-0">
-      <Icon size={13} className="mt-0.5 shrink-0 text-blue-950/30" />
+    <div className="flex items-center gap-3 min-w-0">
+      <div className="shrink-0 flex items-center justify-center w-7 h-7 rounded-full bg-blue-950/10">
+        <Icon size={13} className="text-blue-950/70" />
+      </div>
       <div className="min-w-0">
-        <p className="text-[9px] font-semibold uppercase tracking-wider text-blue-950/40 mb-0.5">{label}</p>
-        <p className={twMerge('text-xs text-blue-950/80 truncate', mono && 'font-mono')}>{value}</p>
+        <p className="text-[9px] font-semibold uppercase tracking-wider text-blue-950/70 mb-0.5">{label}</p>
+        <p className={twMerge('text-xs font-semibold text-blue-950/80', mono && 'font-mono')}>{value}</p>
       </div>
     </div>
   )
@@ -137,8 +139,8 @@ export default function VisitorDetail({ id, onClose }: VisitorDetailProps) {
           <MetaField icon={Fingerprint} label="Visitor ID" value={id} mono />
           {data === null ? (
             Array.from({ length: 5 }).map((_, i) => (
-              <div key={i} className="flex items-start gap-2.5 min-w-0 animate-pulse">
-                <Skeleton className="mt-0.5 h-3 w-3 shrink-0" />
+              <div key={i} className="flex items-center gap-3 min-w-0 animate-pulse">
+                <Skeleton className="shrink-0 w-7 h-7 rounded-full" />
                 <div className="min-w-0 space-y-1.5">
                   <Skeleton className="h-2 w-10" />
                   <Skeleton className="h-3 w-24" />
