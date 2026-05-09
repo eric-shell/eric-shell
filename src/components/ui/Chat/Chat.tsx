@@ -100,7 +100,7 @@ export default function Chat({
     if (!vid) return
     fetch('/api/events', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', 'X-Visitor-Id': vid, 'X-Referrer': document.referrer },
       body: JSON.stringify({ visitorId: vid, type: 'ada_toggle', metadata: { enabled: isWhite } }),
     }).catch(() => {})
   }, [isWhite])
@@ -119,7 +119,7 @@ export default function Chat({
     if (vid) {
       fetch('/api/events', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'X-Visitor-Id': vid, 'X-Referrer': document.referrer },
         body: JSON.stringify({ visitorId: vid, type: 'chat_cleared' }),
       }).catch(() => {})
     }

@@ -11,6 +11,9 @@ export interface VisitorSummary {
   first_seen_at: string
   last_seen_at: string
   user_agent: string | null
+  country: string | null
+  city: string | null
+  referrer: string | null
   chat_message_count: number
   contact_count: number
   last_activity_at: string

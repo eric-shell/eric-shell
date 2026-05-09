@@ -17,13 +17,25 @@ export async function upsertVisitor(req: VercelRequest): Promise<string | null> 
   const ua = req.headers['user-agent']
   const userAgent = typeof ua === 'string' ? ua.slice(0, 500) : null
 
+  const rawCountry = req.headers['x-vercel-ip-country']
+  const country = typeof rawCountry === 'string' ? rawCountry : null
+
+  const rawCity = req.headers['x-vercel-ip-city']
+  const city = typeof rawCity === 'string' ? decodeURIComponent(rawCity) : null
+
+  const rawReferrer = req.headers['x-referrer']
+  const referrer = typeof rawReferrer === 'string' ? rawReferrer.slice(0, 500) || null : null
+
   const db = sql()
   await db`
-    insert into visitors (id, user_agent)
-    values (${id}, ${userAgent})
+    insert into visitors (id, user_agent, country, city, referrer)
+    values (${id}, ${userAgent}, ${country}, ${city}, ${referrer})
     on conflict (id) do update
       set last_seen_at = now(),
-          user_agent = coalesce(visitors.user_agent, excluded.user_agent)
+          user_agent = coalesce(visitors.user_agent, excluded.user_agent),
+          country    = coalesce(visitors.country,    excluded.country),
+          city       = coalesce(visitors.city,       excluded.city),
+          referrer   = coalesce(visitors.referrer,   excluded.referrer)
   `
   return id
 }

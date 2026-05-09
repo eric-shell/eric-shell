@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import ReactMarkdown from 'react-markdown'
 import type { Components } from 'react-markdown'
 import { twMerge } from 'tailwind-merge'
-import { type LucideIcon, CalendarDays, Clock, Eye, Fingerprint, Mail, Monitor, RotateCcw, User, X } from 'lucide-react'
+import { type LucideIcon, CalendarDays, Clock, Eye, Fingerprint, Globe, Link, Mail, Monitor, RotateCcw, User, X } from 'lucide-react'
 import { Button, Panel, toast } from '../../components/ui'
 import { Skeleton } from './Skeleton'
 
@@ -71,6 +71,10 @@ interface Visitor {
   first_seen_at: string
   last_seen_at: string
   user_agent: string | null
+  country: string | null
+  city: string | null
+  referrer: string | null
+  notes: string | null
 }
 
 interface DetailPayload {
@@ -136,6 +140,8 @@ function ConversationDivider({ timestamp }: { timestamp: string }) {
 export default function VisitorDetail({ id, onClose }: VisitorDetailProps) {
   const [data, setData] = useState<DetailPayload | null>(null)
   const [tab, setTab] = useState<Tab>('chat')
+  const [notes, setNotes] = useState('')
+  const [notesSaving, setNotesSaving] = useState(false)
   const chatListRef = useRef<HTMLUListElement>(null)
 
   useEffect(() => {
@@ -154,7 +160,10 @@ export default function VisitorDetail({ id, onClose }: VisitorDetailProps) {
           return
         }
         const json = await res.json()
-        if (!cancelled) setData(json)
+        if (!cancelled) {
+          setData(json)
+          setNotes(json.visitor?.notes ?? '')
+        }
       } catch {
         toast.error('Network error.')
       }
@@ -162,6 +171,25 @@ export default function VisitorDetail({ id, onClose }: VisitorDetailProps) {
     load()
     return () => { cancelled = true }
   }, [id])
+
+  async function saveNotes() {
+    if (!data) return
+    setNotesSaving(true)
+    try {
+      const res = await fetch(`/api/admin/visitors/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ notes }),
+      })
+      if (!res.ok) throw new Error()
+      setData(prev => prev ? { ...prev, visitor: { ...prev.visitor, notes: notes.trim() || null } } : prev)
+      toast.success('Notes saved.')
+    } catch {
+      toast.error('Failed to save notes.')
+    } finally {
+      setNotesSaving(false)
+    }
+  }
 
   const contact = data?.submissions[0]
 
@@ -193,6 +221,12 @@ export default function VisitorDetail({ id, onClose }: VisitorDetailProps) {
               )}
               {data.visitor?.user_agent && (
                 <MetaField icon={Monitor} label="User agent" value={data.visitor.user_agent} />
+              )}
+              {(data.visitor?.city || data.visitor?.country) && (
+                <MetaField icon={Globe} label="Location" value={[data.visitor.city, data.visitor.country].filter(Boolean).join(', ')} />
+              )}
+              {data.visitor?.referrer && (
+                <MetaField icon={Link} label="Referrer" value={data.visitor.referrer} />
               )}
               {(data.events.ada_toggle ?? 0) > 0 && (
                 <MetaField icon={Eye} label="High-contrast" value={`${data.events.ada_toggle}×`} />
@@ -298,6 +332,23 @@ export default function VisitorDetail({ id, onClose }: VisitorDetailProps) {
               </ul>
             )
           )}
+
+          {/* Notes */}
+          <div className="mt-5 border-t border-blue-950/10 pt-4">
+            <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-wider text-blue-950/50">Notes</p>
+            <textarea
+              value={notes}
+              onChange={e => setNotes(e.target.value)}
+              placeholder="Add private notes about this visitor…"
+              rows={3}
+              className="w-full resize-y rounded-lg border border-blue-950/10 bg-white px-3 py-2 text-sm text-blue-950 placeholder:text-blue-950/30 outline-none focus:border-blue-950/30 transition-colors"
+            />
+            <div className="mt-2 flex justify-end">
+              <Button variant="primary" size="sm" onClick={saveNotes} disabled={notesSaving}>
+                {notesSaving ? 'Saving…' : 'Save'}
+              </Button>
+            </div>
+          </div>
         </>
       )}
     </Panel>

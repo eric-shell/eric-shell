@@ -67,6 +67,7 @@ export function useChat() {
         headers: {
           'Content-Type': 'application/json',
           'X-Visitor-Id': getVisitorId(),
+          'X-Referrer': document.referrer,
         },
         body: JSON.stringify({ messages: history, website: '' }),
       })

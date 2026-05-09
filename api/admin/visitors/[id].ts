@@ -6,10 +6,6 @@ const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/
 
 export default async function handler(req: VercelRequest, res: VercelResponse): Promise<void> {
   if (!requireAdmin(req, res)) return
-  if (req.method !== 'GET') {
-    res.status(405).json({ error: 'Method not allowed' })
-    return
-  }
 
   const raw = req.query.id
   const id = Array.isArray(raw) ? raw[0] : raw
@@ -18,10 +14,29 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
     return
   }
 
+  if (req.method === 'PATCH') {
+    try {
+      const { notes } = (req.body ?? {}) as { notes?: unknown }
+      const notesVal = typeof notes === 'string' ? notes.trim() || null : null
+      const db = sql()
+      await db`update visitors set notes = ${notesVal} where id = ${id}`
+      res.status(200).json({ ok: true })
+    } catch (err) {
+      console.error('Admin visitor notes error:', err)
+      res.status(500).json({ error: 'Failed to save notes' })
+    }
+    return
+  }
+
+  if (req.method !== 'GET') {
+    res.status(405).json({ error: 'Method not allowed' })
+    return
+  }
+
   try {
     const db = sql()
     const visitorRows = (await db`
-      select id, first_seen_at, last_seen_at, user_agent
+      select id, first_seen_at, last_seen_at, user_agent, country, city, referrer, notes
       from visitors
       where id = ${id}
     `) as Record<string, unknown>[]

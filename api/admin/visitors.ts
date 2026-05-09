@@ -17,6 +17,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
         v.first_seen_at,
         v.last_seen_at,
         v.user_agent,
+        v.country,
+        v.city,
+        v.referrer,
         coalesce(c.chat_count, 0)::int     as chat_message_count,
         coalesce(s.contact_count, 0)::int  as contact_count,
         greatest(

@@ -108,6 +108,7 @@ export default function Dashboard({ onLogout }: DashboardProps) {
   const [stats, setStats] = useState<StatDay[] | null>(null)
   const [loading, setLoading] = useState(false)
   const [query, setQuery] = useState('')
+  const [lastLoaded, setLastLoaded] = useState<Date | null>(null)
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -128,10 +129,16 @@ export default function Dashboard({ onLogout }: DashboardProps) {
       toast.error('Network error.')
     } finally {
       setLoading(false)
+      setLastLoaded(new Date())
     }
   }, [onLogout])
 
   useEffect(() => { load() }, [load])
+
+  useEffect(() => {
+    const id = setInterval(load, 60_000)
+    return () => clearInterval(id)
+  }, [load])
 
   async function logout() {
     try { await fetch('/api/admin/logout', { method: 'POST' }) } catch { /* ignore */ }
@@ -154,7 +161,12 @@ export default function Dashboard({ onLogout }: DashboardProps) {
     <div className="mx-auto flex max-w-6xl flex-col gap-6 px-6 py-10">
       <header className="flex items-center justify-between">
         <H2 className="text-blue-950">CRM</H2>
-        <div className="flex gap-2">
+        <div className="flex items-center gap-2">
+          {lastLoaded && (
+            <span className="text-xs text-blue-950/40">
+              Updated {lastLoaded.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+            </span>
+          )}
           <Button variant="primary" size="sm" onClick={load} disabled={loading}><RefreshCw size={14} className={loading ? 'animate-spin' : ''} />Refresh</Button>
           <Button variant="white" size="sm" href={window.location.origin} target="_blank"><ExternalLink size={14} />Visit Website</Button>
           <Button variant="white" size="sm" onClick={logout}><LogOut size={14} />Sign out</Button>

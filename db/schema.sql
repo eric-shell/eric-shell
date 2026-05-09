@@ -5,8 +5,18 @@ create table if not exists visitors (
   id            uuid primary key,
   first_seen_at timestamptz not null default now(),
   last_seen_at  timestamptz not null default now(),
-  user_agent    text
+  user_agent    text,
+  country       text,
+  city          text,
+  referrer      text,
+  notes         text
 );
+
+-- Run these if the table already exists:
+-- alter table visitors add column if not exists country  text;
+-- alter table visitors add column if not exists city     text;
+-- alter table visitors add column if not exists referrer text;
+-- alter table visitors add column if not exists notes    text;
 
 create table if not exists chat_messages (
   id          bigserial primary key,

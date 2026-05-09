@@ -59,12 +59,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
   const { name, email, message } = result
 
   try {
-    const { error } = await resend.emails.send({
+    const rawCity = req.headers['x-vercel-ip-city']
+  const rawCountry = req.headers['x-vercel-ip-country']
+  const city = typeof rawCity === 'string' ? decodeURIComponent(rawCity) : null
+  const country = typeof rawCountry === 'string' ? rawCountry : null
+  const locationLine = [city, country].filter(Boolean).join(', ')
+
+  const { error } = await resend.emails.send({
       from: 'Eric Shell Website Form Submission <onboarding@resend.dev>',
       to: 'ericjshell@gmail.com',
       replyTo: email,
       subject: `New message from ${name} via eric.sh`,
-      text: `From: ${name} <${email}>\n\n${message}`,
+      text: `From: ${name} <${email}>${locationLine ? `\nLocation: ${locationLine}` : ''}\n\n${message}`,
     })
 
     if (error) {
