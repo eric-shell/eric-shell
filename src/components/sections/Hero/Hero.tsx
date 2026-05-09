@@ -1,7 +1,7 @@
 import { lazy, Suspense } from 'react'
 import { ChevronDown } from 'lucide-react'
-import { Button, CascadeGroup, CascadeItem, Chat, Eyebrow } from '../../ui'
-import { useChat, useParallax } from '../../../hooks'
+import { Button, CascadeGroup, CascadeItem, Chat, Container, Eyebrow } from '../../ui'
+import { useChat, useParallax } from '@/hooks'
 
 const ParticlesSmall = lazy(() => import('./ParticlesSmall'))
 const ParticlesLarge = lazy(() => import('./ParticlesLarge'))
@@ -76,7 +76,7 @@ export default function Hero() {
         className="absolute inset-0 z-[5] pointer-events-none mix-blend-multiply"
         style={{ background: 'radial-gradient(ellipse 65% 85% at 28% 55%, rgba(0,0,0,0.8) 0%, transparent 70%)' }}
       />
-      <div className="relative z-20 w-full max-w-[1440px] mx-auto px-6 py-24 grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+      <Container className="relative z-20 w-full py-24 grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
 
         {/* Left: text content */}
         <CascadeGroup mountOnly className="flex flex-col gap-6">
@@ -111,7 +111,7 @@ export default function Hero() {
           </CascadeItem>
         </CascadeGroup>
 
-      </div>
+      </Container>
 
       <CascadeGroup mountOnly className="hidden lg:block absolute bottom-24 left-1/2 -translate-x-1/2 z-30">
         <CascadeItem index={0}>

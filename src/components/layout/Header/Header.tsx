@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect, useRef } from 'react'
 import { Menu, X } from 'lucide-react'
-import { CascadeGroup, CascadeItem, Button } from '../../ui'
-import { navLinks } from '../../../data'
+import { CascadeGroup, CascadeItem, Button, Container } from '../../ui'
+import { navLinks } from '@/data'
 
 const eAudio = new Audio('/audio/Eeeeeee.wav')
 eAudio.volume = .4
@@ -66,7 +66,7 @@ export default function Header() {
       atTop && !menuOpen ? 'bg-transparent border-transparent' : 'bg-blue-950/90 backdrop-blur-md border-white/10'
     }`}>
       <CascadeGroup mountOnly>
-        <div className={`max-w-[1440px] mx-auto px-6 flex items-center justify-between transition-all duration-300 ease-out ${atTop ? 'py-6' : 'py-3'}`}>
+        <Container className={`flex items-center justify-between transition-all duration-300 ease-out ${atTop ? 'py-6' : 'py-3'}`}>
 
           <CascadeItem index={0}>
             <div className="relative">
@@ -122,7 +122,7 @@ export default function Header() {
             </button>
           </CascadeItem>
 
-        </div>
+        </Container>
       </CascadeGroup>
 
       <div

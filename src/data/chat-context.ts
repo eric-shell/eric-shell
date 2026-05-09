@@ -16,8 +16,7 @@ function loadBio(): string {
       .filter(r => r.key && r.value && !r.value.startsWith('('))
       .map(r => `- ${r.key}: ${r.value}`)
       .join('\n')
-  } catch (err) {
-    console.error('Failed to load bio.csv:', err)
+  } catch {
     cachedBio = ''
   }
   return cachedBio

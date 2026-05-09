@@ -3,17 +3,12 @@ import { createPortal } from 'react-dom'
 import { ArrowUp, MessagesSquare, Trash2, X } from 'lucide-react'
 import { twMerge } from 'tailwind-merge'
 import ReactMarkdown from 'react-markdown'
-import type { Components } from 'react-markdown'
 import Button from '../Button'
 import Panel from '../Panel'
-import type { ChatMessage } from '../../../hooks/useChat'
-import { getVisitorId } from '../../../lib/visitorId'
-
-const EMAIL_RE = /(?<!\]\(mailto:)(?<!\[)([\w.+-]+@[\w-]+\.[\w.-]+)(?!\w)(?!\]\(mailto:)/g
-
-function linkifyEmail(text: string): string {
-  return text.replace(EMAIL_RE, '[$1](mailto:$1)')
-}
+import type { ChatMessage } from '@/hooks/useChat'
+import { getVisitorId } from '@/lib/visitorId'
+import { chatMdComponents, linkifyEmail } from '@/lib/markdown'
+import { GENIE_OUT_MS } from './timings'
 
 interface ChatProps {
   value: string
@@ -28,7 +23,6 @@ interface ChatProps {
   className?: string
 }
 
-const GENIE_DURATION_MS = 480
 const TEXTAREA_MAX_HEIGHT = 160
 const TYPE_SPEED_MS = 28
 
@@ -102,7 +96,9 @@ export default function Chat({
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'X-Visitor-Id': vid, 'X-Referrer': document.referrer },
       body: JSON.stringify({ visitorId: vid, type: 'ada_toggle', metadata: { enabled: isWhite } }),
-    }).catch(() => {})
+    }).catch(err => {
+      if (import.meta.env.DEV) console.warn('ada_toggle event failed:', err)
+    })
   }, [isWhite])
 
   const handleClose = () => {
@@ -111,7 +107,7 @@ export default function Chat({
       setIsOpen(false)
       setIsClosing(false)
       onClose?.()
-    }, GENIE_DURATION_MS)
+    }, GENIE_OUT_MS)
   }
 
   const handleClear = () => {
@@ -121,46 +117,14 @@ export default function Chat({
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'X-Visitor-Id': vid, 'X-Referrer': document.referrer },
         body: JSON.stringify({ visitorId: vid, type: 'chat_cleared' }),
-      }).catch(() => {})
+      }).catch(err => {
+        if (import.meta.env.DEV) console.warn('chat_cleared event failed:', err)
+      })
     }
     onClear?.()
   }
 
-  const mdComponents: Components = {
-    a: ({ href, children, ...props }) => {
-      if (!href) return <>{children}</>
-      if (href.startsWith('#')) {
-        return (
-          <a
-            href={href}
-            onClick={() => handleClose()}
-            className="font-semibold underline underline-offset-2 hover:opacity-70 transition-opacity"
-            {...props}
-          >
-            {children}
-          </a>
-        )
-      }
-      const isExternal = /^(https?|mailto):/.test(href)
-      return (
-        <a
-          href={href}
-          target={isExternal ? '_blank' : undefined}
-          rel={isExternal ? 'noopener noreferrer' : undefined}
-          className="font-semibold underline underline-offset-2 hover:opacity-70 transition-opacity"
-          {...props}
-        >
-          {children}
-        </a>
-      )
-    },
-    p: ({ children }) => <p className="mb-2 last:mb-0">{children}</p>,
-    ul: ({ children }) => <ul className="list-disc pl-5 mb-2 last:mb-0 [&_li>p]:mb-0">{children}</ul>,
-    ol: ({ children }) => <ol className="list-decimal pl-5 mb-2 last:mb-0 [&_li>p]:mb-0">{children}</ol>,
-    li: ({ children }) => <li className="mb-1.5 last:mb-0">{children}</li>,
-    code: ({ children }) => <code className="px-1 py-0.5 rounded bg-blue-100 font-mono text-xs">{children}</code>,
-    strong: ({ children }) => <span className="font-semibold">{children}</span>,
-  }
+  const mdComponents = chatMdComponents(handleClose)
 
   if (!isOpen) {
     return createPortal(
@@ -171,7 +135,7 @@ export default function Chat({
         }}
         variant="primary"
         size="md"
-        className="genie-button fixed bottom-6 right-6 z-50 shadow-xl [animation:genie-button-in_350ms_cubic-bezier(0.34,1.56,0.64,1)_both] z-[900]"
+        className="genie-button fixed bottom-6 right-6 z-50 shadow-xl animate-genie-button-in z-[900]"
         rightIcon={<MessagesSquare size={15} strokeWidth={2.5} aria-hidden="true" />}
       >
         Start a Chat
@@ -192,14 +156,14 @@ export default function Chat({
       className={twMerge(
         'genie-panel relative flex flex-col rounded-2xl overflow-hidden border',
         borderClass,
-        isClosing && '[animation:genie-out_480ms_cubic-bezier(0.4,0,0.9,0.6)_both]',
+        isClosing && 'animate-genie-out',
         isClosing && 'pointer-events-none',
         className
       )}
     >
       <Panel
         variant={isWhite ? 'white' : 'glass-light'}
-        className="absolute inset-0 border-0 [animation:blur-in_1s_cubic-bezier(0.16,1,0.3,1)_0.3s_both]"
+        className="absolute inset-0 border-0 animate-blur-in"
       />
       <header
         className={twMerge(
@@ -328,6 +292,18 @@ export default function Chat({
             <ArrowUp size={20} strokeWidth={2.5} aria-hidden="true" />
           </Button>
         </div>
+        <p className={twMerge(
+          'mt-2 px-1 font-sans text-[11px] leading-none text-center',
+          isWhite ? 'text-blue-950/50' : 'text-white/60'
+        )}>
+          Conversations are tracked.{' '}
+          <a
+            href="/privacy"
+            className="underline underline-offset-2 hover:opacity-80 transition-opacity"
+          >
+            Privacy
+          </a>
+        </p>
       </div>
     </div>
   )

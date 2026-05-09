@@ -1,61 +1,28 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
 import { ArrowLeft, ArrowRight, ArrowUpRight, Pause, Play } from 'lucide-react'
-import { testimonials } from '../../../data'
-import { Button, CascadeGroup, CascadeItem, Eyebrow, H2 } from '../../ui'
-
-const INTERVAL_MS = 6000
-const FADE_MS = 250
+import { testimonials } from '@/data'
+import { Button, CascadeGroup, CascadeItem, Container, SectionHeader } from '../../ui'
+import { useCarousel } from '@/hooks'
 
 export default function Testimonials() {
-  const [current, setCurrent] = useState(0)
-  const [isPlaying, setIsPlaying] = useState(true)
-  const [visible, setVisible] = useState(true)
-  const fadeTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const currentRef = useRef(current)
+  const { index, visible, isPlaying, next, prev, togglePlaying } = useCarousel({
+    length: testimonials.length,
+    intervalMs: 6000,
+    fadeMs: 250,
+  })
 
-  useEffect(() => { currentRef.current = current }, [current])
-
-  const goTo = useCallback((index: number) => {
-    if (fadeTimer.current) clearTimeout(fadeTimer.current)
-    setVisible(false)
-    fadeTimer.current = setTimeout(() => {
-      setCurrent(index)
-      setVisible(true)
-    }, FADE_MS)
-  }, [])
-
-  const prev = useCallback(() => {
-    goTo((currentRef.current - 1 + testimonials.length) % testimonials.length)
-  }, [goTo])
-
-  const next = useCallback(() => {
-    goTo((currentRef.current + 1) % testimonials.length)
-  }, [goTo])
-
-  useEffect(() => {
-    if (!isPlaying) return
-    const id = setInterval(() => {
-      goTo((currentRef.current + 1) % testimonials.length)
-    }, INTERVAL_MS)
-    return () => clearInterval(id)
-  }, [isPlaying, goTo])
-
-  useEffect(() => {
-    return () => { if (fadeTimer.current) clearTimeout(fadeTimer.current) }
-  }, [])
-
-  const { review, author } = testimonials[current]
+  const { review, author } = testimonials[index]
 
   return (
     <section id="testimonials" className="bg-blue-950 text-white skew-section">
-      <div className="max-w-[1440px] mx-auto px-6 unskew-inner">
+      <Container className="unskew-inner">
 
         <CascadeGroup className="flex items-start justify-between gap-4 pb-10">
           <CascadeItem index={0}>
-            <div>
-              <Eyebrow className="text-blue-50 mb-4 block">Feedback from the Team</Eyebrow>
-              <H2>Testimonials</H2>
-            </div>
+            <SectionHeader
+              eyebrow="Feedback from the Team"
+              title="Testimonials"
+              eyebrowClassName="text-blue-50"
+            />
           </CascadeItem>
           <CascadeItem index={1} className="hidden md:block">
             <Button
@@ -104,7 +71,6 @@ export default function Testimonials() {
               <blockquote
                 className={`transition-opacity duration-[400ms] ${visible ? 'opacity-100' : 'opacity-0'}`}
               >
-                {/* <span aria-hidden="true" className="font-display text-5xl text-blue-700 leading-none block mb-2">&ldquo;</span> */}
                 <p className="font-sans text-xl leading-relaxed text-white">
                   "{review}"
                 </p>
@@ -130,7 +96,7 @@ export default function Testimonials() {
               <Button
                 shape="square"
                 variant="secondary"
-                onClick={() => setIsPlaying(p => !p)}
+                onClick={togglePlaying}
                 aria-label={isPlaying ? 'Pause testimonial slider' : 'Play testimonial slider'}
               >
                 {isPlaying ? <Pause size={18} strokeWidth={2.5} aria-hidden="true" /> : <Play size={18} strokeWidth={2.5} aria-hidden="true" />}
@@ -147,7 +113,7 @@ export default function Testimonials() {
           </CascadeItem>
 
         </CascadeGroup>
-      </div>
+      </Container>
     </section>
   )
 }

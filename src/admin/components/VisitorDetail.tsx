@@ -1,242 +1,30 @@
-import { useEffect, useRef, useState } from 'react'
-import ReactMarkdown from 'react-markdown'
-import type { Components } from 'react-markdown'
-import { twMerge } from 'tailwind-merge'
-import { type LucideIcon, CalendarDays, Clock, Eye, Fingerprint, Globe, Link, Mail, Monitor, RotateCcw, User, X } from 'lucide-react'
-import { Button, Panel, toast } from '../../components/ui'
-import { Skeleton } from './Skeleton'
-
-function DetailSkeleton() {
-  return (
-    <div className="animate-pulse">
-      <div className="mb-4 flex gap-8 border-b border-blue-950/10 pb-2.5">
-        <Skeleton className="h-3 w-12" />
-        <Skeleton className="h-3 w-16" />
-      </div>
-      <div className="flex flex-col gap-3">
-        <div className="flex justify-end"><Skeleton className="h-9 w-48 rounded-2xl" /></div>
-        <div className="flex justify-start"><Skeleton className="h-16 w-64 rounded-2xl" /></div>
-        <div className="flex justify-end"><Skeleton className="h-9 w-36 rounded-2xl" /></div>
-        <div className="flex justify-start"><Skeleton className="h-12 w-52 rounded-2xl" /></div>
-      </div>
-    </div>
-  )
-}
-
-const EMAIL_RE = /(?<!\]\(mailto:)(?<!\[)([\w.+-]+@[\w-]+\.[\w.-]+)(?!\w)(?!\]\(mailto:)/g
-const linkifyEmail = (text: string) => text.replace(EMAIL_RE, '[$1](mailto:$1)')
-
-const mdComponents: Components = {
-  a: ({ href, children, ...props }) => (
-    <a
-      href={href}
-      target="_blank"
-      rel="noopener noreferrer"
-      className="font-semibold underline underline-offset-2 hover:opacity-70 transition-opacity"
-      {...props}
-    >
-      {children}
-    </a>
-  ),
-  p: ({ children }) => <p className="mb-2 last:mb-0">{children}</p>,
-  ul: ({ children }) => <ul className="list-disc pl-5 mb-2 last:mb-0 [&_li>p]:mb-0">{children}</ul>,
-  ol: ({ children }) => <ol className="list-decimal pl-5 mb-2 last:mb-0 [&_li>p]:mb-0">{children}</ol>,
-  li: ({ children }) => <li className="mb-1.5 last:mb-0">{children}</li>,
-  code: ({ children }) => <code className="px-1 py-0.5 rounded bg-blue-100 font-mono text-xs">{children}</code>,
-  strong: ({ children }) => <span className="font-semibold">{children}</span>,
-}
+import { useState } from 'react'
+import { Trash2, X } from 'lucide-react'
+import { Button, Panel } from '../../components/ui'
+import { useVisitorDetail } from '../hooks/useVisitorDetail'
+import { DetailSkeleton } from './Skeleton'
+import VisitorMetaGrid from './VisitorMetaGrid'
+import ConversationTimeline from './ConversationTimeline'
+import ContactSubmissionList from './ContactSubmissionList'
+import TabBar from './TabBar'
 
 interface VisitorDetailProps {
   id: string
   onClose: () => void
-}
-
-interface ChatMessage {
-  id: number
-  role: 'user' | 'assistant'
-  content: string
-  created_at: string
-}
-
-interface ContactSubmission {
-  id: number
-  name: string
-  email: string
-  message: string
-  created_at: string
-}
-
-interface Visitor {
-  id: string
-  first_seen_at: string
-  last_seen_at: string
-  user_agent: string | null
-  country: string | null
-  city: string | null
-  referrer: string | null
-  notes: string | null
-}
-
-interface DetailPayload {
-  visitor: Visitor
-  messages: ChatMessage[]
-  submissions: ContactSubmission[]
-  events: Record<string, number>
-  clearEvents: { created_at: string }[]
+  onDeleted?: (id: string) => void
 }
 
 type Tab = 'chat' | 'contact'
 
-function formatDate(iso: string) {
-  return new Date(iso).toLocaleString(undefined, {
-    month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit',
-  })
-}
-
-function MetaField({ icon: Icon, label, value, mono = false }: {
-  icon: LucideIcon
-  label: string
-  value: string
-  mono?: boolean
-}) {
-  return (
-    <div className="flex items-center gap-3 min-w-0">
-      <div className="shrink-0 flex items-center justify-center w-7 h-7 rounded-full bg-blue-950/10">
-        <Icon size={13} className="text-blue-950/70" />
-      </div>
-      <div className="min-w-0">
-        <p className="text-[9px] font-semibold uppercase tracking-wider text-blue-950/70 mb-0.5">{label}</p>
-        <p className={twMerge('text-xs font-semibold text-blue-950/80', mono && 'font-mono')}>{value}</p>
-      </div>
-    </div>
-  )
-}
-
-type TimelineItem =
-  | { kind: 'message'; data: ChatMessage }
-  | { kind: 'cleared'; created_at: string }
-
-function ConversationDivider({ timestamp }: { timestamp: string }) {
-  return (
-    <li className="flex flex-col items-center gap-1.5 py-1 select-none" aria-label="Conversation cleared">
-      <div className="w-full text-blue-950/20" aria-hidden="true">
-        <svg width="100%" height="30" viewBox="0 0 300 30" preserveAspectRatio="none" fill="none">
-          <path
-            d="M0 15 Q5 1 10 15 Q15 29 20 15 Q25 1 30 15 Q35 29 40 15 Q45 1 50 15 Q55 29 60 15 Q65 1 70 15 Q75 29 80 15 Q85 1 90 15 Q95 29 100 15 Q105 1 110 15 Q115 29 120 15 Q125 1 130 15 Q135 29 140 15 Q145 1 150 15 Q155 29 160 15 Q165 1 170 15 Q175 29 180 15 Q185 1 190 15 Q195 29 200 15 Q205 1 210 15 Q215 29 220 15 Q225 1 230 15 Q235 29 240 15 Q245 1 250 15 Q255 29 260 15 Q265 1 270 15 Q275 29 280 15 Q285 1 290 15 Q295 29 300 15"
-            stroke="currentColor"
-            strokeWidth="1.5"
-            strokeLinecap="round"
-            vectorEffect="non-scaling-stroke"
-          />
-        </svg>
-      </div>
-      <span className="text-[10px] uppercase tracking-wide text-blue-950/35">
-        Conversation cleared · {formatDate(timestamp)}
-      </span>
-    </li>
-  )
-}
-
-export default function VisitorDetail({ id, onClose }: VisitorDetailProps) {
-  const [data, setData] = useState<DetailPayload | null>(null)
+export default function VisitorDetail({ id, onClose, onDeleted }: VisitorDetailProps) {
+  const { data, notes, setNotes, notesSaving, saveNotes, deleting, deleteVisitor } =
+    useVisitorDetail(id, { onClose, onDeleted })
   const [tab, setTab] = useState<Tab>('chat')
-  const [notes, setNotes] = useState('')
-  const [notesSaving, setNotesSaving] = useState(false)
-  const chatListRef = useRef<HTMLUListElement>(null)
-
-  useEffect(() => {
-    const el = chatListRef.current
-    if (!el) return
-    el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' })
-  }, [tab, data])
-
-  useEffect(() => {
-    let cancelled = false
-    async function load() {
-      try {
-        const res = await fetch(`/api/admin/visitors/${id}`)
-        if (!res.ok) {
-          toast.error('Failed to load visitor.')
-          return
-        }
-        const json = await res.json()
-        if (!cancelled) {
-          setData(json)
-          setNotes(json.visitor?.notes ?? '')
-        }
-      } catch {
-        toast.error('Network error.')
-      }
-    }
-    load()
-    return () => { cancelled = true }
-  }, [id])
-
-  async function saveNotes() {
-    if (!data) return
-    setNotesSaving(true)
-    try {
-      const res = await fetch(`/api/admin/visitors/${id}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ notes }),
-      })
-      if (!res.ok) throw new Error()
-      setData(prev => prev ? { ...prev, visitor: { ...prev.visitor, notes: notes.trim() || null } } : prev)
-      toast.success('Notes saved.')
-    } catch {
-      toast.error('Failed to save notes.')
-    } finally {
-      setNotesSaving(false)
-    }
-  }
-
-  const contact = data?.submissions[0]
 
   return (
     <Panel variant="white" className="rounded-b-xl rounded-t-none p-5">
-      {/* Meta grid */}
       <div className="mb-5 flex items-start justify-between gap-6">
-        <div className="grid grid-cols-2 gap-x-8 gap-y-3 sm:grid-cols-3 flex-1 min-w-0">
-          <MetaField icon={Fingerprint} label="Visitor ID" value={id} mono />
-          {data === null ? (
-            Array.from({ length: 5 }).map((_, i) => (
-              <div key={i} className="flex items-center gap-3 min-w-0 animate-pulse">
-                <Skeleton className="shrink-0 w-7 h-7 rounded-full" />
-                <div className="min-w-0 space-y-1.5">
-                  <Skeleton className="h-2 w-10" />
-                  <Skeleton className="h-3 w-24" />
-                </div>
-              </div>
-            ))
-          ) : (
-            <>
-              {contact?.name   && <MetaField icon={User}  label="Name"  value={contact.name} />}
-              {contact?.email  && <MetaField icon={Mail}  label="Email" value={contact.email} />}
-              {data.visitor && (
-                <>
-                  <MetaField icon={CalendarDays} label="First seen" value={formatDate(data.visitor.first_seen_at)} />
-                  <MetaField icon={Clock}        label="Last seen"  value={formatDate(data.visitor.last_seen_at)} />
-                </>
-              )}
-              {data.visitor?.user_agent && (
-                <MetaField icon={Monitor} label="User agent" value={data.visitor.user_agent} />
-              )}
-              {(data.visitor?.city || data.visitor?.country) && (
-                <MetaField icon={Globe} label="Location" value={[data.visitor.city, data.visitor.country].filter(Boolean).join(', ')} />
-              )}
-              {data.visitor?.referrer && (
-                <MetaField icon={Link} label="Referrer" value={data.visitor.referrer} />
-              )}
-              {(data.events.ada_toggle ?? 0) > 0 && (
-                <MetaField icon={Eye} label="High-contrast" value={`${data.events.ada_toggle}×`} />
-              )}
-              {(data.events.chat_cleared ?? 0) > 0 && (
-                <MetaField icon={RotateCcw} label="Chats cleared" value={`${data.events.chat_cleared}×`} />
-              )}
-            </>
-          )}
-        </div>
+        <VisitorMetaGrid id={id} data={data} />
         <Button variant="white" size="sm" shape="square" className="rounded-full" onClick={onClose}>
           <X size={13} />
         </Button>
@@ -246,94 +34,26 @@ export default function VisitorDetail({ id, onClose }: VisitorDetailProps) {
         <DetailSkeleton />
       ) : (
         <>
-          {/* Tabs */}
-          <div className="mb-4 flex border-b border-blue-950/10">
-            {([
+          <TabBar
+            className="mb-4"
+            tabs={[
               ['chat', `Chat (${data.messages.length})`],
               ['contact', `Contact (${data.submissions.length})`],
-            ] as [Tab, string][]).map(([key, label]) => (
-              <button
-                key={key}
-                onClick={() => setTab(key)}
-                className={twMerge(
-                  'cursor-pointer px-4 py-2 text-xs font-semibold uppercase tracking-wide border-b-2 -mb-px transition-colors',
-                  tab === key
-                    ? 'border-blue-950 text-blue-950'
-                    : 'border-transparent text-blue-950/40 hover:text-blue-950/70'
-                )}
-              >
-                {label}
-              </button>
-            ))}
-          </div>
+            ] as const}
+            active={tab}
+            onChange={setTab}
+          />
 
-          {/* Tab panels */}
-          {tab === 'chat' && (() => {
-            if (data.messages.length === 0) {
-              return <p className="text-sm text-blue-950/50">No chat messages.</p>
-            }
-            const timeline: TimelineItem[] = []
-            let ci = 0
-            for (const msg of data.messages) {
-              while (ci < data.clearEvents.length && data.clearEvents[ci].created_at <= msg.created_at) {
-                timeline.push({ kind: 'cleared', created_at: data.clearEvents[ci].created_at })
-                ci++
-              }
-              timeline.push({ kind: 'message', data: msg })
-            }
-            while (ci < data.clearEvents.length) {
-              timeline.push({ kind: 'cleared', created_at: data.clearEvents[ci++].created_at })
-            }
-            return (
-              <ul ref={chatListRef} className="flex flex-col gap-3 max-h-[28rem] overflow-y-auto pr-1">
-                {timeline.map((item, i) =>
-                  item.kind === 'cleared' ? (
-                    <ConversationDivider key={`clear-${i}`} timestamp={item.created_at} />
-                  ) : (
-                    <li
-                      key={item.data.id}
-                      className={twMerge('flex flex-col', item.data.role === 'user' ? 'items-end' : 'items-start')}
-                    >
-                      <Panel
-                        variant={item.data.role === 'user' ? 'primary' : 'white'}
-                        className={twMerge(
-                          'max-w-[85%] rounded-2xl px-4 py-2.5 font-sans text-sm',
-                          item.data.role === 'user' ? 'whitespace-pre-wrap shadow-sm' : 'shadow-sm'
-                        )}
-                      >
-                        {item.data.role === 'user'
-                          ? item.data.content
-                          : <ReactMarkdown components={mdComponents}>{linkifyEmail(item.data.content)}</ReactMarkdown>}
-                      </Panel>
-                      <span className="mt-1.5 px-2 text-[10px] uppercase tracking-wide text-blue-950/70">
-                        {formatDate(item.data.created_at)}
-                      </span>
-                    </li>
-                  )
-                )}
-              </ul>
-            )
-          })()}
-
-          {tab === 'contact' && (
-            data.submissions.length === 0 ? (
-              <p className="text-sm text-blue-950/50">No contact submissions.</p>
-            ) : (
-              <ul className="flex flex-col gap-3 max-h-[28rem] overflow-y-auto pr-1">
-                {data.submissions.map(s => (
-                  <li key={s.id} className="rounded-lg border border-blue-950/10 bg-white p-3 text-sm">
-                    <div className="mb-1 flex items-center justify-between text-[10px] text-blue-950/50">
-                      <span><span className="font-semibold text-blue-950">{s.name}</span> · {s.email}</span>
-                      <span className="text-blue-950/70">{formatDate(s.created_at)}</span>
-                    </div>
-                    <div className="whitespace-pre-wrap text-blue-950/80">{s.message}</div>
-                  </li>
-                ))}
-              </ul>
-            )
+          {tab === 'chat' && (
+            <ConversationTimeline
+              messages={data.messages}
+              clearEvents={data.clearEvents}
+              scrollDep={data}
+            />
           )}
 
-          {/* Notes */}
+          {tab === 'contact' && <ContactSubmissionList submissions={data.submissions} />}
+
           <div className="mt-5 border-t border-blue-950/10 pt-4">
             <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-wider text-blue-950/50">Notes</p>
             <textarea
@@ -343,7 +63,17 @@ export default function VisitorDetail({ id, onClose }: VisitorDetailProps) {
               rows={3}
               className="w-full resize-y rounded-lg border border-blue-950/10 bg-white px-3 py-2 text-sm text-blue-950 placeholder:text-blue-950/30 outline-none focus:border-blue-950/30 transition-colors"
             />
-            <div className="mt-2 flex justify-end">
+            <div className="mt-2 flex items-center justify-between gap-2">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={deleteVisitor}
+                disabled={deleting}
+                leftIcon={<Trash2 size={13} strokeWidth={2.5} aria-hidden="true" />}
+                className="text-red-700 hover:text-red-900"
+              >
+                {deleting ? 'Deleting…' : 'Delete visitor data'}
+              </Button>
               <Button variant="primary" size="sm" onClick={saveNotes} disabled={notesSaving}>
                 {notesSaving ? 'Saving…' : 'Save'}
               </Button>

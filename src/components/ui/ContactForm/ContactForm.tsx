@@ -6,7 +6,7 @@ import Input from '../Input'
 import Panel from '../Panel'
 import Textarea from '../Textarea'
 import { toast } from '../Toast'
-import { getVisitorId } from '../../../lib/visitorId'
+import { getVisitorId } from '@/lib/visitorId'
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 

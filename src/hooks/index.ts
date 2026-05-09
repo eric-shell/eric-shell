@@ -1,4 +1,6 @@
+export { useCarousel } from './useCarousel'
 export { useChat } from './useChat'
 export type { ChatMessage } from './useChat'
+export { useIntersectionObserver } from './useIntersectionObserver'
 export { useParallax } from './useParallax'
 export { useTitleCycle } from './useTitleCycle'

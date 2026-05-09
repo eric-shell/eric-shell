@@ -1,6 +1,6 @@
 import { lazy, Suspense } from 'react'
-import { CascadeGroup, CascadeItem, ContactForm, Eyebrow, H2 } from '../../ui'
-import { useParallax } from '../../../hooks'
+import { CascadeGroup, CascadeItem, ContactForm, Container, Eyebrow, H2 } from '../../ui'
+import { useParallax } from '@/hooks'
 
 const ParticlesSmall = lazy(() => import('../Hero/ParticlesSmall'))
 const ParticlesLarge = lazy(() => import('../Hero/ParticlesLarge'))
@@ -56,7 +56,7 @@ export default function Contact() {
 
       <Suspense fallback={null}><ParticlesLarge mode="fall-toward" /></Suspense>
 
-      <div className="relative z-20 w-full max-w-[1440px] mx-auto px-6 py-24 grid grid-cols-1 lg:grid-cols-2 gap-16 lg:gap-24 items-center">
+      <Container className="relative z-20 w-full py-24 grid grid-cols-1 lg:grid-cols-2 gap-16 lg:gap-24 items-center">
 
         {/* Left: heading + copy */}
         <CascadeGroup className="flex flex-col gap-6" threshold={0.15}>
@@ -92,7 +92,7 @@ export default function Contact() {
           </CascadeItem>
         </CascadeGroup>
 
-      </div>
+      </Container>
     </section>
   )
 }

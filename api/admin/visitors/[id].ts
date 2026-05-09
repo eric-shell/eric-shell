@@ -1,6 +1,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 import { requireAdmin } from '../../_lib/auth.js'
 import { sql } from '../../_lib/db.js'
+import type { ChatMessage, ContactSubmission, Visitor, VisitorDetailPayload } from '../../_lib/types.js'
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
@@ -28,6 +29,29 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
     return
   }
 
+  if (req.method === 'DELETE') {
+    try {
+      const db = sql()
+      // Contact submissions FK is `on delete set null`, so explicitly remove
+      // them first to honor right-to-deletion. Chat messages and events
+      // cascade-delete automatically.
+      await db`delete from contact_submissions where visitor_id = ${id}`
+      const result = await db`delete from visitors where id = ${id}`
+      const rowCount = (result as unknown as { count?: number; rowCount?: number }).count
+        ?? (result as unknown as { rowCount?: number }).rowCount
+        ?? 0
+      if (rowCount === 0) {
+        res.status(404).json({ error: 'Not found' })
+        return
+      }
+      res.status(200).json({ ok: true })
+    } catch (err) {
+      console.error('Admin visitor delete error:', err)
+      res.status(500).json({ error: 'Failed to delete visitor' })
+    }
+    return
+  }
+
   if (req.method !== 'GET') {
     res.status(405).json({ error: 'Method not allowed' })
     return
@@ -39,7 +63,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
       select id, first_seen_at, last_seen_at, user_agent, country, city, referrer, notes
       from visitors
       where id = ${id}
-    `) as Record<string, unknown>[]
+    `) as Visitor[]
     if (visitorRows.length === 0) {
       res.status(404).json({ error: 'Not found' })
       return
@@ -50,13 +74,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
       from chat_messages
       where visitor_id = ${id}
       order by created_at asc, id asc
-    `) as Record<string, unknown>[]
+    `) as ChatMessage[]
     const submissions = (await db`
       select id, name, email, message, created_at
       from contact_submissions
       where visitor_id = ${id}
       order by created_at desc
-    `) as Record<string, unknown>[]
+    `) as ContactSubmission[]
     const eventRows = (await db`
       select type, count(*)::int as count
       from visitor_events
@@ -70,13 +94,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
       where visitor_id = ${id} and type = 'chat_cleared'
       order by created_at asc
     `) as { created_at: string }[]
-    res.status(200).json({
+    const payload: VisitorDetailPayload = {
       visitor: visitorRows[0],
       messages,
       submissions,
       events,
       clearEvents,
-    })
+    }
+    res.status(200).json(payload)
   } catch (err) {
     console.error('Admin visitor detail error:', err)
     res.status(500).json({ error: 'Failed to load visitor' })

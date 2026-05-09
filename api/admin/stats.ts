@@ -1,6 +1,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 import { requireAdmin } from '../_lib/auth.js'
 import { sql } from '../_lib/db.js'
+import type { StatsPayload } from '../_lib/types.js'
 
 export default async function handler(req: VercelRequest, res: VercelResponse): Promise<void> {
   if (!requireAdmin(req, res)) return
@@ -30,7 +31,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
       visitors: r.visitors,
     }))
 
-    res.status(200).json({ days })
+    const payload: StatsPayload = { days }
+    res.status(200).json(payload)
   } catch (err) {
     console.error('Admin stats error:', err)
     res.status(500).json({ error: 'Failed to load stats' })

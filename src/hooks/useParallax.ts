@@ -65,7 +65,9 @@ export function useParallax({ bgStrength, gradientStrength, subjectStrength, ler
 
   const handleMouseMove = useCallback((e: React.MouseEvent<HTMLElement>) => {
     if (reducedMotion.current) return
-    const rect = sectionRef.current!.getBoundingClientRect()
+    const section = sectionRef.current
+    if (!section) return
+    const rect = section.getBoundingClientRect()
     targetX.current = ((e.clientX - rect.left) / rect.width - 0.5) * 2
     targetY.current = ((e.clientY - rect.top) / rect.height - 0.5) * 2
 

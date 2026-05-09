@@ -1,5 +1,6 @@
 import { useState } from 'react'
-import { Button, H2, Input, Panel, toast } from '../../components/ui'
+import { Button, H2, Input, Panel } from '../../components/ui'
+import { apiCall } from '../lib/api'
 
 interface LoginProps {
   onSuccess: () => void
@@ -13,23 +14,13 @@ export default function Login({ onSuccess }: LoginProps) {
     e.preventDefault()
     if (!password || submitting) return
     setSubmitting(true)
-    try {
-      const res = await fetch('/api/admin/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ password }),
-      })
-      if (res.ok) {
-        onSuccess()
-      } else {
-        const data = await res.json().catch(() => ({}))
-        toast.error(data.error || 'Login failed.')
-      }
-    } catch {
-      toast.error('Network error.')
-    } finally {
-      setSubmitting(false)
-    }
+    const result = await apiCall('/api/admin/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ password }),
+    }, { errorMessage: 'Login failed.' })
+    setSubmitting(false)
+    if (result) onSuccess()
   }
 
   return (

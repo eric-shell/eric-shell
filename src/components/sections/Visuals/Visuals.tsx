@@ -1,5 +1,5 @@
-import { instagramPosts } from '../../../data'
-import { Button, CascadeGroup, CascadeItem, Eyebrow, H2, Post } from '../../ui'
+import { instagramPosts } from '@/data'
+import { Button, CascadeGroup, CascadeItem, Container, Post, SectionHeader } from '../../ui'
 
 function InstagramIcon({ size = 15 }: { size?: number }) {
   return (
@@ -12,27 +12,29 @@ function InstagramIcon({ size = 15 }: { size?: number }) {
 export default function Visuals() {
   return (
     <section id="visuals" className="relative bg-blue-50 skew-section z-[150]">
-      <div className="max-w-[1440px] mx-auto px-6 unskew-inner">
+      <Container className="unskew-inner">
 
         <CascadeGroup threshold={0.15}>
           <CascadeItem index={0}>
-            <div className="flex items-start justify-between gap-4 pb-10">
-              <div>
-                <Eyebrow className="text-blue-900 mb-4 block">Creative Supplements</Eyebrow>
-                <H2 className="text-blue-950">Visuals</H2>
-              </div>
-              <Button
-                href="https://www.instagram.com/ericshell/"
-                target="_blank"
-                rel="noopener noreferrer"
-                variant="primary"
-                size="md"
-                className="hidden md:inline-flex shrink-0"
-                leftIcon={<InstagramIcon size={15} />}
-              >
-                Follow on Instagram
-              </Button>
-            </div>
+            <SectionHeader
+              eyebrow="Creative Supplements"
+              title="Visuals"
+              eyebrowClassName="text-blue-900"
+              titleClassName="text-blue-950"
+              action={
+                <Button
+                  href="https://www.instagram.com/ericshell/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  variant="primary"
+                  size="md"
+                  className="hidden md:inline-flex shrink-0"
+                  leftIcon={<InstagramIcon size={15} />}
+                >
+                  Follow on Instagram
+                </Button>
+              }
+            />
           </CascadeItem>
         </CascadeGroup>
 
@@ -83,7 +85,7 @@ export default function Visuals() {
           </div>
 
         </div>
-      </div>
+      </Container>
     </section>
   )
 }

@@ -1,17 +1,28 @@
 import { useEffect } from 'react'
 import './index.css'
 import { Header, Footer } from './components/layout'
-import { Hero, Work, Testimonials, Visuals, Contact, Resume } from './components/sections'
+import { Hero, Work, Testimonials, Visuals, Contact, Resume, Privacy } from './components/sections'
 import { Toaster } from './components/ui'
 import { useTitleCycle } from './hooks'
+
+type Route = 'home' | 'resume' | 'privacy'
+
+function getRoute(): Route {
+  if (typeof window === 'undefined') return 'home'
+  switch (window.location.pathname) {
+    case '/resume':  return 'resume'
+    case '/privacy': return 'privacy'
+    default:         return 'home'
+  }
+}
 
 export default function App() {
   useTitleCycle()
 
-  const isResume = typeof window !== 'undefined' && window.location.pathname === '/resume'
+  const route = getRoute()
 
   useEffect(() => {
-    if (isResume) return
+    if (route !== 'home') return
     const hash = window.location.hash.slice(1)
     if (!hash) return
     requestAnimationFrame(() => {
@@ -20,13 +31,15 @@ export default function App() {
       const top = el.getBoundingClientRect().top + window.scrollY - 80
       window.scrollTo({ top: Math.max(0, top), behavior: 'smooth' })
     })
-  }, [])
+  }, [route])
 
   return (
     <div>
       <Header />
-      {isResume ? (
+      {route === 'resume' ? (
         <Resume />
+      ) : route === 'privacy' ? (
+        <Privacy />
       ) : (
         <>
           <Hero />

@@ -1,13 +1,13 @@
 import { FileDown, Mail } from 'lucide-react'
-import { Button, CascadeGroup, CascadeItem, Eyebrow, H1, H2, H3 } from '../../ui'
-import { certifications, education, headline, jobs, summary, values } from '../../../data/resume'
+import { Button, CascadeGroup, CascadeItem, Container, Eyebrow, H1, H2, H3 } from '../../ui'
+import { certifications, education, headline, jobs, summary, values } from '@/data/resume'
 
 export default function Resume() {
   return (
     <main className="bg-white text-blue-950">
 
       <section className="resume-hero relative bg-blue-950 text-white overflow-hidden pt-32 pb-16 md:pt-40 md:pb-24">
-        <div className="max-w-[1440px] mx-auto px-6">
+        <Container>
           <CascadeGroup mountOnly className="flex flex-col gap-4 print:gap-1">
             <CascadeItem index={0} className="print:hidden">
               <Eyebrow size="lg" className="text-white">Resume</Eyebrow>
@@ -40,14 +40,14 @@ export default function Resume() {
               </div>
             </CascadeItem>
           </CascadeGroup>
-        </div>
+        </Container>
       </section>
 
       {/* Print: About + Values + Credentials stack in left column; Work spans right column */}
       <div className="print-grid">
 
         <section className="resume-section py-16 md:py-24">
-          <div className="max-w-[1440px] mx-auto px-6">
+          <Container>
             <CascadeGroup className="flex flex-col gap-6" threshold={0.15}>
               <CascadeItem index={0}>
                 <H2>About</H2>
@@ -60,11 +60,11 @@ export default function Resume() {
                 </CascadeItem>
               ))}
             </CascadeGroup>
-          </div>
+          </Container>
         </section>
 
         <section className="resume-section work-section py-16 md:py-24 border-t border-blue-950/10">
-          <div className="max-w-[1440px] mx-auto px-6">
+          <Container>
             <CascadeGroup className="flex flex-col gap-12" threshold={0.1}>
               <CascadeItem index={0}>
                 <H2>Work Experience</H2>
@@ -82,11 +82,11 @@ export default function Resume() {
                 </CascadeItem>
               ))}
             </CascadeGroup>
-          </div>
+          </Container>
         </section>
 
         <section className="resume-section py-16 md:py-24 border-t border-blue-950/10 print:hidden">
-          <div className="max-w-[1440px] mx-auto px-6">
+          <Container>
             <CascadeGroup className="flex flex-col gap-8" threshold={0.1}>
               <CascadeItem index={0}>
                 <H2>Values</H2>
@@ -107,11 +107,11 @@ export default function Resume() {
                 </dl>
               </CascadeItem>
             </CascadeGroup>
-          </div>
+          </Container>
         </section>
 
         <section className="resume-section py-16 md:py-24 border-t border-blue-950/10">
-          <div className="max-w-[1440px] mx-auto px-6">
+          <Container>
             <CascadeGroup className="flex flex-col gap-8" threshold={0.1}>
               <CascadeItem index={0}>
                 <H2>Credentials</H2>
@@ -136,7 +136,7 @@ export default function Resume() {
                 </div>
               </CascadeItem>
             </CascadeGroup>
-          </div>
+          </Container>
         </section>
 
       </div>

@@ -3,6 +3,7 @@ import Groq from 'groq-sdk'
 import { buildSystemPrompt } from '../src/data/chat-context.js'
 import { sql } from './_lib/db.js'
 import { upsertVisitor } from './_lib/visitor.js'
+import { checkRateLimit, send429 } from './_lib/ratelimit.js'
 
 type Role = 'user' | 'assistant'
 type Message = { role: Role; content: string }
@@ -45,6 +46,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
 
   if (typeof body.website === 'string' && body.website.trim() !== '') {
     res.status(200).json({ reply: '' })
+    return
+  }
+
+  const rate = await checkRateLimit(req, 'chat', [
+    { name: 'burst',  windowMs: 60_000,    max: 20 },
+    { name: 'hourly', windowMs: 3_600_000, max: 100 },
+  ])
+  if (rate.limited) {
+    send429(res, rate.retryAfterSeconds)
     return
   }
 

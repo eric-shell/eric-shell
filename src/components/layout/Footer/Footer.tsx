@@ -1,12 +1,12 @@
-import { CascadeGroup, CascadeItem } from '../../ui'
-import { navLinks, connectLinks, socialLinks } from '../../../data'
+import { CascadeGroup, CascadeItem, Container } from '../../ui'
+import { navLinks, connectLinks, socialLinks } from '@/data'
 
 export default function Footer() {
   const year = new Date().getFullYear()
 
   return (
     <footer className="bg-black text-white border-t border-white/10 skew-footer">
-      <div className="max-w-[1440px] mx-auto px-6 pt-12 pb-12 md:pt-24 md:pb-24 flex flex-col items-center gap-10 md:flex-row md:items-center md:justify-between md:gap-12 unskew-inner">
+      <Container className="pt-12 pb-12 md:pt-24 md:pb-24 flex flex-col items-center gap-10 md:flex-row md:items-center md:justify-between md:gap-12 unskew-inner">
 
         <CascadeGroup className="flex flex-col items-center gap-6 order-1 md:order-2 md:items-end" threshold={0.2}>
           <CascadeItem index={0}>
@@ -38,6 +38,8 @@ export default function Footer() {
           <CascadeItem index={2} className="leading-none">
             <span className="font-sans text-xs leading-none tracking-wider text-white/50">
               <span className="align-baseline font-mono">©</span> {year} Eric Shell. All Rights Reserved.
+              {' · '}
+              <a href="/privacy" className="hover:text-white transition-colors">Privacy</a>
             </span>
           </CascadeItem>
         </CascadeGroup>
@@ -65,7 +67,7 @@ export default function Footer() {
           </CascadeGroup>
         </nav>
 
-      </div>
+      </Container>
     </footer>
   )
 }

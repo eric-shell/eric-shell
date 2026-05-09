@@ -2,7 +2,7 @@ import type { VercelRequest, VercelResponse } from '@vercel/node'
 import { createHmac, timingSafeEqual } from 'node:crypto'
 
 const COOKIE_NAME = 'admin_session'
-const MAX_AGE_SECONDS = 60 * 60 * 24 * 30 // 30 days
+const MAX_AGE_SECONDS = 60 * 60 * 24 * 7 // 7 days
 
 function secret(): string {
   const s = process.env.ADMIN_SESSION_SECRET
@@ -45,13 +45,13 @@ function readCookie(req: VercelRequest, name: string): string | null {
 
 export function setSessionCookie(res: VercelResponse, token: string): void {
   res.setHeader('Set-Cookie',
-    `${COOKIE_NAME}=${encodeURIComponent(token)}; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=${MAX_AGE_SECONDS}`
+    `${COOKIE_NAME}=${encodeURIComponent(token)}; HttpOnly; Secure; SameSite=Strict; Path=/; Max-Age=${MAX_AGE_SECONDS}`
   )
 }
 
 export function clearSessionCookie(res: VercelResponse): void {
   res.setHeader('Set-Cookie',
-    `${COOKIE_NAME}=; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=0`
+    `${COOKIE_NAME}=; HttpOnly; Secure; SameSite=Strict; Path=/; Max-Age=0`
   )
 }
 

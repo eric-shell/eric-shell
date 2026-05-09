@@ -2,6 +2,7 @@ import type { VercelRequest, VercelResponse } from '@vercel/node'
 import { Resend } from 'resend'
 import { sql } from './_lib/db.js'
 import { upsertVisitor } from './_lib/visitor.js'
+import { checkRateLimit, send429 } from './_lib/ratelimit.js'
 
 type ContactPayload = {
   name?: unknown
@@ -39,6 +40,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
 
   if (isString(body.website) && body.website.trim() !== '') {
     res.status(200).json({ ok: true })
+    return
+  }
+
+  const rate = await checkRateLimit(req, 'contact', [
+    { name: 'short', windowMs: 600_000,    max: 5  },
+    { name: 'daily', windowMs: 86_400_000, max: 30 },
+  ])
+  if (rate.limited) {
+    send429(res, rate.retryAfterSeconds)
     return
   }
 

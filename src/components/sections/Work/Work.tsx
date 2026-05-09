@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { ArrowDownAZ, ArrowUpRight, ArrowUpZA, CalendarDays, Plus, RotateCcw, X } from 'lucide-react'
-import { workItems } from '../../../data'
-import { Button, Card, CascadeGroup, CascadeItem, Dropdown, Eyebrow, H2 } from '../../ui'
+import { workItems } from '@/data'
+import { Button, Card, CascadeGroup, CascadeItem, Container, Dropdown, SectionHeader } from '../../ui'
 
 type SortOrder = 'chronological' | 'asc' | 'desc'
 
@@ -41,27 +41,29 @@ export default function Work() {
 
   return (
     <section id="work" className="relative bg-blue-50 skew-section z-50" style={{ marginTop: '-4rem' }}>
-      <div className="max-w-[1440px] mx-auto px-6 unskew-inner">
+      <Container className="unskew-inner">
 
         <CascadeGroup threshold={0.15} className='z-[50]'>
           <CascadeItem index={0}>
-            <div className="flex items-start justify-between gap-4 pb-10">
-              <div>
-                <Eyebrow className="text-blue-900 mb-4 block">Selected Work and Projects</Eyebrow>
-                <H2 className="text-blue-950">Work</H2>
-              </div>
-              <Button
-                href="https://www.linkedin.com/in/ericshell/details/experience/"
-                target="_blank"
-                rel="noopener noreferrer"
-                variant="primary"
-                size="md"
-                className="hidden md:inline-flex shrink-0"
-                rightIcon={<ArrowUpRight size={15} strokeWidth={2.5} aria-hidden="true" />}
-              >
-                View Work History
-              </Button>
-            </div>
+            <SectionHeader
+              eyebrow="Selected Work and Projects"
+              title="Work"
+              eyebrowClassName="text-blue-900"
+              titleClassName="text-blue-950"
+              action={
+                <Button
+                  href="https://www.linkedin.com/in/ericshell/details/experience/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  variant="primary"
+                  size="md"
+                  className="hidden md:inline-flex shrink-0"
+                  rightIcon={<ArrowUpRight size={15} strokeWidth={2.5} aria-hidden="true" />}
+                >
+                  View Work History
+                </Button>
+              }
+            />
           </CascadeItem>
 
           <CascadeItem index={1}>
@@ -153,7 +155,7 @@ export default function Work() {
           </div>
         )}
 
-      </div>
+      </Container>
     </section>
   )
 }

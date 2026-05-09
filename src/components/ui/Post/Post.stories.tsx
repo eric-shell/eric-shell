@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react'
-import { instagramPosts } from '../../../data/instagram'
+import { instagramPosts } from '@/data/instagram'
 import Post from './Post'
 
 const meta = {

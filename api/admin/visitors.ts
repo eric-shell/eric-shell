@@ -1,6 +1,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 import { requireAdmin } from '../_lib/auth.js'
 import { sql } from '../_lib/db.js'
+import type { VisitorListPayload, VisitorSummary } from '../_lib/types.js'
 
 export default async function handler(req: VercelRequest, res: VercelResponse): Promise<void> {
   if (!requireAdmin(req, res)) return
@@ -49,8 +50,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
       ) s on s.visitor_id = v.id
       order by last_activity_at desc
       limit 500
-    `
-    res.status(200).json({ visitors: rows })
+    ` as VisitorSummary[]
+    const payload: VisitorListPayload = { visitors: rows }
+    res.status(200).json(payload)
   } catch (err) {
     console.error('Admin visitors list error:', err)
     res.status(500).json({ error: 'Failed to load visitors' })

@@ -21,46 +21,58 @@ Key config files:
 ```
 src/
 ├── components/
-│   ├── sections/          # Full-width page sections — each in its own directory with index.ts barrel
+│   ├── layout/            # Site chrome shared across routes
 │   │   ├── Header/        # Fixed nav bar with cascade entrance + icon echo animation
+│   │   ├── Footer/        # Social links, nav, copyright, privacy link
+│   │   └── index.ts
+│   ├── sections/          # Full-width page sections — each in its own directory with index.ts barrel
 │   │   ├── Hero/          # Above-the-fold: name, title, tagline, CTAs, particle effects
-│   │   ├── Contributions/ # Filterable/sortable grid of work and projects
+│   │   ├── Work/          # Filterable/sortable grid of work and projects
 │   │   ├── Testimonials/  # Two-column: context copy + auto-advancing carousel
-│   │   ├── Creative/      # Editorial copy + Instagram photo grid
+│   │   ├── Visuals/       # Editorial copy + Instagram photo grid
 │   │   ├── Contact/       # Contact form
-│   │   ├── Footer/        # Social links, nav, copyright
+│   │   ├── Resume/        # /resume route — full resume page
+│   │   ├── Privacy/       # /privacy route — data-handling disclosure
 │   │   └── index.ts       # Barrel export for all sections
 │   └── ui/                # Reusable primitives — import from 'components/ui'
 │       ├── Button/        # Polymorphic button/anchor — consumes variants.ts; size (sm|md|lg), shape (pill|square)
 │       ├── Cascade/       # CascadeGroup + CascadeItem + CascadeContext (scroll/mount entrance animation)
 │       ├── Chat/          # Genie-style panel with glass overlay, textarea, submit
-│       ├── Dropdown/      # Accessible select w/ click-outside + Escape dismiss
+│       ├── Container/     # 1440px max-width + horizontal padding wrapper
+│       ├── Dropdown/      # Accessible select w/ full keyboard nav (arrows, Home/End, Enter)
 │       ├── Eyebrow/       # Small uppercase label above headings (font-sans, GRAD 150)
 │       ├── Heading/       # H1, H2, H3 display headings
 │       ├── Input/         # Text input primitive
 │       ├── Panel/         # Div-only wrapping surface — consumes variants.ts
 │       ├── Pill/          # Tag/filter chip — active state, optional dismiss X
+│       ├── SectionHeader/ # Eyebrow + H2 pair, optional action button slot
 │       ├── Textarea/      # Multiline text input primitive
 │       ├── variants.ts    # Shared SURFACE + SURFACE_HOVER maps (single source of truth)
 │       └── index.ts       # Barrel export for all ui components
 ├── admin/                 # Admin CRM SPA (separate Vite entry; see /crm)
-├── data/                  # Typed data files (contributions.ts, testimonials.ts, instagram.ts)
-├── hooks/                 # Custom hooks (useParallax.ts)
-├── lib/                   # Browser-side helpers (visitorId.ts)
-├── utils/                 # Utilities (htmlToCanvas.ts)
+│   ├── components/        # Dashboard, Login, VisitorList, VisitorDetail (orchestrator), VisitorMetaGrid, ConversationTimeline, ContactSubmissionList, TabBar, Skeleton
+│   ├── hooks/             # useVisitorDetail (fetch + notes + delete)
+│   └── lib/               # api.ts (apiCall helper), dateFormat.ts
+├── data/                  # Typed data files (work.ts, testimonials.ts, instagram.ts, navigation.ts, resume.ts, chat-context.ts)
+├── hooks/                 # useChat, useCarousel, useIntersectionObserver, useParallax, useTitleCycle
+├── lib/                   # Browser-side helpers (visitorId.ts, markdown.tsx)
+├── utils/                 # Utilities (analytics.ts, htmlToCanvas.ts)
 ├── assets/                # Images, fonts, static files
-├── App.tsx                # Root component — assembles sections in order
+├── App.tsx                # Root component — assembles sections, routes /resume and /privacy
 ├── main.tsx               # React entry point
-└── index.css              # Global CSS + Tailwind import + custom utilities
+└── index.css              # Global CSS + Tailwind import + custom utilities (animate-genie-out, etc.)
 
 api/                       # Vercel serverless functions (auto-discovered)
-├── _lib/                  # Shared helpers (db, auth, visitor) — leading underscore = not a route
+├── _lib/                  # Shared helpers (auth, db, visitor, ratelimit, types) — leading underscore = not a route
 ├── admin/                 # Password-gated CRM endpoints — see /crm
-├── chat.ts                # Groq streaming + chat persistence — see /chat
-└── contact.ts             # Resend email + contact persistence — see /contact
+├── chat.ts                # Groq streaming + chat persistence (rate-limited)
+├── contact.ts             # Resend email + contact persistence (rate-limited)
+└── events.ts              # ada_toggle / chat_cleared event log (rate-limited)
 
 db/schema.sql              # Postgres schema (Neon) — apply manually, see /crm
 ```
+
+Path alias: `@/*` → `src/*` is configured in `vite.config.ts` and `tsconfig.app.json`. Use `@/data`, `@/hooks`, `@/lib/...` rather than long `../../../` chains.
 
 ### UI Component conventions
 
@@ -115,32 +127,35 @@ Inherited from the existing site and maintained going forward:
 - **Light + dark** — system preference respected via Tailwind's `dark:` variant
 - **Responsive** — mobile-first, 4xl max container width
 
-## Sections
+## Routes & Sections
 
-Order in `App.tsx`:
-0. `Header` — fixed nav bar: icon (with echo animation on click) + cascading nav links ✓
+Routing is handled by `App.tsx` reading `window.location.pathname`:
+- `/` (home) renders the section stack below
+- `/resume` renders the full `Resume` page
+- `/privacy` renders the `Privacy` data-handling page
+
+`Header` and `Footer` (from `components/layout/`) wrap every route.
+
+Home section order in `App.tsx`:
 1. `Hero` — name, title, brief tagline, CTAs, Three.js particle effects ✓
-2. `Contributions` — filterable/sortable grid of work and projects ✓
+2. `Work` — filterable/sortable grid of work and projects ✓
 3. `Testimonials` — two-column: context copy + auto-advancing carousel ✓
-4. `Creative` — 4-col layout: editorial copy + 6-post Instagram photo grid (static data in `src/data/instagram.ts`) ✓
+4. `Visuals` — 4-col layout: editorial copy + Instagram photo grid (static data in `src/data/instagram.ts`) ✓
 5. `Contact` — contact form ✓
-6. `Footer` — social links, nav, copyright ✓
-7. `Projects` — richer project cards with tech tags (planned)
-8. `About` — professional background, expertise areas (planned)
 
 ## Admin CRM
 
-A password-gated admin page at `/crm.html` records every chat thread and contact submission to Neon Postgres, keyed by an anonymous client-generated visitor UUID. Persistence is best-effort (wrapped in try/catch after the user-visible response) — DB outages can never break the public chat or contact form.
+A password-gated admin page at `/dashboard` (served from `dashboard.html`) records every chat thread and contact submission to Neon Postgres, keyed by an anonymous client-generated visitor UUID. Persistence is best-effort (wrapped in try/catch after the user-visible response) — DB outages can never break the public chat or contact form.
 
 - Reference: run `/crm` for the full file map, schema, auth model, security caveats, and gotchas.
 - Schema lives in [db/schema.sql](db/schema.sql) (apply manually via Neon SQL editor).
-- Required env vars: `POSTGRES_URL` (auto-set by Neon ↔ Vercel integration; **always verify the value isn't empty** with `npx vercel env pull`), `ADMIN_PASSWORD`, `ADMIN_SESSION_SECRET`.
+- Required env vars: `POSTGRES_URL` (auto-set by Neon ↔ Vercel integration; **always verify the value isn't empty** with `npx vercel env pull`), `ADMIN_PASSWORD`, `ADMIN_SESSION_SECRET`, `UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN` (the Upstash vars enable rate limiting on `/api/chat`, `/api/contact`, and `/api/events`; if absent the limiter soft-fails open).
 - Adding admin endpoints: first line of every handler under `api/admin/` must be `if (!requireAdmin(req, res)) return`.
-- The admin SPA is a separate Vite entry (`crm.html`); admin code never ships to public visitors.
+- The admin SPA is a separate Vite entry (`dashboard.html`); admin code never ships to public visitors.
 
 ## Deployment
 
-Static site + serverless functions on Vercel. `npm run build` produces `dist/` (with both `index.html` and `crm.html` entries) plus the `api/` functions. Final target: **eric.sh**.
+Static site + serverless functions on Vercel. `npm run build` produces `dist/` (with both `index.html` and `dashboard.html` entries) plus the `api/` functions. Final target: **eric.sh**.
 
 ## Claude Commands
 

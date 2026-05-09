@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useState } from 'react'
 import { ExternalLink, LogOut, RefreshCw, Search } from 'lucide-react'
-import { Button, H2, Panel, toast } from '../../components/ui'
-import VisitorList, { type VisitorSummary } from './VisitorList'
-import { Skeleton } from './Skeleton'
-
-type StatDay = { date: string; visitors: number }
+import { Button, H2, Panel } from '../../components/ui'
+import VisitorList from './VisitorList'
+import { MetricsRowSkeleton, Skeleton, VisitorTableSkeleton } from './Skeleton'
+import { apiCall } from '../lib/api'
+import { formatMonthDay } from '../lib/dateFormat'
+import type { StatDay, StatsPayload, VisitorListPayload, VisitorSummary } from '@/../api/_lib/types'
 
 function StatCard({ label, value, sub }: { label: string; value: number | string; sub: string }) {
   return (
@@ -23,11 +24,6 @@ function BarChart({ days }: { days: StatDay[] }) {
   const barW = (W - gap * (days.length - 1)) / days.length
   const maxV = Math.max(...days.map(d => d.visitors), 1)
   const minBarH = 2
-
-  const fmt = (iso: string) => {
-    const d = new Date(iso)
-    return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
-  }
 
   return (
     <div className="flex flex-col gap-1 w-full h-full justify-between">
@@ -52,45 +48,16 @@ function BarChart({ days }: { days: StatDay[] }) {
               rx={1}
               className="fill-blue-600/60 hover:fill-blue-700 transition-colors cursor-default"
             >
-              <title>{fmt(d.date)}: {d.visitors} visitor{d.visitors !== 1 ? 's' : ''}</title>
+              <title>{formatMonthDay(d.date)}: {d.visitors} visitor{d.visitors !== 1 ? 's' : ''}</title>
             </rect>
           )
         })}
       </svg>
       <div className="flex justify-between text-[9px] text-blue-950/40 shrink-0">
-        <span>{fmt(days[0].date)}</span>
-        <span>{fmt(days[days.length - 1].date)}</span>
+        <span>{formatMonthDay(days[0].date)}</span>
+        <span>{formatMonthDay(days[days.length - 1].date)}</span>
       </div>
     </div>
-  )
-}
-
-function VisitorTableSkeleton() {
-  return (
-    <table className="w-full table-fixed text-sm animate-pulse">
-      <thead>
-        <tr className="border-b border-blue-950/10 text-left text-xs uppercase tracking-wide text-blue-950/50">
-          <th className="py-2 px-4 font-semibold w-28">Visitor</th>
-          <th className="py-2 pr-4 font-semibold w-36">Last seen</th>
-          <th className="py-2 pr-4 font-semibold w-36">Name</th>
-          <th className="py-2 pr-4 font-semibold">Email</th>
-          <th className="py-2 pr-4 font-semibold text-right w-16">Chat</th>
-          <th className="py-2 pr-4 font-semibold text-right w-24">Contact</th>
-        </tr>
-      </thead>
-      <tbody>
-        {Array.from({ length: 6 }).map((_, i) => (
-          <tr key={i} className="border-b border-blue-950/5">
-            <td className="py-3 px-4"><Skeleton className="h-3 w-20" /></td>
-            <td className="py-3 pr-4"><Skeleton className="h-3 w-28" /></td>
-            <td className="py-3 pr-4"><Skeleton className="h-3 w-20" /></td>
-            <td className="py-3 pr-4"><Skeleton className="h-3 w-36" /></td>
-            <td className="py-3 pr-4"><Skeleton className="h-3 w-4 ml-auto" /></td>
-            <td className="py-3 pr-4"><Skeleton className="h-3 w-4 ml-auto" /></td>
-          </tr>
-        ))}
-      </tbody>
-    </table>
   )
 }
 
@@ -112,25 +79,17 @@ export default function Dashboard({ onLogout }: DashboardProps) {
 
   const load = useCallback(async () => {
     setLoading(true)
-    try {
-      const [vRes, sRes] = await Promise.all([
-        fetch('/api/admin/visitors'),
-        fetch('/api/admin/stats'),
-      ])
-      if (!vRes.ok) {
-        if (vRes.status === 401) { onLogout(); return }
-        toast.error('Failed to load visitors.')
-        return
-      }
-      const data = await vRes.json()
-      setVisitors(data.visitors ?? [])
-      if (sRes.ok) setStats((await sRes.json()).days)
-    } catch {
-      toast.error('Network error.')
-    } finally {
-      setLoading(false)
-      setLastLoaded(new Date())
-    }
+    const [v, s] = await Promise.all([
+      apiCall<VisitorListPayload>('/api/admin/visitors', undefined, {
+        errorMessage: 'Failed to load visitors.',
+        onUnauthorized: onLogout,
+      }),
+      apiCall<StatsPayload>('/api/admin/stats'),
+    ])
+    if (v) setVisitors(v.visitors ?? [])
+    if (s) setStats(s.days)
+    setLoading(false)
+    setLastLoaded(new Date())
   }, [onLogout])
 
   useEffect(() => { load() }, [load])
@@ -144,6 +103,10 @@ export default function Dashboard({ onLogout }: DashboardProps) {
     try { await fetch('/api/admin/logout', { method: 'POST' }) } catch { /* ignore */ }
     onLogout()
   }
+
+  const handleVisitorDeleted = useCallback((deletedId: string) => {
+    setVisitors(prev => prev?.filter(v => v.id !== deletedId) ?? null)
+  }, [])
 
   const q = query.trim().toLowerCase()
   const filteredVisitors = !q || !visitors ? visitors : visitors.filter(v =>
@@ -176,18 +139,7 @@ export default function Dashboard({ onLogout }: DashboardProps) {
       {/* Metrics row */}
       <div className="flex gap-3 items-stretch min-h-[88px]">
         {visitors === null ? (
-          <>
-            {Array.from({ length: 4 }).map((_, i) => (
-              <Panel key={i} variant="white" className="flex flex-col gap-2 rounded-2xl p-4 min-w-[110px] animate-pulse">
-                <Skeleton className="h-2 w-12" />
-                <Skeleton className="h-7 w-10" />
-                <Skeleton className="h-2 w-20" />
-              </Panel>
-            ))}
-            <Panel variant="white" className="flex-1 rounded-2xl p-4 animate-pulse">
-              <Skeleton className="h-full w-full min-h-[48px]" />
-            </Panel>
-          </>
+          <MetricsRowSkeleton />
         ) : (
           <>
             <StatCard label="Visitors" value={totalVisitors} sub="total" />
@@ -223,7 +175,7 @@ export default function Dashboard({ onLogout }: DashboardProps) {
             {q ? 'No visitors match your search.' : 'No visitors yet.'}
           </p>
         ) : (
-          <VisitorList visitors={filteredVisitors} />
+          <VisitorList visitors={filteredVisitors} onVisitorDeleted={handleVisitorDeleted} />
         )}
       </Panel>
     </div>

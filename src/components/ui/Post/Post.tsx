@@ -1,5 +1,5 @@
 import { ArrowUpRight } from 'lucide-react'
-import type { InstagramPost } from '../../../data'
+import type { InstagramPost } from '@/data'
 
 interface PostProps {
   post: InstagramPost

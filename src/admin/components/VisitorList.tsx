@@ -3,40 +3,23 @@ import { ChevronLeft, ChevronRight } from 'lucide-react'
 import VisitorDetail from './VisitorDetail'
 import { Button } from '../../components/ui'
 import { twMerge } from 'tailwind-merge'
+import type { VisitorSummary } from '@/../api/_lib/types'
+import { formatShort } from '../lib/dateFormat'
+
+export type { VisitorSummary }
 
 const PAGE_SIZE = 25
 
-export interface VisitorSummary {
-  id: string
-  first_seen_at: string
-  last_seen_at: string
-  user_agent: string | null
-  country: string | null
-  city: string | null
-  referrer: string | null
-  chat_message_count: number
-  contact_count: number
-  last_activity_at: string
-  contact_name: string | null
-  contact_email: string | null
-}
-
 interface VisitorListProps {
   visitors: VisitorSummary[]
-}
-
-function formatDate(iso: string) {
-  const d = new Date(iso)
-  return d.toLocaleString(undefined, {
-    month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit',
-  })
+  onVisitorDeleted?: (id: string) => void
 }
 
 function shortId(id: string) {
   return id.slice(0, 8)
 }
 
-export default function VisitorList({ visitors }: VisitorListProps) {
+export default function VisitorList({ visitors, onVisitorDeleted }: VisitorListProps) {
   const [selectedId, setSelectedId] = useState<string | null>(
     () => new URLSearchParams(window.location.search).get('v')
   )
@@ -107,7 +90,7 @@ export default function VisitorList({ visitors }: VisitorListProps) {
                   )}
                 >
                   <td className="py-3 px-4 text-blue-950/90 font-mono text-xs font-semibold truncate">{shortId(v.id)}</td>
-                  <td className="py-3 pr-4 text-blue-950/70">{formatDate(v.last_activity_at)}</td>
+                  <td className="py-3 pr-4 text-blue-950/70">{formatShort(v.last_activity_at)}</td>
                   <td className="py-3 pr-4 text-blue-950/80 truncate">{v.contact_name ?? <span className="text-blue-950/25">—</span>}</td>
                   <td className="py-3 pr-4 text-blue-950/80 truncate">{v.contact_email ?? <span className="text-blue-950/25">—</span>}</td>
                   <td className="py-3 pr-4 text-right text-blue-950">{v.chat_message_count}</td>
@@ -116,7 +99,11 @@ export default function VisitorList({ visitors }: VisitorListProps) {
                 {isOpen && (
                   <tr>
                     <td colSpan={6} className="pb-3 pt-0">
-                      <VisitorDetail id={v.id} onClose={() => setSelectedId(null)} />
+                      <VisitorDetail
+                        id={v.id}
+                        onClose={() => setSelectedId(null)}
+                        onDeleted={onVisitorDeleted}
+                      />
                     </td>
                   </tr>
                 )}
