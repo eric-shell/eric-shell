@@ -40,7 +40,10 @@ export default function Work() {
   const hasMore = !isExpanded && items.length > INITIAL_COUNT
 
   return (
-    <section id="work" className="relative bg-blue-50 skew-section z-50" style={{ marginTop: '-4rem' }}>
+    <section id="work" className="relative bg-gradient-to-br from-white to-blue-50 skew-section z-50" style={{ marginTop: '-4rem' }}>
+      <div aria-hidden="true" className="pointer-events-none absolute inset-0 overflow-hidden">
+        <div className="absolute -top-1/4 left-1/3 w-2/3 aspect-square" style={{ background: 'radial-gradient(ellipse at center, rgba(59,130,246,0.12) 0%, transparent 65%)' }} />
+      </div>
       <Container className="unskew-inner">
 
         <CascadeGroup threshold={0.15} className='z-[50]'>

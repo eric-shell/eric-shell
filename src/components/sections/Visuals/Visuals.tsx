@@ -11,7 +11,10 @@ function InstagramIcon({ size = 15 }: { size?: number }) {
 
 export default function Visuals() {
   return (
-    <section id="visuals" className="relative bg-blue-50 skew-section z-[150]">
+    <section id="visuals" className="relative  bg-gradient-to-br from-white to-blue-100 skew-section z-[150]">
+      <div aria-hidden="true" className="pointer-events-none absolute inset-0 overflow-hidden">
+        <div className="absolute -top-1/4 left-1/3 w-2/3 aspect-square" style={{ background: 'radial-gradient(ellipse at center, rgba(59,130,246,0.10) 0%, transparent 65%)' }} />
+      </div>
       <Container className="unskew-inner">
 
         <CascadeGroup threshold={0.15}>
