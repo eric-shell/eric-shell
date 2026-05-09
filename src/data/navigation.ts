@@ -1,5 +1,5 @@
 import type { LucideIcon } from 'lucide-react'
-import { Briefcase, Quote, Palette, Form, MessagesSquare, Mail, FileText } from 'lucide-react'
+import { Briefcase, Quote, Palette, Form, MessagesSquare, Mail, FileText, Shield } from 'lucide-react'
 
 export interface NavLink {
   label: string
@@ -62,6 +62,11 @@ export const connectLinks: ConnectLink[] = [
     label: 'Contact',
     href: '/#contact',
     Icon: Form,
+  },
+  {
+    label: 'Privacy',
+    href: '/privacy',
+    Icon: Shield,
   },
 ]
 

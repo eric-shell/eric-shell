@@ -38,8 +38,6 @@ export default function Footer() {
           <CascadeItem index={2} className="leading-none">
             <span className="font-sans text-xs leading-none tracking-wider text-white/50">
               <span className="align-baseline font-mono">©</span> {year} Eric Shell. All Rights Reserved.
-              {' · '}
-              <a href="/privacy" className="hover:text-white transition-colors">Privacy</a>
             </span>
           </CascadeItem>
         </CascadeGroup>

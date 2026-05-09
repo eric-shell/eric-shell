@@ -296,7 +296,7 @@ export default function Chat({
           'mt-2 px-1 font-sans text-[11px] leading-none text-center',
           isWhite ? 'text-blue-950/50' : 'text-white/60'
         )}>
-          Conversations are tracked.{' '}
+          Conversations are recorded.{' '}
           <a
             href="/privacy"
             className="underline underline-offset-2 hover:opacity-80 transition-opacity"
