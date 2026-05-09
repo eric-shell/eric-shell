@@ -163,7 +163,7 @@ export default function Dashboard({ onLogout }: DashboardProps) {
         <H2 className="text-blue-950">CRM</H2>
         <div className="flex items-center gap-2">
           {lastLoaded && (
-            <span className="text-xs text-blue-950/40">
+            <span className="text-xs text-blue-950/60 pr-1">
               Updated {lastLoaded.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
             </span>
           )}

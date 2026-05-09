@@ -322,7 +322,7 @@ export default function Chat({
             variant="primary"
             shape="square"
             size="md"
-            className="absolute bottom-2 right-2 rounded-full shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
+            className="absolute top-1/2 -translate-y-1/2 right-2 rounded-full shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
             aria-label={isLoading ? 'Sending' : 'Send message'}
           >
             <ArrowUp size={20} strokeWidth={2.5} aria-hidden="true" />
