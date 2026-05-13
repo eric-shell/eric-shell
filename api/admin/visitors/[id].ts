@@ -36,11 +36,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
       // them first to honor right-to-deletion. Chat messages and events
       // cascade-delete automatically.
       await db`delete from contact_submissions where visitor_id = ${id}`
-      const result = await db`delete from visitors where id = ${id}`
-      const rowCount = (result as unknown as { count?: number; rowCount?: number }).count
-        ?? (result as unknown as { rowCount?: number }).rowCount
-        ?? 0
-      if (rowCount === 0) {
+      const deleted = (await db`delete from visitors where id = ${id} returning id`) as { id: string }[]
+      if (deleted.length === 0) {
         res.status(404).json({ error: 'Not found' })
         return
       }
