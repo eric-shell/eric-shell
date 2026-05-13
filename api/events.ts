@@ -9,7 +9,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') return res.status(405).end()
 
   const rate = await checkRateLimit(req, 'events', [
-    { name: 'burst', windowMs: 60_000, max: 60 },
+    { name: 'burst',  windowMs: 60_000,    max: 10 },
+    { name: 'hourly', windowMs: 3_600_000, max: 200 },
   ])
   if (rate.limited) {
     return res.status(204).end()

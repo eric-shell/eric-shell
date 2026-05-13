@@ -148,6 +148,7 @@ Home section order in `App.tsx`:
 A password-gated admin page at `/dashboard` (served from `dashboard.html`) records every chat thread and contact submission to Neon Postgres, keyed by an anonymous client-generated visitor UUID. Persistence is best-effort (wrapped in try/catch after the user-visible response) — DB outages can never break the public chat or contact form.
 
 - Reference: run `/crm` for the full file map, schema, auth model, security caveats, and gotchas.
+- **`X-Visitor-Id` is client-controlled and pseudonymous only** — any caller can send any UUID. Never use it for authorization or any trusted decision; gate sensitive endpoints with `requireAdmin` instead.
 - Schema lives in [db/schema.sql](db/schema.sql) (apply manually via Neon SQL editor).
 - Required env vars: `POSTGRES_URL` (auto-set by Neon ↔ Vercel integration; **always verify the value isn't empty** with `npx vercel env pull`), `ADMIN_PASSWORD`, `ADMIN_SESSION_SECRET`, `UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN` (the Upstash vars enable rate limiting on `/api/chat`, `/api/contact`, and `/api/events`; if absent the limiter soft-fails open).
 - Adding admin endpoints: first line of every handler under `api/admin/` must be `if (!requireAdmin(req, res)) return`.

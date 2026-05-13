@@ -3,6 +3,9 @@ import { sql } from './db.js'
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
+// X-Visitor-Id is set by the browser and is NOT an identity. It is pseudonymous
+// only — any client can send any UUID. Never use it for authorization, access
+// control, or any decision that requires trust. Use `requireAdmin` for that.
 export function readVisitorId(req: VercelRequest): string | null {
   const raw = req.headers['x-visitor-id']
   const value = Array.isArray(raw) ? raw[0] : raw

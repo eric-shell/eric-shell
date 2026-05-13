@@ -1,11 +1,21 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 import { checkPassword, createSessionToken, setSessionCookie } from '../_lib/auth.js'
+import { checkRateLimit, send429 } from '../_lib/ratelimit.js'
 
 const LOGIN_DELAY_MS = 1500
 
 export default async function handler(req: VercelRequest, res: VercelResponse): Promise<void> {
   if (req.method !== 'POST') {
     res.status(405).json({ error: 'Method not allowed' })
+    return
+  }
+
+  const rate = await checkRateLimit(req, 'admin-login', [
+    { name: 'short', windowMs: 600_000,    max: 10 },
+    { name: 'daily', windowMs: 86_400_000, max: 50 },
+  ])
+  if (rate.limited) {
+    send429(res, rate.retryAfterSeconds)
     return
   }
 
