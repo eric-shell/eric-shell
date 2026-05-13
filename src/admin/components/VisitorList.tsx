@@ -71,6 +71,7 @@ export default function VisitorList({ visitors, onVisitorDeleted }: VisitorListP
           <tr className="border-b border-blue-950/10 text-left text-xs uppercase tracking-wide text-blue-950/70">
             <th className="py-2 px-4 font-semibold w-28">Visitor</th>
             <th className="py-2 pr-4 font-semibold w-36">Last seen</th>
+            <th className="py-2 pr-4 font-semibold w-40">Location</th>
             <th className="py-2 pr-4 font-semibold w-36">Name</th>
             <th className="py-2 pr-4 font-semibold">Email</th>
             <th className="py-2 pr-4 font-semibold text-right w-16">Chat</th>
@@ -91,6 +92,9 @@ export default function VisitorList({ visitors, onVisitorDeleted }: VisitorListP
                 >
                   <td className="py-3 px-4 text-blue-950/90 font-mono text-xs font-semibold truncate">{shortId(v.id)}</td>
                   <td className="py-3 pr-4 text-blue-950/70">{formatShort(v.last_activity_at)}</td>
+                  <td className="py-3 pr-4 text-blue-950/80 truncate">
+                    {[v.city, v.country].filter(Boolean).join(', ') || <span className="text-blue-950/25">—</span>}
+                  </td>
                   <td className="py-3 pr-4 text-blue-950/80 truncate">{v.contact_name ?? <span className="text-blue-950/25">—</span>}</td>
                   <td className="py-3 pr-4 text-blue-950/80 truncate">{v.contact_email ?? <span className="text-blue-950/25">—</span>}</td>
                   <td className="py-3 pr-4 text-right text-blue-950">{v.chat_message_count}</td>
@@ -98,7 +102,7 @@ export default function VisitorList({ visitors, onVisitorDeleted }: VisitorListP
                 </tr>
                 {isOpen && (
                   <tr>
-                    <td colSpan={6} className="pb-3 pt-0">
+                    <td colSpan={7} className="pb-3 pt-0">
                       <VisitorDetail
                         id={v.id}
                         onClose={() => setSelectedId(null)}
