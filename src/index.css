@@ -82,6 +82,28 @@
   100% { transform: scale(1); opacity: 1; }
 }
 
+/* Ambient backdrop blobs — transform-only so they stay composited.
+   Durations are co-prime-ish (26/34/42s) so the three layers never sync. */
+@keyframes ambient-a {
+  from { transform: translate3d(0, 0, 0) scale(1) rotate(0deg); }
+  to   { transform: translate3d(5%, -7%, 0) scale(1.2) rotate(12deg); }
+}
+
+@keyframes ambient-b {
+  from { transform: translate3d(0, 0, 0) scale(1.15); }
+  to   { transform: translate3d(-7%, 5%, 0) scale(0.9); }
+}
+
+@keyframes ambient-c {
+  from { transform: translate3d(0, 0, 0) scale(0.9) rotate(0deg); }
+  to   { transform: translate3d(6%, 6%, 0) scale(1.15) rotate(-10deg); }
+}
+
+@keyframes ambient-hue {
+  from { filter: hue-rotate(-12deg); }
+  to   { filter: hue-rotate(18deg); }
+}
+
 @keyframes toast-in {
   from { opacity: 0; transform: translateX(-20px); }
   to   { opacity: 1; transform: translateX(0); }
@@ -106,6 +128,45 @@
 
 @utility animate-blur-in {
   animation: blur-in 1s cubic-bezier(0.16, 1, 0.3, 1) 0.3s both;
+}
+
+@utility animate-ambient-a {
+  animation: ambient-a 26s ease-in-out infinite alternate;
+}
+
+@utility animate-ambient-b {
+  animation: ambient-b 34s ease-in-out infinite alternate;
+}
+
+@utility animate-ambient-c {
+  animation: ambient-c 42s ease-in-out infinite alternate;
+}
+
+@utility animate-ambient-hue {
+  animation: ambient-hue 48s ease-in-out infinite alternate;
+}
+
+/* Tiled monochrome SVG grain — fills the element; caller sets opacity + blend. */
+@utility bg-noise {
+  background-image: var(--noise-img);
+  background-size: 128px 128px;
+}
+
+/* Grain as an ::after film over a panel surface. The element (or an ancestor
+   clipping it) must be positioned — this utility does not set `position` so it
+   can't fight `absolute` at call sites. */
+@utility noise-overlay {
+  &::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    pointer-events: none;
+    background-image: var(--noise-img);
+    background-size: 128px 128px;
+    opacity: 0.05;
+    mix-blend-mode: overlay;
+  }
 }
 
 @utility skew-section {
@@ -134,6 +195,9 @@
 @layer base {
   :root {
     color-scheme: light dark;
+    /* feColorMatrix saturate(0) keeps the turbulence neutral gray so the grain
+       never tints the surface it sits on. */
+    --noise-img: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='128' height='128'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='128' height='128' filter='url(%23n)'/%3E%3C/svg%3E");
   }
 
   /* The Work grid inserts 30+ cards on "View All" — without this, browser
@@ -390,6 +454,13 @@
   }
 
   @media (prefers-reduced-motion: reduce) {
+    .animate-ambient-a,
+    .animate-ambient-b,
+    .animate-ambient-c,
+    .animate-ambient-hue {
+      animation: none !important;
+    }
+
     .cascade-item {
       transition: none !important;
       transform: none !important;

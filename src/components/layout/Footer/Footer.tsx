@@ -5,7 +5,7 @@ export default function Footer() {
   const year = new Date().getFullYear()
 
   return (
-    <footer className="bg-black text-white border-t border-white/10 skew-footer">
+    <footer className="relative z-50 bg-black text-white border-t border-white/10 skew-footer">
       <Container className="pt-12 pb-12 md:pt-24 md:pb-24 flex flex-col items-center gap-10 md:flex-row md:items-center md:justify-between md:gap-12 unskew-inner">
 
         <CascadeGroup className="flex flex-col items-center gap-6 order-1 md:order-2 md:items-end" threshold={0.2}>

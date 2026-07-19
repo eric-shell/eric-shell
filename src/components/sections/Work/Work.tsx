@@ -1,7 +1,7 @@
 import { useLayoutEffect, useRef, useState } from 'react'
 import { ArrowDownAZ, ArrowUpRight, ArrowUpZA, CalendarDays, Plus, RotateCcw, X } from 'lucide-react'
 import { workItems } from '@/data'
-import { Button, Card, CascadeGroup, CascadeItem, Container, Dropdown, SectionHeader } from '../../ui'
+import { Backdrop, Button, Card, CascadeGroup, CascadeItem, Container, Dropdown, SectionHeader } from '../../ui'
 
 type SortOrder = 'chronological' | 'asc' | 'desc'
 
@@ -56,9 +56,7 @@ export default function Work() {
 
   return (
     <section id="work" className="relative bg-gradient-to-br from-white to-blue-50 skew-section z-50" style={{ marginTop: '-4rem' }}>
-      <div aria-hidden="true" className="pointer-events-none absolute inset-0 overflow-hidden">
-        <div className="absolute -top-1/4 left-1/3 w-2/3 aspect-square" style={{ background: 'radial-gradient(ellipse at center, rgba(59,130,246,0.12) 0%, transparent 65%)' }} />
-      </div>
+      <Backdrop tone="light" />
       <Container className="unskew-inner">
 
         <CascadeGroup threshold={0.15} className='z-[50]'>

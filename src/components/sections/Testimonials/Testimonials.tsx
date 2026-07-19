@@ -1,6 +1,6 @@
 import { ArrowLeft, ArrowRight, ArrowUpRight, Pause, Play } from 'lucide-react'
 import { testimonials } from '@/data'
-import { Button, CascadeGroup, CascadeItem, Container, SectionHeader } from '../../ui'
+import { Backdrop, Button, CascadeGroup, CascadeItem, Container, SectionHeader } from '../../ui'
 import { useCarousel } from '@/hooks'
 
 export default function Testimonials() {
@@ -14,10 +14,7 @@ export default function Testimonials() {
 
   return (
     <section id="testimonials" className="relative bg-gradient-to-br from-blue-950 to-blue-900 text-white skew-section">
-      <div aria-hidden="true" className="pointer-events-none absolute inset-0 overflow-hidden">
-        <div className="absolute top-1/2 -right-1/4 w-3/4 aspect-square -translate-y-1/2" style={{ background: 'radial-gradient(ellipse at center, rgba(99,102,241,0.22) 0%, transparent 65%)' }} />
-        <div className="absolute -top-1/4 -left-1/4 w-1/2 aspect-square" style={{ background: 'radial-gradient(ellipse at center, rgba(99,102,241,0.15) 0%, transparent 65%)' }} />
-      </div>
+      <Backdrop tone="dark" />
       <Container className="unskew-inner">
 
         <CascadeGroup className="flex items-start justify-between gap-4 pb-10">

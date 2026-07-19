@@ -1,6 +1,6 @@
 import { lazy, Suspense } from 'react'
 import { ChevronDown } from 'lucide-react'
-import { Button, CascadeGroup, CascadeItem, Chat, Container, Eyebrow } from '../../ui'
+import { Backdrop, Button, CascadeGroup, CascadeItem, Chat, Container, Eyebrow } from '../../ui'
 import { useChat, useParallax } from '@/hooks'
 
 const ParticlesSmall = lazy(() => import('./ParticlesSmall'))
@@ -76,6 +76,7 @@ export default function Hero() {
         className="absolute inset-0 z-[5] pointer-events-none mix-blend-multiply"
         style={{ background: 'radial-gradient(ellipse 65% 85% at 28% 55%, rgba(0,0,0,0.8) 0%, transparent 70%)' }}
       />
+      <Backdrop tone="photo" className="z-6" />
       <Container className="relative z-20 w-full py-24 grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
 
         {/* Left: text content */}

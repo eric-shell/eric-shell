@@ -29,7 +29,7 @@ export default function Card({
     <a href={href} target={target} rel={rel} className="group block h-full">
       <Panel
         variant="white"
-        className="flex flex-col h-full rounded-xl overflow-hidden hover:shadow-md min-h-[151px] transition"
+        className="relative noise-overlay flex flex-col h-full rounded-xl overflow-hidden hover:shadow-md min-h-[151px] transition"
       >
         {image && (
           <div className="aspect-[16/10] overflow-hidden bg-blue-100">

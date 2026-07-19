@@ -165,7 +165,7 @@ export default function Chat({
     >
       <Panel
         variant={isWhite ? 'white' : 'glass-light'}
-        className="absolute inset-0 border-0 animate-blur-in"
+        className="absolute inset-0 border-0 animate-blur-in noise-overlay"
       />
       <header
         className={twMerge(
@@ -298,7 +298,7 @@ export default function Chat({
           'mt-2 px-1 font-sans text-[11px] leading-none text-center',
           isWhite ? 'text-blue-950/50' : 'text-white/60'
         )}>
-          Conversations are recorded.{' '}
+          Chats are saved so Eric can follow up.{' '}
           <a
             href="/privacy"
             className="underline underline-offset-2 hover:opacity-80 transition-opacity"

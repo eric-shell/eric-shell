@@ -1,5 +1,5 @@
 import { lazy, Suspense } from 'react'
-import { CascadeGroup, CascadeItem, ContactForm, Container, Eyebrow, H2 } from '../../ui'
+import { Backdrop, CascadeGroup, CascadeItem, ContactForm, Container, Eyebrow, H2 } from '../../ui'
 import { useParallax } from '@/hooks'
 
 const ParticlesSmall = lazy(() => import('../Hero/ParticlesSmall'))
@@ -53,6 +53,7 @@ export default function Contact() {
         className="absolute inset-0 z-[5] pointer-events-none mix-blend-multiply"
         style={{ background: 'radial-gradient(ellipse 45% 70% at 25% 50%, rgba(0,0,0,0.75) 0%, rgba(0,0,0,0.35) 50%, transparent 80%)' }}
       />
+      <Backdrop tone="photo" className="z-6" />
 
       <Suspense fallback={null}><ParticlesLarge mode="fall-toward" /></Suspense>
 

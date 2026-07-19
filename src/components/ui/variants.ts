@@ -11,11 +11,11 @@ export type Variant =
 export type Size = 'sm' | 'md' | 'lg'
 
 export const SURFACE: Record<Variant, string> = {
-  primary:   'text-white bg-gradient-to-br from-blue-600 to-blue-700 border border-transparent',
+  primary:   'text-white bg-gradient-to-br from-blue-600 to-blue-700 border border-transparent shadow-[inset_0_1px_0_0_rgba(255,255,255,0.25)]',
   secondary: 'text-blue-800 bg-gradient-to-br from-white to-blue-50 border border-transparent',
   ghost:     'text-blue-950/60 border border-transparent',
-  'glass-light': 'text-white glass-blur bg-white/10 border border-white/20',
-  'glass-dark':  'text-white glass-blur bg-blue-950/20 border border-blue-950/20',
+  'glass-light': 'text-white glass-blur bg-white/10 border border-white/20 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.20)]',
+  'glass-dark':  'text-white glass-blur bg-blue-950/20 border border-blue-950/20 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.10)]',
   'error-glass':   'text-white glass-blur bg-red-950/85 border border-red-400/50',
   'success-glass': 'text-white glass-blur bg-green-950/85 border border-green-400/50',
   white:     'bg-white border border-blue-950/10 text-blue-950',

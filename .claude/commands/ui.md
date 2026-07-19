@@ -49,6 +49,21 @@ Div-only wrapping container. Use for any surface (card, overlay, tile) that is *
 
 For an absolute-positioned glass overlay inside an already-bordered container, strip the default glass border with `className="border-0"`.
 
+### Backdrop — [src/components/ui/Backdrop/Backdrop.tsx](src/components/ui/Backdrop/Backdrop.tsx)
+Ambient section background: slow-drifting, hue-shifting radial gradient blobs plus an SVG film-grain layer. Render it as the first child of a `relative` section, before `Container`. It is `aria-hidden`, `pointer-events-none`, and self-clipping (`absolute inset-0 overflow-hidden`).
+
+- `tone="light"` — cyan/blue/violet blobs for light sections (Work, Visuals).
+- `tone="dark"` — indigo/violet/cyan blobs for dark sections (Testimonials).
+- `tone="photo"` — grain only, for sections with photographic backgrounds (Hero, Contact); pass a `z-*` class to sit above the scrim but below content.
+- `flip` — mirrors the blob layout so adjacent same-tone sections don't look identical.
+
+Motion comes from the `animate-ambient-*` utilities in [src/index.css](src/index.css): transform-only drift keyframes (26/34/42s, never in sync) plus a 48s `hue-rotate` sweep on the blob layer. All of it is frozen under `prefers-reduced-motion` (blobs stay, statically). Blobs must be positioned with inset classes only — the drift animation owns `transform`, so `translate-*` classes on a blob are silently discarded.
+
+Grain utilities (also in `index.css`, sharing the `--noise-img` data-URI):
+
+- `bg-noise` — tiles the grain as a background; combine with `absolute inset-0`, an opacity, and a blend mode.
+- `noise-overlay` — adds grain as an `::after` film over a panel surface (used by `Card` and the Chat glass panel). Does **not** set `position`; the element must already be positioned (`relative`/`absolute`) and the overlay inherits its border-radius.
+
 ### Button — [src/components/ui/Button/Button.tsx](src/components/ui/Button/Button.tsx)
 Polymorphic (renders `<a>` when `href` is passed, else `<button>`). Props: `variant` (default `dark`), `size` (`sm|md|lg`, default `md`), `shape` (`pill|square`, default `pill`). Applies `SURFACE[variant]` + `SURFACE_HOVER[variant]` + size/shape padding. `shape="square"` is the icon-only form.
 
