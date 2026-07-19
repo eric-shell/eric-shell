@@ -27,26 +27,28 @@ const TEXTAREA_MAX_HEIGHT = 160
 const TYPE_SPEED_MS = 28
 
 function useTypewriter(text: string, enabled: boolean): string {
-  const [displayed, setDisplayed] = useState('')
+  const [count, setCount] = useState(() => (enabled ? 0 : text.length))
+  const [prevKey, setPrevKey] = useState<[string, boolean]>([text, enabled])
+  if (prevKey[0] !== text || prevKey[1] !== enabled) {
+    // Adjust state during render (not in an effect) so the reset applies
+    // before the browser paints the new text.
+    setPrevKey([text, enabled])
+    setCount(enabled ? 0 : text.length)
+  }
   useEffect(() => {
-    if (!text) {
-      setDisplayed('')
-      return
-    }
-    if (!enabled) {
-      setDisplayed(text)
-      return
-    }
-    setDisplayed('')
-    let i = 0
+    if (!enabled || !text) return
     const interval = setInterval(() => {
-      i++
-      setDisplayed(text.slice(0, i))
-      if (i >= text.length) clearInterval(interval)
+      setCount(c => {
+        if (c >= text.length) {
+          clearInterval(interval)
+          return c
+        }
+        return c + 1
+      })
     }, TYPE_SPEED_MS)
     return () => clearInterval(interval)
   }, [text, enabled])
-  return displayed
+  return text.slice(0, count)
 }
 
 export default function Chat({

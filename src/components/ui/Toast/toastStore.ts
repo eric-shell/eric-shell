@@ -58,6 +58,9 @@ export const toast = {
 
 export function subscribe(listener: Listener) {
   listeners.add(listener)
-  listener(toasts)
   return () => { listeners.delete(listener) }
+}
+
+export function getToasts() {
+  return toasts
 }

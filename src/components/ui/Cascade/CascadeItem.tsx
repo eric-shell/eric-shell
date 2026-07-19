@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type ElementType } from 'react'
+import { useEffect, useState, type ElementType } from 'react'
 import { useCascade } from './CascadeContext'
 
 interface CascadeItemProps {
@@ -14,16 +14,16 @@ export default function CascadeItem({ children, className, as: Tag = 'div', inde
 
   // If the group is already in view when this item mounts (e.g. a filter revealed it),
   // animate independently so only this item fades in — not the whole group.
-  const groupInViewOnMount = useRef(groupInView)
+  const [groupInViewOnMount] = useState(groupInView)
   const [selfVisible, setSelfVisible] = useState(false)
 
   useEffect(() => {
-    if (!groupInViewOnMount.current) return
+    if (!groupInViewOnMount) return
     const id = requestAnimationFrame(() => setSelfVisible(true))
     return () => cancelAnimationFrame(id)
-  }, [])
+  }, [groupInViewOnMount])
 
-  const isVisible = groupInViewOnMount.current ? selfVisible : groupInView
+  const isVisible = groupInViewOnMount ? selfVisible : groupInView
 
   return (
     <Tag

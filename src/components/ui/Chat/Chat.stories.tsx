@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { fn } from 'storybook/test'
-import type { Meta, StoryObj } from '@storybook/react'
+import type { Decorator, Meta, StoryObj } from '@storybook/react'
 import Chat from './Chat'
 
 const meta = {
@@ -21,8 +21,8 @@ const meta = {
 export default meta
 type Story = StoryObj<typeof meta>
 
-const decorators = [
-  (Story: any) => (
+const decorators: Decorator[] = [
+  Story => (
     <div className="min-h-screen bg-gradient-to-br from-blue-950 via-blue-950/80 to-black flex items-center justify-end p-8">
       <div className="w-[480px]">
         <Story />

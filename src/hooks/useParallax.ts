@@ -45,6 +45,10 @@ export function useParallax({ bgStrength, gradientStrength, subjectStrength, ler
     if (subjectRef.current) subjectRef.current.style.transform = 'translate(0px, 0px)'
   }, [])
 
+  // The loop re-schedules itself through a ref because a useCallback
+  // can't reference its own binding before it's declared.
+  const tickRef = useRef<(() => void) | null>(null)
+
   const tick = useCallback(() => {
     rafId.current = null
 
@@ -59,9 +63,13 @@ export function useParallax({ bgStrength, gradientStrength, subjectStrength, ler
       Math.abs(targetY.current - currentY.current) > EPS
 
     if (stillMoving) {
-      rafId.current = requestAnimationFrame(tick)
+      rafId.current = requestAnimationFrame(() => tickRef.current?.())
     }
   }, [lerpFactor, applyTransforms])
+
+  useEffect(() => {
+    tickRef.current = tick
+  }, [tick])
 
   const handleMouseMove = useCallback((e: React.MouseEvent<HTMLElement>) => {
     if (reducedMotion.current) return

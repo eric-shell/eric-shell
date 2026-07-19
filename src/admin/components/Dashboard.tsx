@@ -77,22 +77,27 @@ export default function Dashboard({ onLogout }: DashboardProps) {
   const [query, setQuery] = useState('')
   const [lastLoaded, setLastLoaded] = useState<Date | null>(null)
 
-  const load = useCallback(async () => {
-    setLoading(true)
-    const [v, s] = await Promise.all([
+  const fetchData = useCallback(() => {
+    return Promise.all([
       apiCall<VisitorListPayload>('/api/admin/visitors', undefined, {
         errorMessage: 'Failed to load visitors.',
         onUnauthorized: onLogout,
       }),
       apiCall<StatsPayload>('/api/admin/stats'),
-    ])
-    if (v) setVisitors(v.visitors ?? [])
-    if (s) setStats(s.days)
-    setLoading(false)
-    setLastLoaded(new Date())
+    ]).then(([v, s]) => {
+      if (v) setVisitors(v.visitors ?? [])
+      if (s) setStats(s.days)
+      setLoading(false)
+      setLastLoaded(new Date())
+    })
   }, [onLogout])
 
-  useEffect(() => { load() }, [load])
+  const load = useCallback(() => {
+    setLoading(true)
+    return fetchData()
+  }, [fetchData])
+
+  useEffect(() => { fetchData() }, [fetchData])
 
   useEffect(() => {
     const id = setInterval(load, 60_000)

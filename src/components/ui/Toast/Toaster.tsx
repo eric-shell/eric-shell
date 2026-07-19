@@ -1,18 +1,10 @@
-import { useEffect, useState } from 'react'
+import { useSyncExternalStore } from 'react'
 import { createPortal } from 'react-dom'
 import Toast from './Toast'
-import { subscribe, type ToastItem } from './toastStore'
+import { subscribe, getToasts } from './toastStore'
 
 export default function Toaster() {
-  const [items, setItems] = useState<ToastItem[]>([])
-  const [mounted, setMounted] = useState(false)
-
-  useEffect(() => {
-    setMounted(true)
-    return subscribe(setItems)
-  }, [])
-
-  if (!mounted) return null
+  const items = useSyncExternalStore(subscribe, getToasts)
 
   return createPortal(
     <div

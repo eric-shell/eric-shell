@@ -29,7 +29,8 @@ export default function Toast({ item }: { item: ToastItem }) {
   const [exiting, setExiting] = useState(false)
   const timeoutRef = useRef<number | null>(null)
   const remainingRef = useRef(item.duration)
-  const startedAtRef = useRef(Date.now())
+  // Set for real by startTimer (which runs in the mount effect) before any read.
+  const startedAtRef = useRef(0)
 
   const beginDismiss = () => {
     setExiting(true)

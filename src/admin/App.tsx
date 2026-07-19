@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Toaster } from '../components/ui'
 import Login from './components/Login'
 import Dashboard from './components/Dashboard'
@@ -6,16 +6,13 @@ import Dashboard from './components/Dashboard'
 export default function App() {
   const [authed, setAuthed] = useState<boolean | null>(null)
 
-  const probe = useCallback(async () => {
-    try {
-      const res = await fetch('/api/admin/visitors')
-      setAuthed(res.ok)
-    } catch {
-      setAuthed(false)
-    }
+  useEffect(() => {
+    let cancelled = false
+    fetch('/api/admin/visitors')
+      .then(res => { if (!cancelled) setAuthed(res.ok) })
+      .catch(() => { if (!cancelled) setAuthed(false) })
+    return () => { cancelled = true }
   }, [])
-
-  useEffect(() => { probe() }, [probe])
 
   return (
     <div className="min-h-screen bg-blue-50 text-blue-950 font-sans">
