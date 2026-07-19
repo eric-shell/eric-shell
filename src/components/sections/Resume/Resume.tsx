@@ -4,7 +4,7 @@ import { certifications, education, headline, jobs, summary, values } from '@/da
 
 export default function Resume() {
   return (
-    <main className="bg-white text-blue-950">
+    <main id="main" className="bg-white text-blue-950">
 
       <section className="resume-hero relative bg-blue-950 text-white overflow-hidden pt-32 pb-16 md:pt-40 md:pb-24">
         <Container>

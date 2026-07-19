@@ -6,7 +6,8 @@
   },
   "rewrites": [
     { "source": "/dashboard", "destination": "/dashboard.html" },
-    { "source": "/((?!api/|@|src/|node_modules/|.*\\.).*)", "destination": "/index.html" }
+    { "source": "/resume", "destination": "/index.html" },
+    { "source": "/privacy", "destination": "/index.html" }
   ],
   "headers": [
     {

@@ -130,7 +130,7 @@ Inherited from the existing site and maintained going forward:
 - **Content-first** — the work speaks; don't let chrome compete with it
 - **Professional restraint** — no gratuitous animations or decorative noise
 - **Scannable** — tech tags on project cards, clear section hierarchy
-- **Light + dark** — system preference respected via Tailwind's `dark:` variant
+- **Fixed palette, no theme switching** — the site is intentionally light-first with deliberate dark sections (Testimonials, Footer, photo sections); there is no dark mode and no `dark:` variants. Decision made 2026-07 — don't reintroduce.
 - **Responsive** — mobile-first, 4xl max container width
 
 ## Routes & Sections
@@ -143,7 +143,7 @@ Routing is handled by `App.tsx` reading `window.location.pathname`:
 `Header` and `Footer` (from `components/layout/`) wrap every route.
 
 Home section order in `App.tsx`:
-1. `Hero` — name, title, brief tagline, CTAs, Three.js particle effects ✓
+1. `Hero` — name, title, brief tagline, CTAs, Canvas 2D particle effects (`ParticlesSmall`/`ParticlesLarge`, no WebGL/Three.js) ✓
 2. `Work` — filterable/sortable grid of work and projects ✓
 3. `Testimonials` — two-column: context copy + auto-advancing carousel ✓
 4. `Visuals` — 4-col layout: editorial copy + Instagram photo grid (static data in `src/data/instagram.ts`) ✓

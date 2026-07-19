@@ -104,6 +104,12 @@ export default function Hero() {
               value={input}
               onChange={setInput}
               onSubmit={send}
+              onPrompt={send}
+              suggestions={[
+                'What is your experience with design systems?',
+                'Have you led teams?',
+                'What stack do you work in?',
+              ]}
               messages={messages}
               isLoading={isLoading}
               onClear={reset}

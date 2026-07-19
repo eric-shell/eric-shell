@@ -3,7 +3,7 @@ import { Button, CascadeGroup, CascadeItem, Container, Eyebrow, H1, H2 } from '.
 
 export default function Privacy() {
   return (
-    <main className="bg-white text-blue-950">
+    <main id="main" className="bg-white text-blue-950">
       <section className="relative bg-blue-950 text-white overflow-hidden pt-32 pb-16 md:pt-40 md:pb-24">
         <Container>
           <CascadeGroup mountOnly className="flex flex-col gap-4">

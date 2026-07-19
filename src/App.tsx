@@ -1,9 +1,12 @@
-import { useEffect } from 'react'
+import { lazy, Suspense, useEffect } from 'react'
 import './index.css'
 import { Header, Footer } from './components/layout'
-import { Hero, Work, Testimonials, Visuals, Contact, Resume, Privacy } from './components/sections'
+import { Hero, Work, Testimonials, Visuals, Contact } from './components/sections'
 import { Toaster } from './components/ui'
 import { useTitleCycle } from './hooks'
+
+const Resume = lazy(() => import('./components/sections/Resume'))
+const Privacy = lazy(() => import('./components/sections/Privacy'))
 
 type Route = 'home' | 'resume' | 'privacy'
 
@@ -35,19 +38,25 @@ export default function App() {
 
   return (
     <div>
+      <a
+        href="#main"
+        className="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-999 focus:px-4 focus:py-2 focus:rounded-lg focus:bg-blue-700 focus:text-white font-sans text-sm font-semibold"
+      >
+        Skip to content
+      </a>
       <Header />
       {route === 'resume' ? (
-        <Resume />
+        <Suspense fallback={null}><Resume /></Suspense>
       ) : route === 'privacy' ? (
-        <Privacy />
+        <Suspense fallback={null}><Privacy /></Suspense>
       ) : (
-        <>
+        <main id="main">
           <Hero />
           <Work />
           <Testimonials />
           <Visuals />
           <Contact />
-        </>
+        </main>
       )}
       <Footer />
       <Toaster />

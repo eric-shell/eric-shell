@@ -14,6 +14,9 @@ interface ChatProps {
   value: string
   onChange: (value: string) => void
   onSubmit: () => void
+  /** Sends a suggested prompt directly (bypasses the textarea). Chips render only when this and `suggestions` are set. */
+  onPrompt?: (text: string) => void
+  suggestions?: string[]
   messages?: ChatMessage[]
   isLoading?: boolean
   onClose?: () => void
@@ -55,6 +58,8 @@ export default function Chat({
   value,
   onChange,
   onSubmit,
+  onPrompt,
+  suggestions = [],
   messages = [],
   isLoading = false,
   onClose,
@@ -69,6 +74,22 @@ export default function Chat({
   const threadRef = useRef<HTMLDivElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const adaFirstMount = useRef(true)
+  const wasClosedRef = useRef(false)
+
+  // Keyboard users shouldn't lose their place when the genie collapses:
+  // closing hands focus to the floating reopen button, reopening hands it
+  // back to the textarea. Skipped on initial mount so page load never
+  // steals focus.
+  useEffect(() => {
+    if (!isOpen) {
+      wasClosedRef.current = true
+      requestAnimationFrame(() => {
+        document.querySelector<HTMLElement>('.genie-button')?.focus()
+      })
+    } else if (wasClosedRef.current) {
+      textareaRef.current?.focus({ preventScroll: true })
+    }
+  }, [isOpen])
 
   const hasMessages = messages.length > 0
   const animateWelcome =
@@ -228,6 +249,23 @@ export default function Chat({
             <ReactMarkdown components={mdComponents}>{linkifyEmail(typedWelcome)}</ReactMarkdown>
           </div>
         )}
+        {onPrompt && suggestions.length > 0 && !hasMessages && (
+          <div className="flex flex-wrap gap-2" role="group" aria-label="Suggested questions">
+            {suggestions.map((s) => (
+              <Button
+                key={s}
+                type="button"
+                size="sm"
+                variant={isWhite ? 'white' : 'glass-light'}
+                className="rounded-full"
+                disabled={isLoading}
+                onClick={() => onPrompt(s)}
+              >
+                {s}
+              </Button>
+            ))}
+          </div>
+        )}
         {hasMessages && messages.map((m, i) => (
           <div
             key={i}
@@ -298,7 +336,7 @@ export default function Chat({
           'mt-2 px-1 font-sans text-[11px] leading-none text-center',
           isWhite ? 'text-blue-950/50' : 'text-white/60'
         )}>
-          Chats are saved so Eric can follow up.{' '}
+          Chats are saved so I can follow up.{' '}
           <a
             href="/privacy"
             className="underline underline-offset-2 hover:opacity-80 transition-opacity"

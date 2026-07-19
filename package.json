@@ -17,7 +17,6 @@
   },
   "dependencies": {
     "@neondatabase/serverless": "^1.1.0",
-    "@types/three": "^0.184.0",
     "@upstash/ratelimit": "^2.0.8",
     "@upstash/redis": "^1.38.0",
     "csv-parse": "^6.2.1",
@@ -28,8 +27,7 @@
     "react-intersection-observer": "^10.0.3",
     "react-markdown": "^10.1.0",
     "resend": "^6.12.2",
-    "tailwind-merge": "^3.5.0",
-    "three": "^0.184.0"
+    "tailwind-merge": "^3.5.0"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.4",
@@ -43,6 +41,7 @@
     "@types/react-dom": "^19.2.3",
     "@vercel/node": "^5.7.13",
     "@vitejs/plugin-react": "^6.0.1",
+    "axe-core": "^4.12.1",
     "concurrently": "^9.2.1",
     "eslint": "^9.39.4",
     "eslint-plugin-react-hooks": "^7.1.1",

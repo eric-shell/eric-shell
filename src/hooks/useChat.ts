@@ -42,8 +42,8 @@ export function useChat() {
     }
   }, [messages])
 
-  const send = useCallback(async () => {
-    const trimmed = input.trim()
+  const send = useCallback(async (promptText?: string) => {
+    const trimmed = (promptText ?? input).trim()
     if (!trimmed || isLoading) return
 
     const turnIndex = messages.length
