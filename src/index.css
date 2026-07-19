@@ -136,6 +136,14 @@
     color-scheme: light dark;
   }
 
+  /* The Work grid inserts 30+ cards on "View All" — without this, browser
+     scroll anchoring follows the content below the insertion point down the
+     page. overflow-anchor is not inherited, so exclude the whole subtree. */
+  #work,
+  #work * {
+    overflow-anchor: none;
+  }
+
   html {
     scroll-behavior: smooth;
   }

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useLayoutEffect, useRef, useState } from 'react'
 import { ArrowDownAZ, ArrowUpRight, ArrowUpZA, CalendarDays, Plus, RotateCcw, X } from 'lucide-react'
 import { workItems } from '@/data'
 import { Button, Card, CascadeGroup, CascadeItem, Container, Dropdown, SectionHeader } from '../../ui'
@@ -17,6 +17,21 @@ export default function Work() {
   const [sort, setSort] = useState<SortOrder>('chronological')
   const [activeTags, setActiveTags] = useState<string[]>([])
   const [showAll, setShowAll] = useState(false)
+  const scrollYBeforeReveal = useRef<number | null>(null)
+
+  function revealAll() {
+    scrollYBeforeReveal.current = window.scrollY
+    setShowAll(true)
+  }
+
+  // Restore the pre-reveal scroll position before paint — inserting 30+ cards
+  // otherwise triggers browser scroll anchoring, which follows the content
+  // below the insertion point down the page.
+  useLayoutEffect(() => {
+    if (scrollYBeforeReveal.current === null) return
+    window.scrollTo(0, scrollYBeforeReveal.current)
+    scrollYBeforeReveal.current = null
+  }, [showAll])
 
   function toggleTag(tag: string) {
     setActiveTags(prev => prev.includes(tag) ? prev.filter(t => t !== tag) : [...prev, tag])
@@ -129,7 +144,15 @@ export default function Work() {
         <div className="relative">
           <CascadeGroup as="ul" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 z-[40]" threshold={0.05}>
             {visibleItems.map(({ url, title, solution, tags, image }, i) => (
-              <CascadeItem as="li" key={title} index={i}>
+              // Items revealed by "View All Work" get an explicit rolling delay —
+              // the default index stagger caps at 7 steps, which would make
+              // everything past the 8th revealed item appear at once.
+              <CascadeItem
+                as="li"
+                key={title}
+                index={i}
+                delayMs={showAll && i >= INITIAL_COUNT ? (i - INITIAL_COUNT) * 60 : undefined}
+              >
                 <Card
                   href={url}
                   title={title}
@@ -145,18 +168,29 @@ export default function Work() {
             ))}
           </CascadeGroup>
 
-          {hasMore && (
-            <div className="absolute bottom-0 left-0 right-0 h-48 bg-gradient-to-t from-blue-50 to-transparent pointer-events-none z-10" />
-          )}
+          <div
+            className={`absolute bottom-0 left-0 right-0 h-48 bg-gradient-to-t from-blue-50 to-transparent pointer-events-none z-10 transition-opacity duration-700 motion-reduce:transition-none ${
+              hasMore ? 'opacity-100' : 'opacity-0'
+            }`}
+          />
         </div>
 
-        {hasMore && (
-          <div className="flex justify-center mt-6">
-            <Button variant="primary" size="md" onClick={() => setShowAll(true)} rightIcon={<Plus size={15} strokeWidth={2.5} aria-hidden="true" />}>
-              View All Work
-            </Button>
-          </div>
-        )}
+        <div
+          aria-hidden={!hasMore}
+          className={`flex justify-center overflow-hidden transition-[max-height,opacity,margin] duration-500 ease-out motion-reduce:transition-none ${
+            hasMore ? 'mt-6 max-h-20 opacity-100' : 'mt-0 max-h-0 opacity-0'
+          }`}
+        >
+          <Button
+            variant="primary"
+            size="md"
+            onClick={revealAll}
+            tabIndex={hasMore ? undefined : -1}
+            rightIcon={<Plus size={15} strokeWidth={2.5} aria-hidden="true" />}
+          >
+            View All Work
+          </Button>
+        </div>
 
       </Container>
     </section>

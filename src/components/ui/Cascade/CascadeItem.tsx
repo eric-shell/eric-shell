@@ -6,11 +6,13 @@ interface CascadeItemProps {
   className?: string
   as?: ElementType
   index?: number
+  /** Explicit entrance delay — bypasses the index * stagger formula and its 7-step cap. */
+  delayMs?: number
 }
 
-export default function CascadeItem({ children, className, as: Tag = 'div', index = 0 }: CascadeItemProps) {
+export default function CascadeItem({ children, className, as: Tag = 'div', index = 0, delayMs }: CascadeItemProps) {
   const { inView: groupInView, stagger } = useCascade()
-  const delay = Math.min(index, 7) * stagger
+  const delay = delayMs ?? Math.min(index, 7) * stagger
 
   // If the group is already in view when this item mounts (e.g. a filter revealed it),
   // animate independently so only this item fades in — not the whole group.
