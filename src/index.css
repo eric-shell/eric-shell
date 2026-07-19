@@ -104,6 +104,18 @@
   to   { filter: hue-rotate(18deg); }
 }
 
+/* Scroll-linked drift for the whole blob layer — progress comes from the
+   section's position in the viewport (animation-timeline: view()), not time. */
+@keyframes ambient-parallax {
+  from { transform: translateY(-5%); }
+  to   { transform: translateY(5%); }
+}
+
+/* MPA route changes (/ ↔ /resume ↔ /privacy) cross-fade instead of hard-cutting. */
+@view-transition {
+  navigation: auto;
+}
+
 @keyframes toast-in {
   from { opacity: 0; transform: translateX(-20px); }
   to   { opacity: 1; transform: translateX(0); }
@@ -144,6 +156,22 @@
 
 @utility animate-ambient-hue {
   animation: ambient-hue 48s ease-in-out infinite alternate;
+}
+
+@utility animate-ambient-parallax {
+  @supports (animation-timeline: view()) {
+    animation: ambient-parallax linear both;
+    animation-timeline: view();
+  }
+}
+
+/* Optical-weight shift on hover — Google Sans GRAD axis (same one Eyebrow uses). */
+@utility grad-hover {
+  transition: font-variation-settings 250ms ease;
+
+  &:hover {
+    font-variation-settings: 'GRAD' 150;
+  }
 }
 
 /* Tiled monochrome SVG grain — fills the element; caller sets opacity + blend. */
@@ -210,6 +238,44 @@
 
   html {
     scroll-behavior: smooth;
+  }
+
+  ::selection {
+    background: var(--color-blue-600);
+    color: var(--color-white);
+  }
+
+  :root {
+    accent-color: var(--color-blue-600);
+  }
+
+  input,
+  textarea {
+    caret-color: var(--color-blue-500);
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-blue-500);
+    outline-offset: 2px;
+  }
+
+  /* The fixed header persists across cross-document view transitions instead
+     of fading with the page. Keep this name unique to the site header. */
+  .site-header {
+    view-transition-name: site-header;
+  }
+
+  /* Display headings land a touch heavy, then relax as their cascade item
+     fades in. transition-delay: inherit picks up the item's stagger delay. */
+  .cascade-item :is(h1, h2, h3) {
+    transition: font-variation-settings 900ms cubic-bezier(0.16, 1, 0.3, 1);
+    transition-delay: inherit;
+    font-variation-settings: 'wght' 700;
+  }
+
+  .cascade-item.opacity-0 :is(h1, h2, h3) {
+    transition: none;
+    font-variation-settings: 'wght' 860;
   }
 
   body {
@@ -401,6 +467,11 @@
       transform: none !important;
     }
 
+    .cascade-item :is(h1, h2, h3) {
+      transition: none !important;
+      font-variation-settings: normal !important;
+    }
+
     /* ─────────────────────────────────────────────
        PRINT-GRID — About + Credentials in left col,
        Work Experience in right col
@@ -457,8 +528,20 @@
     .animate-ambient-a,
     .animate-ambient-b,
     .animate-ambient-c,
-    .animate-ambient-hue {
+    .animate-ambient-hue,
+    .animate-ambient-parallax {
       animation: none !important;
+    }
+
+    ::view-transition-group(*),
+    ::view-transition-old(*),
+    ::view-transition-new(*) {
+      animation: none !important;
+    }
+
+    .cascade-item :is(h1, h2, h3) {
+      transition: none !important;
+      font-variation-settings: normal !important;
     }
 
     .cascade-item {

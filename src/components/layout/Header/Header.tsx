@@ -60,7 +60,7 @@ export default function Header() {
   }, [])
 
   return (
-    <header className={`fixed top-0 inset-x-0 z-850 transition-all duration-300 ease-out border-b ${
+    <header className={`site-header fixed top-0 inset-x-0 z-850 transition-all duration-300 ease-out border-b ${
       hidden ? '-translate-y-full' : 'translate-y-0'
     } ${
       atTop && !menuOpen ? 'bg-transparent border-transparent' : 'bg-blue-950/90 backdrop-blur-md border-white/10'

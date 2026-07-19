@@ -81,7 +81,7 @@ export default function Contact() {
           </CascadeItem>
           <CascadeItem index={3}>
             <p className="font-sans text-lg leading-relaxed text-white text-shadow-md max-w-sm">
-              Prefer to skip the form? Here's my email:<br/><a href="mailto:ericjshell@gmail.com">ericjshell@gmail.com</a>
+              Prefer to skip the form? Here's my email:<br/><a href="mailto:ericjshell@gmail.com" className="grad-hover underline underline-offset-4 decoration-white/40 hover:decoration-white">ericjshell@gmail.com</a>
             </p>
           </CascadeItem>
         </CascadeGroup>

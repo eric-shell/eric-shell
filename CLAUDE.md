@@ -96,6 +96,8 @@ Path alias: `@/*` → `src/*` is configured in `vite.config.ts` and `tsconfig.ap
 - `.glass-blur` — defined in `src/index.css`. Applies `backdrop-filter: blur(12px)`. Under `prefers-reduced-motion`, the animation is suppressed and blur is applied statically. Used by the `glass-light` / `glass-dark` variants and the Hero glass panel. Not a Tailwind utility — cannot be overridden with `backdrop-blur-*` classes.
 - `.animate-ambient-a/b/c` + `.animate-ambient-hue` — slow transform-only blob drift (26/34/42s) and a 48s hue-rotate sweep, consumed by the `Backdrop` ui component. Frozen (static, still visible) under `prefers-reduced-motion`.
 - `.bg-noise` / `.noise-overlay` — SVG `feTurbulence` film grain from the shared `--noise-img` data-URI. `bg-noise` tiles it as a background (caller supplies opacity + blend mode); `noise-overlay` renders it as an `::after` film over an already-positioned panel (used by `Card` and the Chat glass panel).
+- `.animate-ambient-parallax` — scroll-linked blob drift via `animation-timeline: view()` inside an `@supports` guard; no-op (falls back to time-based drift only) where unsupported.
+- `.grad-hover` — optical-weight hover shift on the Google Sans `GRAD` axis (used on footer/contact links). Route changes cross-fade via `@view-transition` (MPA cross-document); the fixed header carries `view-transition-name: site-header` — keep that name unique. Display headings inside a `CascadeItem` settle from `wght` 860→700 as they enter; all of this is disabled under `prefers-reduced-motion` and print.
 
 ### Scroll animation requirements
 
@@ -116,6 +118,7 @@ npm run dev:site  # vercel dev only (site at http://localhost:3000) — runs Vit
 npm run build     # production build → dist/
 npm run preview   # preview production build locally
 npm run lint      # ESLint
+npm run lqip      # regenerate src/data/lqip.ts blur-up placeholders (run after `npm run images` adds Instagram posts)
 ```
 
 Env vars for `vercel dev` come from the linked Vercel project (cloud), not `.env.local`. Use `npx vercel env add NAME [development|preview|production]` to add new keys per-environment.

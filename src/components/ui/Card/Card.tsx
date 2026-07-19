@@ -1,3 +1,4 @@
+import { useRef } from 'react'
 import { ArrowUpRight } from 'lucide-react'
 import Panel from '../Panel'
 import Pill from '../Pill'
@@ -25,12 +26,29 @@ export default function Card({
   target,
   rel,
 }: CardProps) {
+  const spotRef = useRef<HTMLDivElement>(null)
+
+  // Writes CSS vars directly — no re-render per mousemove.
+  const handleMouseMove = (e: React.MouseEvent<HTMLAnchorElement>) => {
+    const spot = spotRef.current
+    if (!spot) return
+    const rect = e.currentTarget.getBoundingClientRect()
+    spot.style.setProperty('--spot-x', `${e.clientX - rect.left}px`)
+    spot.style.setProperty('--spot-y', `${e.clientY - rect.top}px`)
+  }
+
   return (
-    <a href={href} target={target} rel={rel} className="group block h-full">
+    <a href={href} target={target} rel={rel} className="group block h-full" onMouseMove={handleMouseMove}>
       <Panel
         variant="white"
-        className="relative noise-overlay flex flex-col h-full rounded-xl overflow-hidden hover:shadow-md min-h-[151px] transition"
+        className="relative noise-overlay flex flex-col h-full rounded-xl overflow-hidden hover:shadow-md hover:border-blue-400/40 min-h-[151px] transition"
       >
+        <div
+          ref={spotRef}
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-0 z-10 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+          style={{ background: 'radial-gradient(220px circle at var(--spot-x, 50%) var(--spot-y, 50%), oklch(0.68 0.11 235 / 0.12), transparent 70%)' }}
+        />
         {image && (
           <div className="aspect-[16/10] overflow-hidden bg-blue-100">
             <img

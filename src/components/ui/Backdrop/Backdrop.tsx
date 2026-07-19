@@ -63,14 +63,18 @@ export default function Backdrop({ tone = 'light', flip = false, className, ...p
       {...props}
     >
       {tone !== 'photo' && (
-        <div className={`absolute inset-0 animate-ambient-hue ${flip ? '-scale-x-100' : ''}`}>
-          {BLOBS[tone].map((blob, i) => (
-            <div
-              key={i}
-              className={`${blob.className} aspect-square rounded-full`}
-              style={{ background: blob.background }}
-            />
-          ))}
+        // Parallax owns transform on its own layer; the hue layer owns filter
+        // (and the static flip transform); each blob owns its drift transform.
+        <div className="absolute inset-0 animate-ambient-parallax">
+          <div className={`absolute inset-0 animate-ambient-hue ${flip ? '-scale-x-100' : ''}`}>
+            {BLOBS[tone].map((blob, i) => (
+              <div
+                key={i}
+                className={`${blob.className} aspect-square rounded-full`}
+                style={{ background: blob.background }}
+              />
+            ))}
+          </div>
         </div>
       )}
       <div className={`absolute inset-0 bg-noise mix-blend-overlay ${GRAIN[tone]}`} />

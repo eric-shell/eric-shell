@@ -1,11 +1,23 @@
+import { useEffect, useRef, useState } from 'react'
 import { ArrowUpRight } from 'lucide-react'
 import type { InstagramPost } from '@/data'
+import { lqip } from '@/data/lqip'
 
 interface PostProps {
   post: InstagramPost
 }
 
 export default function Post({ post }: PostProps) {
+  const imgRef = useRef<HTMLImageElement>(null)
+  const [loaded, setLoaded] = useState(false)
+
+  // onLoad never fires for cache-hit images that complete before hydration.
+  useEffect(() => {
+    if (imgRef.current?.complete) setLoaded(true)
+  }, [])
+
+  const placeholder = lqip[post.imageUrl]
+
   return (
     <a
       href={post.url}
@@ -14,6 +26,13 @@ export default function Post({ post }: PostProps) {
       aria-label={`View Instagram post: ${post.altText}`}
       className="group relative block aspect-[4/5] overflow-hidden rounded-xl border border-blue-950/10 bg-white hover:border-blue-950/30 hover:shadow-md transition"
     >
+      {placeholder && (
+        <div
+          aria-hidden="true"
+          className="absolute inset-0 bg-cover bg-center"
+          style={{ backgroundImage: `url(${placeholder})` }}
+        />
+      )}
       {(() => {
         const lastDot = post.imageUrl.lastIndexOf('.')
         const base = post.imageUrl.slice(0, lastDot)
@@ -32,11 +51,15 @@ export default function Post({ post }: PostProps) {
               sizes={sizes}
             />
             <img
+              ref={imgRef}
               src={`${base}-640.${ext}`}
               srcSet={`${base}-320.${ext} 320w, ${base}-640.${ext} 640w, ${base}-960.${ext} 960w`}
               sizes={sizes}
               alt={post.altText}
-              className="absolute inset-0 w-full h-full object-cover transition duration-300 group-hover:scale-105"
+              onLoad={() => setLoaded(true)}
+              className={`absolute inset-0 w-full h-full object-cover transition duration-300 group-hover:scale-105 ${
+                loaded ? 'opacity-100' : 'opacity-0'
+              }`}
               loading="lazy"
               decoding="async"
             />

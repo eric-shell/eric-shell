@@ -46,7 +46,7 @@ export default function Footer() {
           <CascadeGroup as="ul" className="flex flex-col gap-4" threshold={0.2}>
             {navLinks.slice(0, 4).map(({ label, href, Icon }, i) => (
               <CascadeItem key={label} as="li" index={i}>
-                <a href={href} className="flex items-center gap-2 font-sans text-sm font-semibold text-white/50 hover:text-white transition-colors">
+                <a href={href} className="grad-hover flex items-center gap-2 font-sans text-sm font-semibold text-white/50 hover:text-white transition-[color,font-variation-settings]">
                   <Icon size={14} />
                   {label}
                 </a>
@@ -56,7 +56,7 @@ export default function Footer() {
           <CascadeGroup as="ul" className="flex flex-col gap-4" threshold={0.2}>
             {connectLinks.map(({ label, href, Icon }, i) => (
               <CascadeItem key={label} as="li" index={i}>
-                <a href={href} className="flex items-center gap-2 font-sans text-sm font-semibold text-white/50 hover:text-white transition-colors">
+                <a href={href} className="grad-hover flex items-center gap-2 font-sans text-sm font-semibold text-white/50 hover:text-white transition-[color,font-variation-settings]">
                   <Icon size={14} />
                   {label}
                 </a>

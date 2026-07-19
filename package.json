@@ -11,6 +11,7 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "images": "node scripts/generate-responsive-images.mjs",
+    "lqip": "node scripts/generate-lqip.mjs",
     "storybook": "storybook dev -p 6006",
     "build-storybook": "storybook build"
   },
