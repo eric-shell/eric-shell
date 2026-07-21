@@ -1,6 +1,6 @@
 #!/usr/bin/env node
-import { readFile, writeFile, stat } from 'node:fs/promises'
-import { basename, dirname, extname, join } from 'node:path'
+import { readFile, mkdir, stat } from 'node:fs/promises'
+import { basename, extname, join } from 'node:path'
 import sharp from 'sharp'
 import manifest from './responsive-images.config.mjs'
 
@@ -18,11 +18,12 @@ async function generateVariant(buffer, { width, format, outPath }) {
   return size
 }
 
-async function processEntry({ src, widths, formats }) {
+async function processEntry({ src, outDir, widths, formats }) {
   const buffer = await readFile(src)
   const ext = extname(src)
   const base = basename(src, ext)
-  const dir = dirname(src)
+  await mkdir(outDir, { recursive: true })
+  const dir = outDir
   const results = []
   for (const width of widths) {
     for (const format of formats) {

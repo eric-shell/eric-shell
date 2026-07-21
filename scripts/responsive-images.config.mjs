@@ -1,5 +1,7 @@
 // Manifest of source images that should be emitted as responsive variants.
-// Each entry's variants are written next to the source as `{basename}-{width}.{format}`.
+// Sources live in assets-source/ (tracked in git, never shipped by Vite).
+// Variants are written into outDir — the public/ path the app actually
+// references via srcSet — as `{basename}-{width}.{format}`.
 // Add new entries here and rerun `npm run images`.
 
 // Widths beyond the source image's intrinsic width are skipped (would just
@@ -11,47 +13,56 @@
 
 export default [
   {
-    src: 'public/hero/background.jpg',
+    src: 'assets-source/hero/background.jpg',
+    outDir: 'public/hero',
     widths: [640, 1280, 1920],
     formats: ['avif', 'webp', 'jpg'],
   },
   {
-    src: 'public/contact/EJS01845.jpg',
+    src: 'assets-source/contact/EJS01845.jpg',
+    outDir: 'public/contact',
     widths: [640, 1280, 1920, 2560],
     formats: ['avif', 'webp', 'jpg'],
   },
   {
-    src: 'public/hero/subject.png',
+    src: 'assets-source/hero/subject.png',
+    outDir: 'public/hero',
     widths: [512, 1024],
     formats: ['avif', 'webp', 'png'],
   },
   {
-    src: 'public/posts/AA2_8841.png',
-    widths: [320, 640, 960],
-    formats: ['avif', 'webp', 'png'],
-  },
-  {
-    src: 'public/posts/EJS01205.png',
-    widths: [320, 640, 960],
-    formats: ['avif', 'webp', 'png'],
-  },
-  {
-    src: 'public/posts/EJS01692.png',
-    widths: [320, 640, 960],
-    formats: ['avif', 'webp', 'png'],
-  },
-  {
-    src: 'public/posts/EJS06506.jpg',
+    src: 'assets-source/posts/AA2_8841.jpg',
+    outDir: 'public/posts',
     widths: [320, 640, 960],
     formats: ['avif', 'webp', 'jpg'],
   },
   {
-    src: 'public/posts/EJS08482.jpg',
+    src: 'assets-source/posts/EJS01205.jpg',
+    outDir: 'public/posts',
     widths: [320, 640, 960],
     formats: ['avif', 'webp', 'jpg'],
   },
   {
-    src: 'public/posts/EJS08874.jpg',
+    src: 'assets-source/posts/EJS01692.jpg',
+    outDir: 'public/posts',
+    widths: [320, 640, 960],
+    formats: ['avif', 'webp', 'jpg'],
+  },
+  {
+    src: 'assets-source/posts/EJS06506.jpg',
+    outDir: 'public/posts',
+    widths: [320, 640, 960],
+    formats: ['avif', 'webp', 'jpg'],
+  },
+  {
+    src: 'assets-source/posts/EJS08482.jpg',
+    outDir: 'public/posts',
+    widths: [320, 640, 960],
+    formats: ['avif', 'webp', 'jpg'],
+  },
+  {
+    src: 'assets-source/posts/EJS08874.jpg',
+    outDir: 'public/posts',
     widths: [320, 640, 960],
     formats: ['avif', 'webp', 'jpg'],
   },
