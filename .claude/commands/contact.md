@@ -1,64 +1,51 @@
 # Contact Section
 
-Implemented at `src/components/sections/Contact.tsx`. Positioned between Creative and Footer in `App.tsx`.
+Implemented across two files:
+- [src/components/sections/Contact/Contact.tsx](src/components/sections/Contact/Contact.tsx) — section shell (full-bleed photo background, parallax, particles, copy column)
+- [src/components/ui/ContactForm/ContactForm.tsx](src/components/ui/ContactForm/ContactForm.tsx) — the form itself, a standalone `components/ui` primitive (not Contact-specific — reusable anywhere)
+
+Positioned last in the home section stack, between Visuals and Footer. Wrapped in its own `ErrorBoundary` in `App.tsx` with a `mailto:` fallback if the section itself throws.
 
 ## Layout
 
-Two-column desktop (stacks on mobile): heading/copy on the left, form on the right.
+Two-column (`lg:grid-cols-2`, stacks on mobile) over a full-bleed photo background (`/contact/EJS01845-*`) with a parallax scrim, `Backdrop tone="photo"`, and the small/large particle layers reused from Hero.
 
-- **Left column** — Eyebrow "Say Hello" + H2 "Get in Touch" + subtext + `mailto:` email link
-- **Right column** — contact form, or success confirmation card after submit
+- **Left column** — Eyebrow "Say What's up" + H2 "Get in Touch" + two lines of copy + a `mailto:ericjshell@gmail.com` fallback line
+- **Right column** — `<ContactForm />`, a `Panel` (`variant="white"` or `"glass-light"`, toggle-able via an "ADA / WCAG" high-contrast switch in the corner)
 
 ## Form fields
 
-| Field | Type | Validation |
+| Field | Type | Validation (client `ContactForm.tsx` + server `api/contact.ts`, kept in sync) |
 |---|---|---|
 | Name | text | required, max 100 chars |
 | Email | email | required, max 100 chars, regex validated |
 | Message | textarea | required, min 10, max 2000 chars |
+| Website | hidden (honeypot) | must stay empty — sr-only, `tabIndex={-1}`, `autoComplete="off"` |
 
-All fields show a character counter. Validation runs client-side on submit and surfaces errors in a red banner above the submit button.
+`Input`/`Textarea` render a live `n/maxLength` character counter automatically whenever `maxLength` is passed. Validation failures set `errorField` (borders the offending field red) and fire a `toast.error(...)` — there is no separate error banner.
 
-## State
+## Spam protection
 
-```ts
-type SubmitStatus = 'idle' | 'success' | 'error'
-```
+A hidden honeypot field (`website`), not reCAPTCHA. `api/contact.ts` returns a fake `200 { ok: true }` immediately if it's non-empty, without sending an email — indistinguishable from success to a bot. Real submissions are also rate-limited via `checkRateLimit` (5 / 10 min, 30 / day per visitor).
 
-- On success: form is replaced by a green confirmation card (same `CascadeItem` slot)
-- On error: error message appears inline; form remains editable
+## Submit flow
 
-## API
+`ContactForm` posts JSON to `/api/contact` with `X-Visitor-Id` and `X-Referrer` headers. On success: fields clear, `toast.success(...)` fires, `onSuccess?.()` runs. On failure: `toast.error(...)` with the server's message (or a generic fallback on network/parse failure); the form stays populated and editable. There is no inline success/error card swap — feedback is toast-only.
 
-Posts to `/api/contact` — not yet wired up. Expects:
+## Backend — `api/contact.ts`
 
-```json
-{ "name": "...", "email": "...", "message": "..." }
-```
-
-**Backend target: Resend.** When implementing the handler, call `resend.emails.send(...)` with this payload.
+Re-validates everything server-side (never trust the client check alone), then:
+1. Honeypot check → fake success if tripped.
+2. Rate limit (soft-fails open if Upstash env vars are absent — see root CLAUDE.md).
+3. Sends via **Resend** (`RESEND_API_KEY` env var) — `replyTo` is the visitor's email, body includes a best-effort city/country line from Vercel's `x-vercel-ip-*` headers.
+4. Persists to `contact_submissions` (Neon/Postgres) **after** the email send succeeds — wrapped in its own try/catch so a DB outage never breaks the visible response. Persistence happens before `res.status(200)` returns, since Vercel can freeze the function the instant the response flushes.
 
 ## Styling
 
-- Background: `bg-white` (differentiates from adjacent Creative `bg-off-white` and Footer `bg-black`)
-- Input/textarea: `border border-off-black/20`, `rounded-lg`, focus ring via `focus:border-off-black/60`
-- Submit: `Button` component, `solid` variant, `rightIcon={<Send />}`
-
-## Animations
-
-Both columns use `CascadeGroup` + `CascadeItem` (scroll-triggered, `threshold={0.15}` left / `threshold={0.1}` right) per CLAUDE.md requirements.
+- `Button` submit: `variant="primary"`, `rightIcon={<Send />}`.
+- Panel surface follows the theme toggle: `white` (light, high-contrast) or `glass-light` (frosted, matches the photo background) — see [/ui](ui.md) for what those variants mean.
+- Both columns use `CascadeGroup` + `CascadeItem` (`threshold={0.15}` left / `threshold={0.1}` right) per the scroll-animation rules in root CLAUDE.md.
 
 ## Footer nav
 
-`#contact` link was added to `CONNECT_LINKS` in `Footer.tsx`.
-
-## Future: reCAPTCHA / spam protection
-
-When wiring Resend, add reCAPTCHA v3 before the `fetch` call:
-
-```ts
-const token = await window.grecaptcha.execute(VITE_RECAPTCHA_SITE_KEY, { action: 'submit' })
-// include token in POST body, verify server-side
-```
-
-Use `import.meta.env.VITE_RECAPTCHA_SITE_KEY` — never hardcode the key.
+`#contact` is one of the anchor links in `Footer.tsx`'s nav list.

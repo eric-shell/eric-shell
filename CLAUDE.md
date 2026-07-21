@@ -37,17 +37,23 @@ src/
 │   └── ui/                # Reusable primitives — import from 'components/ui'
 │       ├── Backdrop/      # Ambient section background — drifting hue-shifting gradient blobs + film grain (tone: light|dark|photo)
 │       ├── Button/        # Polymorphic button/anchor — consumes variants.ts; size (sm|md|lg), shape (pill|square)
+│       ├── Card/          # <a> + Panel(white) + Pill composition for project/work-grid cards
 │       ├── Cascade/       # CascadeGroup + CascadeItem + CascadeContext (scroll/mount entrance animation)
 │       ├── Chat/          # Genie-style panel with glass overlay, textarea, submit
+│       ├── Colors/        # Storybook-only palette reference (not exported from the barrel)
 │       ├── Container/     # 1440px max-width + horizontal padding wrapper
+│       ├── ContactForm/   # Name/email/message form w/ validation + toast feedback — used by Contact section
 │       ├── Dropdown/      # Accessible select w/ full keyboard nav (arrows, Home/End, Enter)
+│       ├── ErrorBoundary/ # Per-section error boundary — name prop labels logs/analytics, optional fallback
 │       ├── Eyebrow/       # Small uppercase label above headings (font-sans, GRAD 150)
 │       ├── Heading/       # H1, H2, H3 display headings
 │       ├── Input/         # Text input primitive
 │       ├── Panel/         # Div-only wrapping surface — consumes variants.ts
 │       ├── Pill/          # Tag/filter chip — active state, optional dismiss X
+│       ├── Post/          # Instagram-grid tile — responsive <picture> + LQIP blur-up
 │       ├── SectionHeader/ # Eyebrow + H2 pair, optional action button slot
 │       ├── Textarea/      # Multiline text input primitive
+│       ├── Toast/         # Imperative toast queue — toast.success/error/info() + <Toaster/>
 │       ├── variants.ts    # Shared SURFACE + SURFACE_HOVER maps (single source of truth)
 │       └── index.ts       # Barrel export for all ui components
 ├── admin/                 # Admin CRM SPA (separate Vite entry; see /crm)
@@ -80,11 +86,11 @@ Path alias: `@/*` → `src/*` is configured in `vite.config.ts` and `tsconfig.ap
 - All components spread `...props` onto the root element and accept `className` for overrides.
 - Headings default to `color: inherit` — set text color on the parent or via `className`.
 - `Eyebrow` applies `fontVariationSettings: "'GRAD' 150"` for the optical weight effect used across the site.
-- **Variant system**: `Button`, `Panel`, and `Pill` all consume `SURFACE` / `SURFACE_HOVER` maps from [src/components/ui/variants.ts](src/components/ui/variants.ts). Variants: `darker | dark | light | lighter | primary | ghost | glass-light | glass-dark`. Run `/ui` for the full reference, rules, and examples. Never hand-roll surface color classes (`bg-off-black text-white`, `glass-blur bg-white/10 border-white/20`, etc.) at call sites — use the variant, or add one if needed.
-- `Button` defaults to `variant="dark"`. Pass `href` to render as `<a>`. Two additional axes:
+- **Variant system**: `Button`, `Panel`, and `Pill` all consume `SURFACE` / `SURFACE_HOVER` maps from [src/components/ui/variants.ts](src/components/ui/variants.ts). Variants: `primary | secondary | ghost | glass-light | glass-dark | error-glass | success-glass | white`. Run `/ui` for the full reference, rules, and examples. Never hand-roll surface color classes (`bg-blue-950 text-white`, `glass-blur bg-white/10 border-white/20`, etc.) at call sites — use the variant, or add one if needed.
+- `Button` defaults to `variant="secondary"`. Pass `href` to render as `<a>`. Two additional axes:
   - `size` (`sm` | `md` | `lg`, default `md`) — controls text scale and padding.
   - `shape` (`pill` | `square`, default `pill`) — `pill` for text buttons; `square` for icon-only buttons.
-- `Panel` is a div-only wrapping surface (default `variant="lighter"`). For clickable cards, wrap `<Panel>` in an `<a>` — it is not polymorphic.
+- `Panel` is a div-only wrapping surface (default `variant="secondary"`). For clickable cards, wrap `<Panel>` in an `<a>` — it is not polymorphic. `Card` (in `components/ui`) already packages this pattern for image/title/description/tag-pill cards — prefer it over hand-rolling a new one.
 - `Dropdown` is light-theme by default; swap border/bg classes via `className` if needed in a dark section.
 - `Pill` is a tag/filter chip. Set `active` for filled state, `onClick` for interactive use (adds `aria-pressed`), `onDismiss` for a dismissible badge with X icon. Handles `e.preventDefault()` + `e.stopPropagation()` internally — safe inside card links.
 - `CascadeGroup` wraps a group of elements and fires when it enters the viewport (`react-intersection-observer`, `triggerOnce: true`). Use `mountOnly` for above-the-fold content (Header, Hero) — animates on mount instead of scroll. Accepts `threshold` (default `0.1`) and `stagger` (default `75ms`). Use `as` to render as any HTML element (e.g. `as="ul"`).

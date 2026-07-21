@@ -1,16 +1,19 @@
 Add an image to the responsive-image pipeline (AVIF/WebP variants + `<picture>` markup).
 
-Use this when adding a new `<img>` to a section that references a source file in `public/`. Skip for decorative icons, SVGs, or images rendered tiny (< 200px on all viewports) — the overhead isn't worth it.
+Use this when adding a new `<img>` to a section. Skip for decorative icons, SVGs, or images rendered tiny (< 200px on all viewports) — the overhead isn't worth it.
+
+**Sources live in `assets-source/`, never in `public/`.** `public/` is copied into `dist/` verbatim by Vite, so anything placed there ships to every visitor — including full-resolution originals nobody ever links to. `assets-source/` is git-tracked (so the original is never lost) but outside the build's copy root. Only the generated `-{width}.{format}` variants belong in `public/`.
 
 ---
 
 ## 1. Add the source to the manifest
 
-Edit `scripts/responsive-images.config.mjs`. Append an entry:
+Drop the original file in `assets-source/<section>/<name>.<ext>`, then edit `scripts/responsive-images.config.mjs` and append an entry:
 
 ```js
 {
-  src: 'public/<section>/<name>.<ext>',
+  src: 'assets-source/<section>/<name>.<ext>',
+  outDir: 'public/<section>',        // where the generated variants land — what the app actually references
   widths: [640, 1280, 1920],         // add 2560 for full-bleed backgrounds
   formats: ['avif', 'webp', '<ext>'], // keep the original format as fallback
 }
@@ -29,7 +32,7 @@ Edit `scripts/responsive-images.config.mjs`. Append an entry:
 npm run images
 ```
 
-Writes `{basename}-{width}.{format}` next to each source. Commit the output — the static host serves them directly, no build-time processing.
+Writes `{basename}-{width}.{format}` into `outDir`. Commit the generated variants (in `public/`) — the static host serves them directly, no build-time processing. Also commit the source in `assets-source/` so the original is never lost, but double-check it isn't reachable under `public/` — if `npm run build && find dist -iname '<name>.*'` turns up the raw original, something's wired to the wrong path.
 
 ## 3. Replace `<img>` with `<picture>`
 
@@ -98,10 +101,10 @@ See `src/components/ui/Post/Post.tsx` for the live example (Visuals section grid
 
 - `npm run build` passes
 - Check DevTools → Network → filter "Img" on mobile viewport: confirm a `640.avif` loads, not the 1920 original
-- The original source file can stay on disk as documentation; it's no longer referenced by the app
+- `find dist -iname '<name>.<ext>'` should return nothing — only the `-{width}.{format}` variants should exist in the build output, never the raw source
 
 ## Notes
 
 - `sharp` is a dev dep. The script runs locally; the deploy host never sees sharp.
-- If a source image is replaced (same filename, new content), just rerun `npm run images` — it overwrites.
-- If a source is removed, delete its manifest entry and remove the generated `-{width}.{format}` files by hand.
+- If a source image is replaced (same filename, new content), just rerun `npm run images` — it overwrites the variants in `outDir`.
+- If a source is removed, delete its manifest entry, delete the file from `assets-source/`, and remove the generated `-{width}.{format}` files from `public/` by hand.
