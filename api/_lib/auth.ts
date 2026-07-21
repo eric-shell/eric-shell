@@ -68,8 +68,18 @@ export function checkPassword(supplied: unknown): boolean {
   const expected = process.env.ADMIN_PASSWORD
   if (!expected) return false
   if (typeof supplied !== 'string' || supplied.length === 0) return false
-  const a = Buffer.from(supplied)
-  const b = Buffer.from(expected)
-  if (a.length !== b.length) return false
-  return timingSafeEqual(a, b)
+
+  const expectedBuf = Buffer.from(expected)
+  const suppliedBuf = Buffer.from(supplied)
+
+  // Compare against a length-matched buffer so timingSafeEqual always runs
+  // rather than short-circuiting on a length mismatch first — an early
+  // return there would leak the real password's length via response timing.
+  const paddedSupplied = Buffer.alloc(expectedBuf.length)
+  suppliedBuf.copy(paddedSupplied)
+
+  const lengthsMatch = suppliedBuf.length === expectedBuf.length
+  const contentsMatch = timingSafeEqual(paddedSupplied, expectedBuf)
+
+  return lengthsMatch && contentsMatch
 }
