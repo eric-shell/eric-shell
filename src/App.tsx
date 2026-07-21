@@ -2,13 +2,26 @@ import { lazy, Suspense, useEffect } from 'react'
 import './index.css'
 import { Header, Footer } from './components/layout'
 import { Hero, Work, Testimonials, Visuals, Contact } from './components/sections'
-import { Toaster } from './components/ui'
+import { Button, ErrorBoundary, Toaster } from './components/ui'
 import { useTitleCycle } from './hooks'
 
 const Resume = lazy(() => import('./components/sections/Resume'))
 const Privacy = lazy(() => import('./components/sections/Privacy'))
 
 type Route = 'home' | 'resume' | 'privacy'
+
+function ContactFallback() {
+  return (
+    <section id="contact" className="min-h-[50vh] flex items-center justify-center bg-blue-950 text-white text-center px-6">
+      <div>
+        <p className="font-sans text-lg mb-4">Something went wrong loading this section — but I'm still reachable.</p>
+        <Button href="mailto:ericjshell@gmail.com?subject=New%20Website%20Contact" variant="primary">
+          ericjshell@gmail.com
+        </Button>
+      </div>
+    </section>
+  )
+}
 
 function getRoute(): Route {
   if (typeof window === 'undefined') return 'home'
@@ -51,11 +64,11 @@ export default function App() {
         <Suspense fallback={null}><Privacy /></Suspense>
       ) : (
         <main id="main">
-          <Hero />
-          <Work />
-          <Testimonials />
-          <Visuals />
-          <Contact />
+          <ErrorBoundary name="Hero"><Hero /></ErrorBoundary>
+          <ErrorBoundary name="Work"><Work /></ErrorBoundary>
+          <ErrorBoundary name="Testimonials"><Testimonials /></ErrorBoundary>
+          <ErrorBoundary name="Visuals"><Visuals /></ErrorBoundary>
+          <ErrorBoundary name="Contact" fallback={<ContactFallback />}><Contact /></ErrorBoundary>
         </main>
       )}
       <Footer />
