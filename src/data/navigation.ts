@@ -1,5 +1,5 @@
 import type { LucideIcon } from 'lucide-react'
-import { Briefcase, Quote, Palette, Form, MessagesSquare, Mail, FileText, Shield } from 'lucide-react'
+import { Briefcase, Quote, Palette, Form, House, MessagesSquare, Mail, FileText, Shield } from 'lucide-react'
 
 export interface NavLink {
   label: string
@@ -17,6 +17,17 @@ export interface SocialLink {
   label: string
   href: string
   path: string
+}
+
+/**
+ * Prepended to the header nav on non-home routes (/resume, /privacy) so those
+ * pages have a way back. Deliberately not part of `navLinks` — the Footer takes
+ * a positional `slice(0, 4)` of that array, which prepending would shift.
+ */
+export const homeLink: NavLink = {
+  label: 'Home',
+  href: '/',
+  Icon: House,
 }
 
 export const navLinks: NavLink[] = [

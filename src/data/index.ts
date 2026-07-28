@@ -1,7 +1,7 @@
 export { workItems } from './work'
 export { testimonials } from './testimonials'
 export { instagramPosts } from './instagram'
-export { navLinks, connectLinks, socialLinks } from './navigation'
+export { navLinks, homeLink, connectLinks, socialLinks } from './navigation'
 export type { WorkItem } from './work'
 export type { Testimonial } from './testimonials'
 export type { InstagramPost } from './instagram'

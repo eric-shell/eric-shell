@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect, useRef } from 'react'
 import { Menu, X } from 'lucide-react'
 import { CascadeGroup, CascadeItem, Button, Container } from '../../ui'
-import { navLinks } from '@/data'
+import { navLinks, homeLink } from '@/data'
 
 const eAudio = new Audio('/audio/Eeeeeee.wav')
 eAudio.volume = .4
@@ -14,6 +14,9 @@ export default function Header() {
   const [menuOpen, setMenuOpen] = useState(false)
   const lastScrollY = useRef(0)
   const isHomePage = window.location.pathname === '/'
+  // /resume and /privacy get a Home link ahead of the section anchors; on the
+  // home page itself the logo already scrolls to top, so it would be dead weight.
+  const links = isHomePage ? navLinks : [homeLink, ...navLinks]
 
   useEffect(() => {
     const sectionIds = navLinks.filter(l => l.href.includes('#')).map(l => l.href.split('#')[1])
@@ -89,9 +92,9 @@ export default function Header() {
             </div>
           </CascadeItem>
 
-          <nav aria-label="Primary navigation" className="hidden sm:block">
+          <nav aria-label="Primary navigation" className="hidden lg:block">
             <ul className="flex items-center gap-6">
-              {navLinks.map(({ label, href, Icon }, i) => {
+              {links.map(({ label, href, Icon }, i) => {
                 const sectionId = href.split('#')[1]
                 const isActive = isHomePage && !!sectionId && activeSection === sectionId
                 return (
@@ -111,7 +114,7 @@ export default function Header() {
             </ul>
           </nav>
 
-          <CascadeItem index={navLinks.length + 1} className="sm:hidden">
+          <CascadeItem index={links.length + 1} className="lg:hidden">
             <button
               className="text-white hover:text-white cursor-pointer transition-colors p-1 -mr-1"
               aria-label={menuOpen ? 'Close menu' : 'Open menu'}
@@ -126,14 +129,14 @@ export default function Header() {
       </CascadeGroup>
 
       <div
-        className={`sm:hidden overflow-hidden transition-[max-height,opacity] duration-300 ease-out ${
+        className={`lg:hidden overflow-hidden transition-[max-height,opacity] duration-300 ease-out ${
           menuOpen ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0 pointer-events-none'
         }`}
         aria-hidden={!menuOpen}
       >
         <nav aria-label="Mobile navigation">
           <ul className="px-6 pb-6 pt-1 flex flex-col gap-2">
-            {navLinks.map(({ label, href, Icon }) => {
+            {links.map(({ label, href, Icon }) => {
               const sectionId = href.split('#')[1]
               const isActive = isHomePage && !!sectionId && activeSection === sectionId
               return (
