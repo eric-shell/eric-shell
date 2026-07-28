@@ -187,7 +187,7 @@ export default function ContactForm({
           type="submit"
           disabled={isSubmitting}
           variant="primary"
-          className="shadow-md self-end"
+          className="shadow-md self-end mt-4"
           rightIcon={<Send size={14} strokeWidth={2.5} aria-hidden="true" />}
         >
           {isSubmitting ? 'Sending…' : 'Send Message'}

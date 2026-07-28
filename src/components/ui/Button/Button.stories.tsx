@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react'
-import { ArrowUpRight, Briefcase } from 'lucide-react'
+import { ArrowUpRight, Briefcase, ChevronDown, MessagesSquare, Plus } from 'lucide-react'
 import Button from './Button'
 import type { Variant, Size } from '../variants'
 
@@ -79,6 +79,92 @@ export const WithRightIcon: Story = {
     children: 'Visit Site',
     rightIcon: <ArrowUpRight size={14} strokeWidth={2.5} />,
   },
+}
+
+export const IconSlab: Story = {
+  parameters: {
+    controls: { disable: true },
+    layout: 'padded',
+  },
+  render: () => (
+    <div className="flex flex-col gap-6">
+      {sizes.map((size) => (
+        <div key={size} className="flex gap-4 items-center">
+          <span className="w-8 text-xs font-mono text-blue-950/60 uppercase">{size}</span>
+          <Button size={size} leftIcon={<Briefcase size={14} strokeWidth={2.5} />}>
+            Left icon
+          </Button>
+          <Button size={size} rightIcon={<ArrowUpRight size={14} strokeWidth={2.5} />}>
+            Right icon
+          </Button>
+          <Button
+            size={size}
+            leftIcon={<Briefcase size={14} strokeWidth={2.5} />}
+            rightIcon={<ArrowUpRight size={14} strokeWidth={2.5} />}
+          >
+            Both
+          </Button>
+          <Button
+            size={size}
+            leftIcon={<Briefcase size={14} strokeWidth={2.5} />}
+            iconSlab={false}
+          >
+            No slab
+          </Button>
+        </div>
+      ))}
+    </div>
+  ),
+}
+
+export const IconSlabVariants: Story = {
+  parameters: {
+    controls: { disable: true },
+    layout: 'padded',
+    backgrounds: { default: 'blue-950' },
+  },
+  render: () => (
+    <div className="flex flex-wrap gap-4 items-center">
+      {(['primary', 'secondary', 'white', 'ghost', 'glass-light', 'glass-dark'] as Variant[]).map(
+        (variant) => (
+          <Button
+            key={variant}
+            variant={variant}
+            leftIcon={<Briefcase size={14} strokeWidth={2.5} />}
+            rightIcon={<ArrowUpRight size={14} strokeWidth={2.5} />}
+          >
+            {variant}
+          </Button>
+        ),
+      )}
+    </div>
+  ),
+}
+
+/**
+ * Light geometric glyphs get a 1.25x optical bump so they hold the same visual
+ * weight as dense pictograms in the slab. Compare the rows: the arrow, chevron
+ * and plus render larger than the briefcase and chat marks, but read the same.
+ */
+export const OpticalIconSizing: Story = {
+  parameters: {
+    controls: { disable: true },
+    layout: 'padded',
+  },
+  render: () => (
+    <div className="flex flex-col gap-6">
+      {sizes.map((size) => (
+        <div key={size} className="flex gap-4 items-center flex-wrap">
+          <span className="w-8 text-xs font-mono text-blue-950/60 uppercase">{size}</span>
+          <Button size={size} leftIcon={<ArrowUpRight strokeWidth={2.5} />}>Arrow</Button>
+          <Button size={size} leftIcon={<ChevronDown strokeWidth={2.5} />}>Chevron</Button>
+          <Button size={size} leftIcon={<Plus strokeWidth={2.5} />}>Plus</Button>
+          <Button size={size} leftIcon={<Briefcase strokeWidth={2.5} />}>Briefcase</Button>
+          <Button size={size} leftIcon={<MessagesSquare strokeWidth={2.5} />}>Messages</Button>
+        </div>
+      ))}
+    </div>
+  ),
 }
 
 export const AsAnchor: Story = {

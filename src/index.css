@@ -184,6 +184,35 @@
   }
 }
 
+/* Optical icon sizing. Geometric glyphs (arrows, chevrons, plus, x) lay down far
+   less ink than dense pictograms — a Briefcase or Instagram mark fills its box,
+   an ArrowUpRight is two thin strokes — so at an equal box size the light ones
+   read undersized. Lucide stamps every icon with a `lucide-<name>` class, which
+   lets us bump whole families by prefix instead of tagging each call site.
+
+   The caller sets `--icon-size`; the family rules override `--icon-optical-scale`
+   on the same element the `width`/`height` read it from, so the more specific
+   selector wins and the box grows. Anything unmatched stays at 1. */
+@utility icon-optical {
+  --icon-optical-scale: 1;
+
+  & svg {
+    width: calc(var(--icon-size) * var(--icon-optical-scale));
+    height: calc(var(--icon-size) * var(--icon-optical-scale));
+  }
+
+  & svg[class*='lucide-arrow'],
+  & svg[class*='lucide-chevron'],
+  & svg[class*='lucide-corner'],
+  & svg[class*='lucide-move'],
+  & svg[class*='lucide-plus'],
+  & svg[class*='lucide-minus'],
+  & svg[class*='lucide-check'],
+  & svg[class*='lucide-x'] {
+    --icon-optical-scale: 1.25;
+  }
+}
+
 /* Optical-weight shift on hover — Google Sans GRAD axis (same one Eyebrow uses). */
 @utility grad-hover {
   transition: font-variation-settings 250ms ease;

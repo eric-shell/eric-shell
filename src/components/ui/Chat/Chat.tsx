@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { ArrowUp, MessagesSquare, Trash2, X } from 'lucide-react'
+import { ArrowRight, MessagesSquare, Trash2, X } from 'lucide-react'
 import { twMerge } from 'tailwind-merge'
 import ReactMarkdown from 'react-markdown'
 import Button from '../Button'
@@ -348,7 +348,7 @@ export default function Chat({
               className="absolute top-1/2 -translate-y-1/2 right-2 rounded-full shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
               aria-label={isLoading ? 'Sending' : 'Send message'}
             >
-              <ArrowUp size={20} strokeWidth={2.5} aria-hidden="true" />
+              <ArrowRight size={20} strokeWidth={2.5} aria-hidden="true" />
             </Button>
           </div>
           <p className={twMerge(

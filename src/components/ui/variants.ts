@@ -21,6 +21,34 @@ export const SURFACE: Record<Variant, string> = {
   white:     'bg-white border border-blue-950/10 text-blue-950',
 }
 
+/**
+ * Translucent darkening layer behind a Button's leading/trailing icon.
+ * Deliberately alpha-only so it tracks whatever the surface underneath is
+ * doing — including the hover gradient — instead of restating each variant's
+ * color.
+ */
+export const SURFACE_ICON: Record<Variant, string> = {
+  primary:   'bg-blue-950/25',
+  secondary: 'bg-blue-950/8',
+  ghost:     'bg-blue-950/6',
+  'glass-light': 'bg-blue-950/15',
+  'glass-dark':  'bg-blue-950/25',
+  'error-glass':   'bg-red-950/50',
+  'success-glass': 'bg-green-950/50',
+  white:     'bg-blue-950/6',
+}
+
+export const SURFACE_ICON_HOVER: Record<Variant, string> = {
+  primary:   'group-hover:bg-blue-950/35',
+  secondary: 'group-hover:bg-blue-950/20',
+  ghost:     'group-hover:bg-blue-950/10',
+  'glass-light': 'group-hover:bg-blue-950/25',
+  'glass-dark':  'group-hover:bg-blue-950/35',
+  'error-glass':   'group-hover:bg-red-950/40',
+  'success-glass': 'group-hover:bg-green-950/40',
+  white:     'group-hover:bg-blue-950/10',
+}
+
 export const SURFACE_HOVER: Record<Variant, string> = {
   primary:   'hover:from-blue-800 hover:to-blue-900',
   secondary: 'hover:text-white hover:from-blue-600 hover:to-blue-700',
