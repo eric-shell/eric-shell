@@ -97,6 +97,10 @@ export default function Chat({
     typeof window !== 'undefined' &&
     !window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
   const typedWelcome = useTypewriter(welcomeMessage ?? '', animateWelcome)
+  // Suggestion chips wait for the welcome message to finish typing. With no
+  // welcome message — or under reduced motion, where the typewriter resolves
+  // instantly — this is true on the first render and they never fade.
+  const welcomeDone = !welcomeMessage || typedWelcome.length >= welcomeMessage.length
 
   useEffect(() => {
     const el = threadRef.current
@@ -186,164 +190,176 @@ export default function Chat({
     >
       <Panel
         variant={isWhite ? 'white' : 'glass-light'}
-        className="absolute inset-0 border-0 animate-blur-in noise-overlay"
+        className="absolute inset-0 border-0 animate-glass-in noise-overlay"
       />
-      <header
-        className={twMerge(
-          'relative z-10 flex items-center justify-between gap-2 px-3 py-2.5 border-b',
-          borderClass
-        )}
-      >
-        <button
-          role="switch"
-          aria-checked={isWhite}
-          aria-label="Toggle high-contrast mode"
-          onClick={() => setIsWhite(v => !v)}
+      {/* Chrome fades as a *sibling* of the glass, never as its ancestor: an
+          ancestor mid-fade would form a backdrop root and the blur would snap
+          when the fade resolved. Same timing, so they read as one motion. */}
+      <div className="relative z-10 flex flex-col flex-1 min-h-0 animate-glass-in">
+        <header
           className={twMerge(
-            'flex items-center gap-1.5 rounded-full px-2 py-1 cursor-pointer transition-colors',
-            isWhite ? 'text-blue-950' : 'text-white'
+            'relative z-10 flex items-center justify-between gap-2 px-3 py-2.5 border-b',
+            borderClass
           )}
         >
-          <span className={twMerge(
-            'relative inline-flex h-4 w-7 items-center rounded-full transition-all',
-            isWhite ? 'bg-blue-700 hover:bg-blue-800' : 'bg-black/20 hover:bg-black/50'
-          )}>
+          <button
+            role="switch"
+            aria-checked={isWhite}
+            aria-label="Toggle high-contrast mode"
+            onClick={() => setIsWhite(v => !v)}
+            className={twMerge(
+              'flex items-center gap-1.5 rounded-full px-2 py-1 cursor-pointer transition-colors',
+              isWhite ? 'text-blue-950' : 'text-white'
+            )}
+          >
             <span className={twMerge(
-              'inline-block h-2.5 w-2.5 rounded-full bg-white shadow transition-transform',
-              isWhite ? 'translate-x-3.5' : 'translate-x-0.5'
-            )} />
-          </span>
-          <span className="font-sans text-xs font-semibold tracking-wide">ADA / WCAG</span>
-        </button>
-        <div className="flex items-center gap-1.5">
-          {hasMessages && onClear && (
+              'relative inline-flex h-4 w-7 items-center rounded-full transition-all',
+              isWhite ? 'bg-blue-700 hover:bg-blue-800' : 'bg-black/20 hover:bg-black/50'
+            )}>
+              <span className={twMerge(
+                'inline-block h-2.5 w-2.5 rounded-full bg-white shadow transition-transform',
+                isWhite ? 'translate-x-3.5' : 'translate-x-0.5'
+              )} />
+            </span>
+            <span className="font-sans text-xs font-semibold tracking-wide">ADA / WCAG</span>
+          </button>
+          <div className="flex items-center gap-1.5">
+            {hasMessages && onClear && (
+              <Button
+                onClick={handleClear}
+                variant={isWhite ? 'white' : 'glass-dark'}
+                shape="square"
+                size="sm"
+                className="border-0"
+                aria-label="Clear conversation"
+              >
+                <Trash2 size={16} strokeWidth={2.5} aria-hidden="true" />
+              </Button>
+            )}
             <Button
-              onClick={handleClear}
+              onClick={handleClose}
               variant={isWhite ? 'white' : 'glass-dark'}
               shape="square"
               size="sm"
               className="border-0"
-              aria-label="Clear conversation"
+              aria-label="Close chat"
             >
-              <Trash2 size={16} strokeWidth={2.5} aria-hidden="true" />
+              <X size={16} strokeWidth={2.5} aria-hidden="true" />
             </Button>
+          </div>
+        </header>
+        <div
+          ref={threadRef}
+          className="relative z-0 flex-1 min-h-[280px] max-h-[400px] overflow-y-auto p-3 flex flex-col gap-3"
+        >
+          {welcomeMessage && !hasMessages && (
+            <div className={assistantBubbleClass} aria-label="Welcome message">
+              <ReactMarkdown components={mdComponents}>{linkifyEmail(typedWelcome)}</ReactMarkdown>
+            </div>
           )}
-          <Button
-            onClick={handleClose}
-            variant={isWhite ? 'white' : 'glass-dark'}
-            shape="square"
-            size="sm"
-            className="border-0"
-            aria-label="Close chat"
-          >
-            <X size={16} strokeWidth={2.5} aria-hidden="true" />
-          </Button>
-        </div>
-      </header>
-      <div
-        ref={threadRef}
-        className="relative z-0 flex-1 min-h-[280px] max-h-[400px] overflow-y-auto p-3 flex flex-col gap-3"
-      >
-        {welcomeMessage && !hasMessages && (
-          <div className={assistantBubbleClass} aria-label="Welcome message">
-            <ReactMarkdown components={mdComponents}>{linkifyEmail(typedWelcome)}</ReactMarkdown>
-          </div>
-        )}
-        {onPrompt && suggestions.length > 0 && !hasMessages && (
-          <div className="flex flex-wrap gap-2" role="group" aria-label="Suggested questions">
-            {suggestions.map((s) => (
-              <Button
-                key={s}
-                type="button"
-                size="sm"
-                variant={isWhite ? 'white' : 'glass-light'}
-                className="rounded-full"
-                disabled={isLoading}
-                onClick={() => onPrompt(s)}
-              >
-                {s}
-              </Button>
-            ))}
-          </div>
-        )}
-        {hasMessages && messages.map((m, i) => (
-          <div
-            key={i}
-            className={
-              m.role === 'user'
-                ? 'self-end max-w-[85%] rounded-2xl px-4 py-2.5 font-sans text-sm whitespace-pre-wrap text-white bg-gradient-to-br from-blue-600 to-blue-700 shadow-sm'
-                : assistantBubbleClass
-            }
-          >
-            {m.role === 'assistant'
-              ? <ReactMarkdown components={mdComponents}>{linkifyEmail(m.content)}</ReactMarkdown>
-              : m.content}
-          </div>
-        ))}
-        {showTypingDots && (
-          <div
-            className={assistantBubbleClass}
-            aria-live="polite"
-            aria-label="Assistant is typing"
-          >
-            <span className="inline-flex gap-1 items-center text-lg leading-none text-blue-800">
-              <span className="animate-bounce">·</span>
-              <span className="animate-bounce [animation-delay:120ms]">·</span>
-              <span className="animate-bounce [animation-delay:240ms]">·</span>
-            </span>
-          </div>
-        )}
-      </div>
-      <div className={twMerge(
-        'relative z-10 border-t px-3 py-3',
-        borderClass
-      )}>
-        <div className="relative">
-          <textarea
-            ref={textareaRef}
-            value={value}
-            onChange={e => onChange(e.target.value)}
-            onKeyDown={e => {
-              if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault()
-                onSubmit()
+          {onPrompt && suggestions.length > 0 && !hasMessages && (
+            <div
+              className={twMerge(
+                'flex flex-wrap gap-2 transition-[opacity,transform] duration-500 ease-out motion-reduce:transition-none',
+                welcomeDone ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-[6px]'
+              )}
+              role="group"
+              aria-label="Suggested questions"
+            >
+              {suggestions.map((s) => (
+                <Button
+                  key={s}
+                  type="button"
+                  size="sm"
+                  variant={isWhite ? 'white' : 'glass-light'}
+                  className="rounded-full"
+                  disabled={isLoading || !welcomeDone}
+                  onClick={() => onPrompt(s)}
+                >
+                  {s}
+                </Button>
+              ))}
+            </div>
+          )}
+          {hasMessages && messages.map((m, i) => (
+            <div
+              key={i}
+              className={
+                m.role === 'user'
+                  ? 'self-end max-w-[85%] rounded-2xl px-4 py-2.5 font-sans text-sm whitespace-pre-wrap text-white bg-gradient-to-br from-blue-600 to-blue-700 shadow-sm'
+                  : assistantBubbleClass
               }
-            }}
-            placeholder={placeholder}
-            rows={1}
-            disabled={isLoading}
-            style={{ maxHeight: TEXTAREA_MAX_HEIGHT }}
-            className={twMerge(
-              'block w-full rounded-[28px] border pl-5 pr-16 py-4 font-sans text-base leading-6 resize-none overflow-y-auto [&::-webkit-scrollbar]:hidden [scrollbar-width:none] transition-[height] duration-150 ease-out focus:outline-none disabled:opacity-60',
-              isWhite
-                ? 'bg-white border-blue-950/20 text-blue-950 placeholder:text-blue-950/30 focus:border-blue-700'
-                : 'bg-white/10 border-white/20 text-white placeholder:text-white/40 focus:border-white/60 focus:bg-white/15'
-            )}
-          />
-          <Button
-            onClick={onSubmit}
-            disabled={submitDisabled}
-            variant="primary"
-            shape="square"
-            size="md"
-            className="absolute top-1/2 -translate-y-1/2 right-2 rounded-full shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
-            aria-label={isLoading ? 'Sending' : 'Send message'}
-          >
-            <ArrowUp size={20} strokeWidth={2.5} aria-hidden="true" />
-          </Button>
+            >
+              {m.role === 'assistant'
+                ? <ReactMarkdown components={mdComponents}>{linkifyEmail(m.content)}</ReactMarkdown>
+                : m.content}
+            </div>
+          ))}
+          {showTypingDots && (
+            <div
+              className={assistantBubbleClass}
+              aria-live="polite"
+              aria-label="Assistant is typing"
+            >
+              <span className="inline-flex gap-1 items-center text-lg leading-none text-blue-800">
+                <span className="animate-bounce">·</span>
+                <span className="animate-bounce [animation-delay:120ms]">·</span>
+                <span className="animate-bounce [animation-delay:240ms]">·</span>
+              </span>
+            </div>
+          )}
         </div>
-        <p className={twMerge(
-          'mt-2 px-1 font-sans text-[11px] leading-none text-center',
-          isWhite ? 'text-blue-950/50' : 'text-white/60'
+        <div className={twMerge(
+          'relative z-10 border-t px-3 py-3',
+          borderClass
         )}>
-          Chats are saved so I can follow up.{' '}
-          <a
-            href="/privacy"
-            className="underline underline-offset-2 hover:opacity-80 transition-opacity"
-          >
-            Privacy
-          </a>
-        </p>
+          <div className="relative">
+            <textarea
+              ref={textareaRef}
+              value={value}
+              onChange={e => onChange(e.target.value)}
+              onKeyDown={e => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                  e.preventDefault()
+                  onSubmit()
+                }
+              }}
+              placeholder={placeholder}
+              rows={1}
+              disabled={isLoading}
+              style={{ maxHeight: TEXTAREA_MAX_HEIGHT }}
+              className={twMerge(
+                'block w-full rounded-[28px] border pl-5 pr-16 py-4 font-sans text-base leading-6 resize-none overflow-y-auto [&::-webkit-scrollbar]:hidden [scrollbar-width:none] transition-[height] duration-150 ease-out focus:outline-none disabled:opacity-60',
+                isWhite
+                  ? 'bg-white border-blue-950/20 text-blue-950 placeholder:text-blue-950/30 focus:border-blue-700'
+                  : 'bg-white/10 border-white/20 text-white placeholder:text-white/40 focus:border-white/60 focus:bg-white/15'
+              )}
+            />
+            <Button
+              onClick={onSubmit}
+              disabled={submitDisabled}
+              variant="primary"
+              shape="square"
+              size="md"
+              className="absolute top-1/2 -translate-y-1/2 right-2 rounded-full shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
+              aria-label={isLoading ? 'Sending' : 'Send message'}
+            >
+              <ArrowUp size={20} strokeWidth={2.5} aria-hidden="true" />
+            </Button>
+          </div>
+          <p className={twMerge(
+            'mt-2 px-1 font-sans text-[11px] leading-none text-center',
+            isWhite ? 'text-blue-950/50' : 'text-white/60'
+          )}>
+            Chats are saved so I can follow up.{' '}
+            <a
+              href="/privacy"
+              className="underline underline-offset-2 hover:opacity-80 transition-opacity"
+            >
+              Privacy
+            </a>
+          </p>
+        </div>
       </div>
     </div>
   )

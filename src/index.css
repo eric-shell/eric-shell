@@ -61,9 +61,16 @@
   to   { transform: scale(80)  rotate(270deg); opacity: 0;   }
 }
 
-@keyframes blur-in {
-  from { opacity: 0; backdrop-filter: blur(0px); -webkit-backdrop-filter: blur(0px); }
-  to   { opacity: 1; backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); }
+/* Entrance for the chat glass panel. Deliberately opacity-only: tweening the
+   backdrop-filter radius forces a re-blur of everything behind the panel (hero
+   photo, both particle canvases, the ambient blobs) on every frame. Holding the
+   blur at its final 12px and fading the composited result is a cheap, jump-free
+   layer fade. Must be applied to the blurred element itself — an *ancestor*
+   with opacity < 1 forms a backdrop root, so the blur samples nothing until the
+   fade lands on exactly 1 and then snaps. */
+@keyframes glass-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
 }
 
 /* Bottom contracts toward bottom-right first, top follows — approximates macOS genie */
@@ -138,8 +145,8 @@
   animation: genie-button-in 350ms cubic-bezier(0.34, 1.56, 0.64, 1) both;
 }
 
-@utility animate-blur-in {
-  animation: blur-in 1s cubic-bezier(0.16, 1, 0.3, 1) 0.3s both;
+@utility animate-glass-in {
+  animation: glass-in 600ms cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
 @utility animate-ambient-a {
@@ -729,6 +736,11 @@
       opacity: 1 !important;
       backdrop-filter: blur(12px) !important;
       -webkit-backdrop-filter: blur(12px) !important;
+    }
+
+    .animate-glass-in {
+      animation: none !important;
+      opacity: 1 !important;
     }
 
     .genie-panel, .genie-button {

@@ -1,5 +1,5 @@
 import { FileDown, Mail } from 'lucide-react'
-import { Button, CascadeGroup, CascadeItem, Container, Eyebrow, H1, H2, H3 } from '../../ui'
+import { Backdrop, Button, CascadeGroup, CascadeItem, Container, Eyebrow, H1, H2, H3 } from '../../ui'
 import { certifications, contact, education, headline, intros, jobs, summary, summaryPrint, values } from '@/data/resume'
 
 export default function Resume() {
@@ -7,7 +7,11 @@ export default function Resume() {
     <main id="main" className="resume-root bg-white text-blue-950">
 
       {/* pt is 2rem beyond the visual target to offset skew-hero's -2rem margin. */}
-      <section className="resume-hero relative bg-blue-950 text-white overflow-hidden skew-hero pt-40 pb-16 md:pt-48 md:pb-24">
+      <section className="resume-hero relative bg-gradient-to-br from-blue-950 to-blue-900 text-white overflow-hidden skew-hero pt-40 pb-16 md:pt-48 md:pb-24">
+        {/* print:hidden — the blobs and grain are child backgrounds, so the
+            hero's own `background: none` print rule can't suppress them, and
+            they'd render if "Background graphics" is enabled. */}
+        <Backdrop tone="dark" className="print:hidden" />
         <Container className="resume-masthead unskew-inner">
           <CascadeGroup mountOnly className="resume-identity flex flex-col gap-4 print:gap-1">
             <CascadeItem index={0} className="print:hidden">

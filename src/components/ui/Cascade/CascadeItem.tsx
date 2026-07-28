@@ -8,9 +8,17 @@ interface CascadeItemProps {
   index?: number
   /** Explicit entrance delay — bypasses the index * stagger formula and its 7-step cap. */
   delayMs?: number
+  /**
+   * Slide in without the opacity fade. Required when the item contains a
+   * `backdrop-filter` element (any `glass-*` variant): an ancestor with
+   * opacity < 1 forms a backdrop root, so the blur samples an empty backdrop
+   * for the whole fade and then snaps the moment opacity resolves to 1. Such
+   * children should fade themselves — see `animate-glass-in`.
+   */
+  slideOnly?: boolean
 }
 
-export default function CascadeItem({ children, className, as: Tag = 'div', index = 0, delayMs }: CascadeItemProps) {
+export default function CascadeItem({ children, className, as: Tag = 'div', index = 0, delayMs, slideOnly = false }: CascadeItemProps) {
   const { inView: groupInView, stagger } = useCascade()
   const delay = delayMs ?? Math.min(index, 7) * stagger
 
@@ -29,8 +37,12 @@ export default function CascadeItem({ children, className, as: Tag = 'div', inde
 
   return (
     <Tag
-      className={`cascade-item transition-[opacity,transform] duration-500 ease-out ${
-        isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-[6px]'
+      className={`cascade-item duration-500 ease-out ${
+        slideOnly ? 'transition-transform' : 'transition-[opacity,transform]'
+      } ${
+        isVisible
+          ? `translate-y-0${slideOnly ? '' : ' opacity-100'}`
+          : `translate-y-[6px]${slideOnly ? '' : ' opacity-0'}`
       }${className ? ` ${className}` : ''}`}
       style={{ transitionDelay: isVisible ? `${delay}ms` : '0ms' }}
     >

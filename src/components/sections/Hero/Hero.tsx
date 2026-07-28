@@ -99,7 +99,9 @@ export default function Hero() {
 
         {/* Right: chat interface */}
         <CascadeGroup mountOnly>
-          <CascadeItem index={0}>
+          {/* slideOnly: the panel's glass fades itself (animate-glass-in) — an
+              opacity fade out here would break its backdrop-filter. */}
+          <CascadeItem index={0} slideOnly>
             <Chat
               value={input}
               onChange={setInput}
