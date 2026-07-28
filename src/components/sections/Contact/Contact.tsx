@@ -88,8 +88,10 @@ export default function Contact() {
 
         {/* Right: form */}
         <CascadeGroup className="flex flex-col gap-6" threshold={0.1}>
-          <CascadeItem index={0}>
-            <ContactForm />
+          {/* The form's root is a glass Panel — it fades itself via cascade-fade
+              so the item only slides, keeping the blur out of a backdrop root. */}
+          <CascadeItem index={0} slideOnly>
+            <ContactForm className="cascade-fade" />
           </CascadeItem>
         </CascadeGroup>
 

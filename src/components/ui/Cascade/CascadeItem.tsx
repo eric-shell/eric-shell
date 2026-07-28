@@ -1,4 +1,4 @@
-import { useEffect, useState, type ElementType } from 'react'
+import { useEffect, useState, type CSSProperties, type ElementType } from 'react'
 import { useCascade } from './CascadeContext'
 
 interface CascadeItemProps {
@@ -44,7 +44,14 @@ export default function CascadeItem({ children, className, as: Tag = 'div', inde
           ? `translate-y-0${slideOnly ? '' : ' opacity-100'}`
           : `translate-y-[6px]${slideOnly ? '' : ' opacity-0'}`
       }${className ? ` ${className}` : ''}`}
-      style={{ transitionDelay: isVisible ? `${delay}ms` : '0ms' }}
+      style={{
+        transitionDelay: isVisible ? `${delay}ms` : '0ms',
+        // Inherited by descendants so a `cascade-fade` element can fade itself.
+        // Custom properties form no backdrop root, so this reaches glass that
+        // an ancestor's opacity would have broken.
+        '--cascade-fade': isVisible ? 1 : 0,
+        '--cascade-delay': isVisible ? `${delay}ms` : '0ms',
+      } as CSSProperties}
     >
       {children}
     </Tag>

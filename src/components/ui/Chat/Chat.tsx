@@ -190,12 +190,16 @@ export default function Chat({
     >
       <Panel
         variant={isWhite ? 'white' : 'glass-light'}
-        className="absolute inset-0 border-0 animate-glass-in noise-overlay"
+        className="absolute inset-0 border-0 rounded-2xl animate-glass-in noise-overlay"
       />
       {/* Chrome fades as a *sibling* of the glass, never as its ancestor: an
           ancestor mid-fade would form a backdrop root and the blur would snap
-          when the fade resolved. Same timing, so they read as one motion. */}
-      <div className="relative z-10 flex flex-col flex-1 min-h-0 animate-glass-in">
+          when the fade resolved. Same timing, so they read as one motion.
+          Repeats the parent's rounding because the fade promotes this to its own
+          composited layer, and the parent's overflow clip then applies as a
+          rectangle — leaving the header/composer borders to square off the
+          corners. Clipping to the same radius here keeps them inside it. */}
+      <div className="relative z-10 flex flex-col flex-1 min-h-0 rounded-2xl overflow-hidden animate-glass-in">
         <header
           className={twMerge(
             'relative z-10 flex items-center justify-between gap-2 px-3 py-2.5 border-b',

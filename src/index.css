@@ -149,6 +149,18 @@
   animation: glass-in 600ms cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
+/* Scroll-triggered counterpart to animate-glass-in, for glass that mounts
+   off-screen and can't use a mount animation. A `CascadeItem` publishes
+   --cascade-fade, which inherits down to here — unlike an ancestor's opacity,
+   an inherited custom property forms no backdrop root, so the blur underneath
+   never snaps. Put this on the blurred element itself, alongside `slideOnly`
+   on the CascadeItem so the two don't both fade. */
+@utility cascade-fade {
+  opacity: var(--cascade-fade, 1);
+  transition: opacity 500ms ease-out;
+  transition-delay: var(--cascade-delay, 0ms);
+}
+
 @utility animate-ambient-a {
   animation: ambient-a 26s ease-in-out infinite alternate;
 }
@@ -738,8 +750,10 @@
       -webkit-backdrop-filter: blur(12px) !important;
     }
 
-    .animate-glass-in {
+    .animate-glass-in,
+    .cascade-fade {
       animation: none !important;
+      transition: none !important;
       opacity: 1 !important;
     }
 
