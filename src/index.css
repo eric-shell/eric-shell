@@ -190,15 +190,21 @@
    read undersized. Lucide stamps every icon with a `lucide-<name>` class, which
    lets us bump whole families by prefix instead of tagging each call site.
 
-   The caller sets `--icon-size`; the family rules override `--icon-optical-scale`
-   on the same element the `width`/`height` read it from, so the more specific
-   selector wins and the box grows. Anything unmatched stays at 1. */
+   The caller sets `--icon-size`, which fixes the icon's *layout box* — every
+   icon occupies the same space no matter its family. The optical bump is applied
+   as `scale`, which paints larger without reserving more room, so it can't
+   change a button's height or width. That matters most for icon-only buttons,
+   where the icon is the only content and a bigger box would resize the button.
+
+   `scale` is the standalone transform property, so it composes with Tailwind's
+   `rotate-*` (the Dropdown chevron flips on open) instead of overwriting it. */
 @utility icon-optical {
   --icon-optical-scale: 1;
 
   & svg {
-    width: calc(var(--icon-size) * var(--icon-optical-scale));
-    height: calc(var(--icon-size) * var(--icon-optical-scale));
+    width: var(--icon-size);
+    height: var(--icon-size);
+    scale: var(--icon-optical-scale);
   }
 
   & svg[class*='lucide-arrow'],
