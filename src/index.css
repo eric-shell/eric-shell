@@ -216,6 +216,16 @@
   margin-top: -2rem;
 }
 
+/* Mirror of skew-footer for a page's opening block (/resume): the bottom
+   edge angles into the content below, matching the cut the home page gets
+   from Work overlapping Hero. The negative top margin pulls the shear's
+   low corner above the viewport edge so it can't expose a sliver of page
+   background — callers add 2rem of top padding to hold content in place. */
+@utility skew-hero {
+  transform: skewY(-1deg);
+  margin-top: -2rem;
+}
+
 @utility unskew-inner {
   transform: skewY(0.5deg);
 }
@@ -287,15 +297,62 @@
     -webkit-font-smoothing: antialiased;
   }
 
+  /* ═══════════════════════════════════════════════════════════════
+     PRINT / PDF
+     The "Download PDF" button calls window.print(), so this sheet is
+     the PDF design. Chrome ships "Background graphics" OFF by default,
+     so nothing here may depend on a background fill to stay legible —
+     every accent is ink (text colour) or a border, both of which always
+     print. Site kinship comes from the type system, not from colour: the
+     Display face on the name and company names, and the Eyebrow treatment
+     (sans / uppercase / tracked) on section labels.
+
+     Colourway is greyscale — hierarchy is carried by weight, size and rule
+     strength alone. Every colour routes through the five --print-* tokens
+     below, so restoring the site blues is a one-block edit (ink → blue-950,
+     ink-muted → blue-700, ink-subtle → blue-600, rule → blue-300,
+     rule-soft → blue-200).
+     ═══════════════════════════════════════════════════════════════ */
   @media print {
     @page {
       size: letter;
-      margin: 0.5in;
+      margin: 0.5in 0.55in;
     }
+
+    .resume-root {
+      /* The only fill in the layout was white-on-white — dropping it means
+         the sheet renders identically with background graphics on or off. */
+      background: none !important;
+
+      --print-ink:        #000000;  /* name, company, body copy      */
+      --print-ink-muted:  #3d3d3d;  /* headline, role, section label */
+      --print-ink-subtle: #575757;  /* dates, value descriptions     */
+      --print-rule:       #9a9a9a;  /* section-label underline       */
+      --print-rule-soft:  #d0d0d0;  /* entry separators              */
+
+      /* Six deliberate steps. Everything sizes off these — no one-off
+         values, so parallel elements can't drift a few hundredths apart
+         and read as misaligned. */
+      --print-size-name:  2.1rem;   /* the name, once                 */
+      --print-size-entry: 0.85rem;  /* company names (Display)        */
+      --print-size-lead:  0.76rem;  /* masthead headline              */
+      --print-size-body:  0.7rem;   /* running text, list items, dt   */
+      --print-size-meta:  0.65rem;  /* dates, contact lines           */
+      --print-size-label: 0.58rem;  /* every uppercase label          */
+    }
+
+    /* Weight roles, applied consistently across all three "title + detail"
+       structures (work role, value label, education line):
+         700 name · company · uppercase labels
+         600 entry sub-titles
+         500 dates
+         400 everything else                                          */
 
     html,
     body {
       background: white !important;
+      /* Site body weight is 550 — far too heavy for 7pt print body copy. */
+      font-weight: 400 !important;
     }
 
     header,
@@ -309,218 +366,331 @@
       print-color-adjust: exact;
     }
 
-    /* ─────────────────────────────────────────────
-       HERO — traditional resume header:
-       Name on left, email on right, headline below
-       ───────────────────────────────────────────── */
-    .resume-hero {
-      background: white !important;
-      color: var(--color-blue-950) !important;
-      padding: 0 0 0.5rem 0 !important;
-      border-bottom: 1pt solid var(--color-blue-950) !important;
-      margin-bottom: 0.6rem !important;
-    }
-    .resume-hero > div {
-      padding: 0 !important;
-      max-width: 100% !important;
-    }
-    /* Convert the CascadeGroup's flex-col into a 2-row, 2-col grid */
-    .resume-hero > div > div {
-      display: grid !important;
-      grid-template-columns: 1fr auto;
-      column-gap: 1.5rem !important;
-      row-gap: 0.15rem !important;
-      align-items: baseline;
-    }
-    /* :nth-child(1) is the Eyebrow CascadeItem (display:none via print:hidden) */
-    .resume-hero .cascade-item:nth-child(2) { /* H1 "Eric Shell" */
-      grid-column: 1;
-      grid-row: 1;
-    }
-    .resume-hero .cascade-item:nth-child(3) { /* Headline */
-      grid-column: 1 / -1;
-      grid-row: 2;
-    }
-    .resume-hero .cascade-item:nth-child(4) { /* Email button */
-      grid-column: 2;
-      grid-row: 1;
-      justify-self: end;
-    }
-    .resume-hero h1 {
-      color: var(--color-blue-950) !important;
-      font-size: 1.75rem !important;
-      line-height: 1 !important;
-      letter-spacing: 0.01em !important;
-    }
-    .resume-hero p {
-      color: var(--color-blue-700) !important;
-      font-size: 0.72rem !important;
-      line-height: 1.3 !important;
-      padding: 0 !important;
-      margin: 0 !important;
-      max-width: 100% !important;
-      font-style: italic;
-    }
-    .resume-hero a[href^="mailto:"] {
-      background: transparent !important;
-      background-image: none !important;
-      color: var(--color-blue-800) !important;
-      border: none !important;
-      box-shadow: none !important;
-      padding: 0 !important;
-      font-size: 0.72rem !important;
-      font-weight: 500 !important;
-      text-decoration: none !important;
-    }
-    .resume-hero a[href^="mailto:"] svg {
-      display: none;
-    }
-
-    /* ─────────────────────────────────────────────
-       SECTION SPACING & HEADINGS
-       ───────────────────────────────────────────── */
-    .resume-section {
-      padding: 0 0 0.6rem 0 !important;
-      border-top: none !important;
-    }
-
-    /* H2: section header — small caps, dark, with hairline rule */
-    main h2 {
-      font-size: 0.6rem !important;
-      color: var(--color-blue-950) !important;
-      letter-spacing: 0.18em !important;
-      margin: 0 0 0.35rem 0 !important;
-      padding-bottom: 0.15rem !important;
-      border-bottom: 0.75pt solid var(--color-blue-950) !important;
-    }
-
-    /* H3: company names */
-    main h3 {
-      font-size: 0.78rem !important;
-      line-height: 1.1 !important;
-      color: var(--color-blue-950) !important;
-      letter-spacing: 0 !important;
-    }
-
-    /* Body text */
-    main p,
-    main li,
-    main dd,
-    main dt,
-    main .font-sans {
-      font-size: 0.7rem !important;
-      line-height: 1.4 !important;
-    }
-
-    /* ─────────────────────────────────────────────
-       JOB ENTRIES — clean header + description:
-       Row 1:  COMPANY                          Dates
-       Row 2:  Role
-       Row 3+: Description spanning full width
-       ───────────────────────────────────────────── */
-    article {
-      grid-template-columns: 1fr !important;
-      gap: 0.2rem !important;
-      padding-top: 0.45rem !important;
-      margin-top: 0.4rem !important;
-      border-top: 0.5pt solid var(--color-blue-200) !important;
-      break-inside: avoid;
-    }
-    article > div:first-child {
-      display: grid !important;
-      grid-template-columns: 1fr auto !important;
-      align-items: baseline !important;
-      column-gap: 0.6rem !important;
-      row-gap: 0 !important;
-      padding: 0 !important;
-    }
-    /* Company */
-    article > div:first-child h3 {
-      grid-column: 1;
-      grid-row: 1;
-      font-weight: 700 !important;
-    }
-    /* Role */
-    article > div:first-child > p:first-of-type {
-      grid-column: 1 / -1;
-      grid-row: 2;
-      font-weight: 500 !important;
-      color: var(--color-blue-700) !important;
-      font-size: 0.7rem !important;
-      padding: 0 !important;
-      font-style: italic;
-    }
-    /* Dates — top-right of the entry */
-    article > div:first-child > p:last-of-type {
-      grid-column: 2;
-      grid-row: 1;
-      justify-self: end;
-      color: var(--color-blue-600) !important;
-      font-size: 0.65rem !important;
-      padding: 0 !important;
-      letter-spacing: 0.02em;
-    }
-
-    /* Cascade animations — keep visible */
+    /* Cascade entrance animations — force the settled state. */
     .cascade-item {
       opacity: 1 !important;
       transform: none !important;
     }
-
     .cascade-item :is(h1, h2, h3) {
       transition: none !important;
       font-variation-settings: normal !important;
     }
 
     /* ─────────────────────────────────────────────
-       PRINT-GRID — About + Credentials in left col,
-       Work Experience in right col
+       MASTHEAD
+         ERIC SHELL              ericjshell@gmail.com
+         headline…               eric.sh
+                                 linkedin.com/in/…
+                                 github.com/…
+         ══════════════════════════════════════════
+       ───────────────────────────────────────────── */
+    .resume-hero {
+      background: none !important;
+      color: var(--print-ink) !important;
+      padding: 0 0 0.45rem 0 !important;
+      /* Borders print even with background graphics disabled. */
+      border-bottom: 2.25pt solid var(--print-ink) !important;
+      /* Drop the on-screen skew-hero shear and its offset — the masthead
+         rule has to sit square on the page. */
+      transform: none !important;
+      margin: 0 0 0.7rem 0 !important;
+      overflow: visible !important;
+    }
+    .resume-masthead {
+      /* Counters unskew-inner. */
+      transform: none !important;
+      display: grid !important;
+      grid-template-columns: minmax(0, 1fr) auto;
+      column-gap: 1.5rem;
+      align-items: end;
+      padding: 0 !important;
+      max-width: 100% !important;
+    }
+    .resume-identity {
+      gap: 0.28rem !important;
+    }
+    .resume-name {
+      color: var(--print-ink) !important;
+      font-size: var(--print-size-name) !important;
+      line-height: 0.92 !important;
+      letter-spacing: -0.005em !important;
+    }
+    .resume-headline {
+      color: var(--print-ink-muted) !important;
+      font-size: var(--print-size-lead) !important;
+      line-height: 1.38 !important;
+      font-weight: 400 !important;
+      padding: 0 !important;
+      margin: 0 !important;
+      max-width: 34em !important;
+    }
+
+    .resume-contact {
+      list-style: none !important;
+      margin: 0 !important;
+      padding: 0 !important;
+      text-align: right;
+      align-self: end;
+    }
+    .resume-contact li {
+      font-family: var(--font-sans);
+      font-size: var(--print-size-meta) !important;
+      line-height: 1.55 !important;
+      color: var(--print-ink-muted) !important;
+      white-space: nowrap;
+    }
+    /* Email leads the stack — give it the ink the others don't get. */
+    .resume-contact li:first-child {
+      font-weight: 600 !important;
+      color: var(--print-ink) !important;
+    }
+
+    /* ─────────────────────────────────────────────
+       LABELS — the site's Eyebrow treatment (sans /
+       bold / uppercase / tracked), not the Display
+       face shrunk down to 7pt.
+
+       One label style for the whole document. Section
+       heads and the Credentials sub-heads share size,
+       tracking and weight; rank is carried by the rule
+       and the ink alone, so they read as two levels of
+       one system rather than two competing styles.
+       ───────────────────────────────────────────── */
+    .resume-root h2,
+    .credentials-grid h3 {
+      font-family: var(--font-sans) !important;
+      font-size: var(--print-size-label) !important;
+      font-weight: 700 !important;
+      font-style: normal !important;
+      text-transform: uppercase !important;
+      letter-spacing: 0.14em !important;
+      line-height: 1 !important;
+      font-variation-settings: 'GRAD' 150 !important;
+    }
+    /* Rank 1 — section head: darker ink, full-width rule. */
+    .resume-root h2 {
+      color: var(--print-ink-muted) !important;
+      margin: 0 0 0.4rem 0 !important;
+      padding-bottom: 0.28rem !important;
+      border-bottom: 0.75pt solid var(--print-rule) !important;
+    }
+    /* Rank 2 — sub-head inside a section: lighter ink, no rule. */
+    .credentials-grid h3 {
+      color: var(--print-ink-subtle) !important;
+      margin-bottom: 0.24rem !important;
+    }
+
+    .resume-root p,
+    .resume-root li,
+    .resume-root dd,
+    .resume-root dt,
+    .resume-root .font-sans {
+      font-size: var(--print-size-body) !important;
+      line-height: 1.42 !important;
+    }
+
+    /* ─────────────────────────────────────────────
+       PRINT GRID — explicit placement so section
+       order in the DOM can change without breaking
+       the layout.
+         col 1: About · Values · Credentials
+         col 2: Work Experience (full height)
        ───────────────────────────────────────────── */
     .print-grid {
       display: grid !important;
-      grid-template-columns: minmax(0, 2fr) minmax(0, 3fr);
-      column-gap: 1.5rem;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1.42fr);
+      column-gap: 1.6rem;
       align-items: start;
     }
     .print-grid > section {
-      padding: 0 0 0.6rem 0 !important;
+      padding: 0 0 0.75rem 0 !important;
+      border-top: none !important;
     }
     .print-grid > section > div {
       padding: 0 !important;
       max-width: 100% !important;
     }
-    .print-grid .work-section {
-      grid-column: 2;
-      grid-row: 1 / span 3;
+    /* Work spans all three rows, so its height sets the row heights and the
+       left-rail sections space themselves evenly to match — the two columns
+       stay balanced as content changes. Left-rail gaps are therefore a
+       function of the work column's length, not a fixed value. */
+    .about-section       { grid-column: 1; grid-row: 1; }
+    .values-section      { grid-column: 1; grid-row: 2; }
+    .credentials-section { grid-column: 1; grid-row: 3; padding-bottom: 0 !important; }
+    .work-section        { grid-column: 2; grid-row: 1 / span 3; }
+
+    /* Tighten the CascadeGroup stack inside each section. Scoped to the
+       direct section > Container > CascadeGroup path — as a descendant
+       selector this outranked the per-block gap rules below and silently
+       forced every nested flex column to 0.4rem. */
+    .resume-section > div > .flex.flex-col {
+      gap: 0.4rem !important;
+    }
+
+    .about-section p {
+      max-width: 100% !important;
+    }
+    .resume-summary-print {
+      color: var(--print-ink) !important;
+      margin: 0 !important;
     }
 
     /* ─────────────────────────────────────────────
-       CREDENTIALS — compact, label-style sub-headings
+       JOB ENTRIES
+         COMPANY                        Dates
+         Role
+         Description…
        ───────────────────────────────────────────── */
-    .credentials-grid {
-      gap: 0.45rem !important;
-      grid-template-columns: 1fr !important;
+    .work-section article {
+      display: block !important;
+      padding-top: 0.5rem !important;
+      margin-top: 0.5rem !important;
+      border-top: 0.5pt solid var(--print-rule-soft) !important;
+      break-inside: avoid;
     }
-    .credentials-grid h3 {
-      font-size: 0.55rem !important;
+    /* First entry sits directly under the section rule — no double line.
+       Keyed to a class rather than sibling position, which shifts whenever
+       a screen-only block (the section intro) is added above the list. */
+    .work-section article.first-entry {
+      padding-top: 0 !important;
+      margin-top: 0 !important;
+      border-top: none !important;
+    }
+    .work-section article > div:first-child {
+      display: grid !important;
+      grid-template-columns: minmax(0, 1fr) auto !important;
+      align-items: baseline !important;
+      column-gap: 0.75rem !important;
+      row-gap: 0 !important;
+      gap: 0 0.75rem !important;
+      padding: 0 !important;
+      margin-bottom: 0.18rem;
+    }
+    /* Company */
+    .work-section article h3 {
+      grid-column: 1;
+      grid-row: 1;
+      font-size: var(--print-size-entry) !important;
+      line-height: 1.15 !important;
       font-weight: 700 !important;
-      letter-spacing: 0.14em !important;
-      text-transform: uppercase !important;
-      color: var(--color-blue-700) !important;
-      margin-bottom: 0.15rem !important;
+      letter-spacing: 0 !important;
+      color: var(--print-ink) !important;
     }
-    .credentials-grid ul,
+    /* Role */
+    .work-section article > div:first-child > p:first-of-type {
+      grid-column: 1;
+      grid-row: 2;
+      font-weight: 600 !important;
+      color: var(--print-ink-muted) !important;
+      font-size: var(--print-size-body) !important;
+      line-height: 1.3 !important;
+      padding: 0 !important;
+    }
+    /* Dates — right-aligned on the company baseline */
+    .work-section article > div:first-child > p:last-of-type {
+      grid-column: 2;
+      grid-row: 1;
+      justify-self: end;
+      color: var(--print-ink-subtle) !important;
+      font-size: var(--print-size-meta) !important;
+      font-weight: 500 !important;
+      padding: 0 !important;
+      letter-spacing: 0.02em;
+      white-space: nowrap;
+    }
+    /* Description */
+    .work-section article > p {
+      color: var(--print-ink) !important;
+    }
+
+    /* ─────────────────────────────────────────────
+       VALUES — label + description. The condensed
+       print profile frees enough of the left rail to
+       carry the descriptions, so each entry explains
+       itself instead of being a bare label list.
+       ───────────────────────────────────────────── */
+    .values-grid {
+      display: grid !important;
+      grid-template-columns: 1fr !important;
+      gap: 0.34rem !important;
+      max-width: 100% !important;
+    }
+    /* Entry title — identical treatment to a job's role line and to the
+       education school line, since all three play the same part. */
+    .values-grid dt,
+    .credentials-grid > div > div > p:first-child {
+      font-family: var(--font-sans) !important;
+      font-size: var(--print-size-body) !important;
+      font-weight: 600 !important;
+      font-style: normal !important;
+      text-transform: none !important;
+      letter-spacing: 0 !important;
+      line-height: 1.3 !important;
+      color: var(--print-ink) !important;
+    }
+    /* Supporting detail under that title. */
+    .values-grid dd,
+    .credentials-grid > div > div > p:last-child {
+      font-size: var(--print-size-body) !important;
+      font-weight: 400 !important;
+      line-height: 1.42 !important;
+      color: var(--print-ink-subtle) !important;
+      padding-top: 0 !important;
+      margin: 0 !important;
+    }
+
+    /* ─────────────────────────────────────────────
+       CREDENTIALS — label styling is shared with the
+       section heads above; only spacing lives here.
+       ───────────────────────────────────────────── */
+    /* Certifications block ↔ Education block. */
+    .credentials-grid {
+      display: grid !important;
+      grid-template-columns: 1fr !important;
+      gap: 0.55rem !important;
+    }
+    /* Sub-head ↔ its content — spacing comes from the h3 margin. */
+    .credentials-grid > div {
+      gap: 0 !important;
+    }
+    /* Separate single-line credentials from each other. */
+    .credentials-grid ul {
+      padding-top: 0 !important;
+      gap: 0.14rem !important;
+    }
+    /* School ↔ degree is one title+detail pair, so it sits flush the way a
+       value's label sits against its description. */
     .credentials-grid > div > div {
       padding-top: 0 !important;
-      gap: 0.1rem !important;
+      gap: 0 !important;
     }
     .credentials-grid li {
       list-style: none;
+      line-height: 1.42 !important;
+      color: var(--print-ink) !important;
     }
 
-    /* Tighten cascade-group internal gaps */
-    .resume-section .flex.flex-col {
-      gap: 0.35rem !important;
+    /* Multi-page safety — if content ever outgrows one sheet, don't
+       strand single lines or split a block across the fold. */
+    .resume-root p {
+      orphans: 2;
+      widows: 2;
+    }
+    .values-section,
+    .credentials-section,
+    .credentials-grid > div {
+      break-inside: avoid;
+    }
+
+    /* Routes without a designed print layout (/privacy) still print
+       legibly rather than at on-screen display sizes. */
+    main:not(.resume-root) :is(h1, h2, h3) {
+      font-size: 1rem !important;
+      line-height: 1.2 !important;
+    }
+    main:not(.resume-root) :is(p, li) {
+      font-size: 0.8rem !important;
+      line-height: 1.45 !important;
     }
   }
 

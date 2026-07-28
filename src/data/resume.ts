@@ -16,8 +16,24 @@ export type ResumeEducation = {
   field: string
 }
 
+/** Contact details surfaced in the print/PDF masthead. */
+export const contact = {
+  email: 'ericjshell@gmail.com',
+  site: 'eric.sh',
+  linkedin: 'linkedin.com/in/ericshell',
+  github: 'github.com/eric-shell',
+} as const
+
 export const headline: string =
   'An AI Design Systems Engineer with over 15 years of professional experience developing modern web and mobile applications.'
+
+/**
+ * Condensed profile for the print/PDF layout. Same facts as `summary`,
+ * compressed to a single paragraph so the left rail has room to show the
+ * `values` descriptions rather than bare labels.
+ */
+export const summaryPrint: string =
+  'AI Design Systems Engineer with over 15 years building modern web and mobile applications. At MMGY Global I own front-end architecture across a portfolio of enterprise marketing platforms, integrating LLMs directly into how those systems are built and delivered. My track record spans Fortune 500 brands, financial institutions, federal agencies, and national restaurant chains. Formal education in Design from Lehigh University. Active DOI government clearance through March 2030.'
 
 export const summary: string[] = [
   "Over 15 years I've evolved from shipping pixel-perfect UIs to architecting the systems that produce them at scale, and now to integrating AI natively into how those systems are built and delivered. As an AI Design Systems Engineer at MMGY Global, I own front-end architecture for a portfolio of enterprise marketing platforms, treating large language models not just as productivity tools but as first-class collaborators in the development lifecycle.",
@@ -25,12 +41,23 @@ export const summary: string[] = [
   "Today my focus is the intersection of design systems and AI. I build LLM-powered features directly into production applications, from Claude-driven chat interfaces to AI-assisted tooling, and actively research how models like Claude change the way teams design, document, and scale front-end architecture. My formal education in Design from Lehigh University keeps the human side of that equation grounded. I hold an active DOI government clearance through March 2030.",
 ]
 
+/**
+ * Screen-only lead-in copy framing each section. Print omits these — the
+ * one-page layout has no room for framing prose, and the section labels
+ * carry enough on their own there.
+ */
+export const intros = {
+  work: 'Each role has widened the scope from writing the interface to owning the systems and teams behind it:',
+  values: "Beyond developing code, I've contributed across the full project lifecycle:",
+  credentials: 'My design training and developer certifications both still shape how I work:',
+} as const
+
 export const jobs: ResumeJob[] = [
   {
     company: 'MMGY Global',
     role: 'AI Design Systems Engineer',
     dates: 'Nov. 2025 - Present',
-    description: 'I own front-end architecture across a portfolio of enterprise marketing platforms, integrating LLMs directly into the development and delivery workflow. I build and maintain design systems that bridge the gap between design intent and production output at scale, while leading feature development, release planning, and cross-team coordination as the resident front-end SME. I also mentor delivery engineers and establish coding standards, documentation practices, and AI-augmented tooling across the team.',
+    description: 'I build AI-augmented tooling across the team and establish the coding standards and documentation practices around it, integrating LLMs directly into the development and delivery workflow. I own front-end architecture across a portfolio of enterprise marketing platforms, building and maintaining design systems that bridge the gap between design intent and production output at scale. As the resident front-end SME, I drive experience-guided feature development and white-label solution architecture: a productized front-end foundation we spin off into every client engagement. It delivers deep, complex feature parity across everything we build, scaling in lockstep as our team, solutions, and projects evolve.',
   },
   {
     company: 'Bounteous',
