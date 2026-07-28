@@ -1,11 +1,14 @@
-import { CascadeGroup, CascadeItem, Container } from '../../ui'
+import { Backdrop, CascadeGroup, CascadeItem, Container } from '../../ui'
 import { navLinks, connectLinks, socialLinks } from '@/data'
 
 export default function Footer() {
   const year = new Date().getFullYear()
 
   return (
-    <footer className="relative z-50 bg-black text-white border-t border-white/10 skew-footer">
+    <footer className="relative z-50 bg-gradient-to-br from-blue-950 to-blue-900 text-white border-t border-white/10 skew-footer">
+      {/* flip so the blob layout doesn't mirror the /resume hero's dark
+          Backdrop on the same page. */}
+      <Backdrop tone="dark" flip />
       <Container className="pt-12 pb-12 md:pt-24 md:pb-24 flex flex-col items-center gap-10 md:flex-row md:items-center md:justify-between md:gap-12 unskew-inner">
 
         <CascadeGroup className="flex flex-col items-center gap-6 order-1 md:order-2 md:items-end" threshold={0.2}>
@@ -25,7 +28,7 @@ export default function Footer() {
                   target="_blank"
                   rel="noopener noreferrer"
                   aria-label={label}
-                  className="w-10 h-10 rounded-full border border-white/20 flex items-center justify-center text-white/50 hover:text-white hover:border-white/50 hover:bg-white/10 transition-all"
+                  className="w-10 h-10 rounded-full border border-white/30 flex items-center justify-center text-white/70 hover:text-white hover:border-white/60 hover:bg-white/10 transition-all"
                 >
                   <svg viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4">
                     <path d={path} />
@@ -36,7 +39,7 @@ export default function Footer() {
           </CascadeItem>
 
           <CascadeItem index={2} className="leading-none">
-            <span className="font-sans text-xs leading-none tracking-wider text-white/50">
+            <span className="font-sans text-xs leading-none tracking-wider text-white/70">
               <span className="align-baseline font-mono">©</span> {year} Eric Shell. All Rights Reserved.
             </span>
           </CascadeItem>
@@ -46,7 +49,7 @@ export default function Footer() {
           <CascadeGroup as="ul" className="flex flex-col gap-4" threshold={0.2}>
             {navLinks.slice(0, 4).map(({ label, href, Icon }, i) => (
               <CascadeItem key={label} as="li" index={i}>
-                <a href={href} className="grad-hover flex items-center gap-2 font-sans text-sm font-semibold text-white/50 hover:text-white transition-[color,font-variation-settings]">
+                <a href={href} className="grad-hover flex items-center gap-2 font-sans text-sm font-semibold text-white/70 hover:text-white transition-[color,font-variation-settings]">
                   <Icon size={14} />
                   {label}
                 </a>
@@ -56,7 +59,7 @@ export default function Footer() {
           <CascadeGroup as="ul" className="flex flex-col gap-4" threshold={0.2}>
             {connectLinks.map(({ label, href, Icon }, i) => (
               <CascadeItem key={label} as="li" index={i}>
-                <a href={href} className="grad-hover flex items-center gap-2 font-sans text-sm font-semibold text-white/50 hover:text-white transition-[color,font-variation-settings]">
+                <a href={href} className="grad-hover flex items-center gap-2 font-sans text-sm font-semibold text-white/70 hover:text-white transition-[color,font-variation-settings]">
                   <Icon size={14} />
                   {label}
                 </a>
