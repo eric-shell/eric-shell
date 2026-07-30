@@ -41,7 +41,7 @@ export default function VisitorMetaGrid({ id, data }: Props) {
   const totalEngagedMs = sessions.reduce((sum, s) => sum + s.engaged_ms, 0)
 
   return (
-    <div className="grid grid-cols-2 gap-x-8 gap-y-3 sm:grid-cols-3 flex-1 min-w-0">
+    <div className="grid grid-cols-1 gap-x-8 gap-y-3 sm:grid-cols-2 md:grid-cols-3 flex-1 min-w-0">
       <MetaField icon={Fingerprint} label="Visitor ID" value={id} mono />
       {/* Skeleton count approximates what an enriched visitor renders, so the
           block doesn't jump in height when the fetch resolves. */}

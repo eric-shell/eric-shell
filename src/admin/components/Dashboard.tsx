@@ -168,7 +168,7 @@ export default function Dashboard({ onLogout }: DashboardProps) {
   const totalEngagedMs = visitors?.reduce((s, v) => s + v.total_engaged_ms, 0) ?? 0
 
   return (
-    <div className="mx-auto flex max-w-6xl flex-col gap-6 px-6 py-10">
+    <div className="mx-auto flex max-w-6xl flex-col gap-4 px-4 py-6 sm:gap-6 sm:px-6 sm:py-10">
       <header className="flex flex-wrap items-end justify-between gap-4">
         <div className="flex flex-col gap-1">
           <Eyebrow className="text-white/85">eric.sh</Eyebrow>
@@ -199,10 +199,12 @@ export default function Dashboard({ onLogout }: DashboardProps) {
         </div>
       </header>
 
-      {/* Metrics row */}
-      {/* Sized to include the chart's caption, plot, baseline, and axis band —
-          a shorter row squeezed the plot into a strip of stubby tabs. */}
-      <div className="flex gap-3 items-stretch min-h-[116px]">
+      {/* Metrics row. On a phone the five tiles cannot sit on one line — they
+          forced the document wider than the viewport, so the browser zoomed the
+          whole page out to fit. Two-up grid instead, chart full-width below.
+          Min-height only applies once it is a row; in the grid each cell sizes
+          to its own content. */}
+      <div className="grid grid-cols-2 gap-3 sm:flex sm:items-stretch sm:min-h-[116px]">
         {visitors === null ? (
           <MetricsRowSkeleton />
         ) : (
@@ -229,7 +231,7 @@ export default function Dashboard({ onLogout }: DashboardProps) {
               icon={MailCheck}
               tone="positive"
             />
-            <Panel variant="raised-dark" className="flex-1 rounded-2xl p-4">
+            <Panel variant="raised-dark" className="col-span-2 min-h-[116px] rounded-2xl p-4 sm:col-span-1 sm:flex-1">
               {stats
                 ? <VisitorsChart days={stats} />
                 : <Skeleton className="h-full w-full min-h-[48px]" />}
@@ -259,7 +261,7 @@ export default function Dashboard({ onLogout }: DashboardProps) {
             onChange={e => setQuery(e.target.value)}
             placeholder="Search by name, email, location, or visitor ID…"
             aria-label="Search visitors"
-            className="min-w-0 flex-1 bg-transparent text-sm text-white placeholder:text-white/70 outline-none"
+            className="h-7 min-w-0 flex-1 bg-transparent text-sm text-white placeholder:text-white/70 outline-none"
           />
           {/* Only while filtering: confirms the search is scoped to this table
               and that an empty result is a filter, not an empty database. */}
@@ -275,7 +277,7 @@ export default function Dashboard({ onLogout }: DashboardProps) {
                 onClick={() => setQuery('')}
                 aria-label="Clear search"
                 title="Clear search"
-                className="shrink-0 cursor-pointer rounded p-0.5 text-white/70 transition-colors hover:text-white"
+                className="-m-1 flex h-7 w-7 shrink-0 cursor-pointer items-center justify-center rounded text-white/70 transition-colors hover:text-white"
               >
                 <X size={14} aria-hidden="true" />
               </button>

@@ -1,5 +1,5 @@
 import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { Check, ChevronDown, ChevronLeft, ChevronRight, ChevronUp, MailCheck } from 'lucide-react'
+import { Check, ChevronDown, ChevronLeft, ChevronRight, ChevronUp, MailCheck, MessageSquare } from 'lucide-react'
 import VisitorDetail from './VisitorDetail'
 import { Button } from '../../components/ui'
 import { twMerge } from 'tailwind-merge'
@@ -24,6 +24,36 @@ interface VisitorListProps {
 
 function shortId(id: string) {
   return id.slice(0, 8)
+}
+
+/** Location cell content, shared by the table and the phone cards. */
+function LocationValue({ location }: { location: ReturnType<typeof resolveLocation> }) {
+  if (!location.label) return <Dash />
+  return (
+    <span title={location.approximate ? 'Approximate — from IP geolocation' : 'Manually corrected'}>
+      {location.label}
+      {/* Nearly every location is IP-derived, so marking the exception reads far
+          quieter than marking the rule. */}
+      {!location.approximate && (
+        <Check size={11} className="ml-1 inline-block align-[-1px] text-white/80" aria-label="corrected" />
+      )}
+    </span>
+  )
+}
+
+/** Page views over engaged time. */
+function EngagementValue({ v, align = 'right' }: { v: VisitorSummary; align?: 'left' | 'right' }) {
+  if (v.page_view_count === 0 && v.total_engaged_ms === 0) return <Dash />
+  return (
+    <div className={align === 'right' ? 'text-right' : ''}>
+      <div className="text-white">
+        {v.page_view_count} {v.page_view_count === 1 ? 'view' : 'views'}
+      </div>
+      {v.total_engaged_ms > 0 && (
+        <div className="text-xs text-white/75">{formatDuration(v.total_engaged_ms)}</div>
+      )}
+    </div>
+  )
 }
 
 /**
@@ -78,6 +108,133 @@ function Dash() {
   return <span className="text-white/65">—</span>
 }
 
+
+/**
+ * Phone rendering of the visitor list.
+ *
+ * A horizontally scrolling table on a 412px screen means the reader never sees
+ * a whole row, so each visitor becomes a self-contained card instead. Content
+ * is shared with the table via LocationValue / EngagementValue so the two can't
+ * drift.
+ *
+ * Sorting moves to a native `<select>`: there are no column headers to click,
+ * and on Android a native select opens the OS picker — better than a custom
+ * listbox on a small touch screen, and accessible without extra work.
+ */
+function MobileList({
+  rows, sort, onSort, selectedId, onSelect, locationFor, onVisitorDeleted, onSaved,
+}: {
+  rows: VisitorSummary[]
+  sort: SortState
+  onSort: (key: SortKey) => void
+  selectedId: string | null
+  onSelect: (id: string | null) => void
+  /** Same resolver the table uses, so the "corrected" marker stays truthful. */
+  locationFor: (v: VisitorSummary) => ReturnType<typeof resolveLocation>
+  onVisitorDeleted?: (id: string) => void
+  onSaved: (id: string, override: string | null) => void
+}) {
+  const dirLabel = sort.dir === 'asc' ? 'ascending' : 'descending'
+  return (
+    <div className="md:hidden">
+      <div className="mb-3 flex items-center gap-2">
+        <label htmlFor="visitor-sort" className="shrink-0 text-[10px] font-semibold uppercase tracking-wide text-white/75">
+          Sort
+        </label>
+        <select
+          id="visitor-sort"
+          value={sort.key}
+          onChange={e => onSort(e.target.value as SortKey)}
+          className="min-w-0 flex-1 rounded-lg border border-white/10 bg-white/[0.05] px-2.5 py-2 text-sm text-white outline-none focus:border-accent/60"
+        >
+          {(Object.keys(SORT_LABEL) as SortKey[]).map(k => (
+            // Native option lists can't be styled on Android, so give them an
+            // explicit dark background rather than inheriting white-on-white.
+            <option key={k} value={k} className="bg-blue-950 text-white">
+              {SORT_LABEL[k]}
+            </option>
+          ))}
+        </select>
+        <button
+          type="button"
+          onClick={() => onSort(sort.key)}
+          aria-label={`Sort ${dirLabel}, tap to reverse`}
+          title={`Sorted ${dirLabel}`}
+          className="flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-lg border border-white/10 bg-white/[0.05] text-white/90 transition-colors hover:bg-white/[0.09]"
+        >
+          {sort.dir === 'asc' ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+        </button>
+      </div>
+
+      <ul className="flex flex-col gap-2">
+        {rows.map(v => {
+          const isOpen = selectedId === v.id
+          const location = locationFor(v)
+          const tags = classifyVisitor(v)
+          return (
+            <li key={v.id}>
+              {/* Whole card is the tap target — 44px+ tall by construction. */}
+              <button
+                type="button"
+                onClick={() => onSelect(isOpen ? null : v.id)}
+                aria-expanded={isOpen}
+                className={twMerge(
+                  'w-full cursor-pointer rounded-xl border border-white/10 p-3 text-left transition-colors',
+                  isOpen ? 'rounded-b-none bg-black/[0.5]' : 'bg-white/[0.03] hover:bg-white/[0.06]',
+                )}
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <span className="font-mono text-xs font-semibold text-white/95">{shortId(v.id)}</span>
+                  <span className="shrink-0 text-xs text-white/85">{formatShort(v.last_activity_at)}</span>
+                </div>
+                {tags.length > 0 && <VisitorTags tags={tags} />}
+
+                <div className="mt-1.5 truncate text-sm text-white/90">
+                  <LocationValue location={location} />
+                </div>
+
+                {(v.contact_name || v.contact_email) && (
+                  <div className="mt-1.5 min-w-0">
+                    {v.contact_name && (
+                      <div className="truncate text-sm font-semibold text-white/95">{v.contact_name}</div>
+                    )}
+                    {v.contact_email && (
+                      <div className="truncate text-xs text-white/75">{v.contact_email}</div>
+                    )}
+                  </div>
+                )}
+
+                <div className="mt-2 flex items-center gap-4 border-t border-white/5 pt-2 text-xs tabular-nums">
+                  <span className="text-white/90"><EngagementValue v={v} align="left" /></span>
+                  <span className="ml-auto flex items-center gap-1 text-white/90">
+                    <MessageSquare size={12} className="text-white/70" aria-hidden="true" />
+                    <span className="sr-only">Chat messages: </span>
+                    {v.chat_message_count || 0}
+                  </span>
+                  <span className={twMerge('flex items-center gap-1', v.contact_count ? 'font-semibold text-green-400' : 'text-white/90')}>
+                    <MailCheck size={12} aria-hidden="true" className={v.contact_count ? '' : 'text-white/70'} />
+                    <span className="sr-only">Contact submissions: </span>
+                    {v.contact_count || 0}
+                  </span>
+                </div>
+              </button>
+
+              {isOpen && (
+                <VisitorDetail
+                  id={v.id}
+                  onClose={() => onSelect(null)}
+                  onDeleted={onVisitorDeleted}
+                  onSaved={onSaved}
+                />
+              )}
+            </li>
+          )
+        })}
+      </ul>
+    </div>
+  )
+}
+
 export default function VisitorList({ visitors, onVisitorDeleted }: VisitorListProps) {
   const [selectedId, setSelectedId] = useState<string | null>(
     () => new URLSearchParams(window.location.search).get('v')
@@ -91,11 +248,15 @@ export default function VisitorList({ visitors, onVisitorDeleted }: VisitorListP
 
   // Sort against the label the cell actually shows, override included, so the
   // Location column can never order by something different from what's on screen.
-  const labelFor = useCallback(
+  const locationFor = useCallback(
     (v: VisitorSummary) => resolveLocation(
       v.id in savedOverrides ? { ...v, location_override: savedOverrides[v.id] } : v
-    ).label,
+    ),
     [savedOverrides],
+  )
+  const labelFor = useCallback(
+    (v: VisitorSummary) => locationFor(v).label,
+    [locationFor],
   )
 
   const sorted = useMemo(
@@ -163,7 +324,10 @@ export default function VisitorList({ visitors, onVisitorDeleted }: VisitorListP
       {/* Telemetry pushed this to nine columns, which blew the page out past the
           viewport below ~md. The table keeps a comfortable min-width and scrolls
           inside its own container instead of dragging the body wide. */}
-      <div className="overflow-x-auto">
+      {/* The table needs 54rem to breathe. On a phone that is wider than the
+          viewport, which made the browser zoom the whole page out. Below `md`
+          the same rows render as cards instead — see MobileList. */}
+      <div className="hidden overflow-x-auto md:block">
       <table className="w-full min-w-[54rem] table-fixed text-sm">
         <thead>
           <tr className="border-b border-white/10 text-left text-xs uppercase tracking-wide text-white/85">
@@ -188,9 +352,7 @@ export default function VisitorList({ visitors, onVisitorDeleted }: VisitorListP
         <tbody>
           {pageVisitors.map(v => {
             const isOpen = selectedId === v.id
-            const location = resolveLocation(
-              v.id in savedOverrides ? { ...v, location_override: savedOverrides[v.id] } : v
-            )
+            const location = locationFor(v)
             const tags = classifyVisitor(v)
             return (
               <Fragment key={v.id}>
@@ -207,18 +369,7 @@ export default function VisitorList({ visitors, onVisitorDeleted }: VisitorListP
                   </td>
                   <td className="py-3 pr-4 text-white/85">{formatShort(v.last_activity_at)}</td>
                   <td className="py-3 pr-4 text-white/90 truncate">
-                    {location.label
-                      ? <span title={location.approximate
-                          ? 'Approximate — from IP geolocation'
-                          : 'Manually corrected'}>
-                          {location.label}
-                          {/* Nearly every location is IP-derived, so marking the
-                              exception reads far quieter than marking the rule. */}
-                          {!location.approximate && (
-                            <Check size={11} className="ml-1 inline-block align-[-1px] text-white/80" aria-label="corrected" />
-                          )}
-                        </span>
-                      : <Dash />}
+                    <LocationValue location={location} />
                   </td>
                   {/* Name over email in one column: most visitors are anonymous
                       readers now, and two separate columns of em-dashes wasted
@@ -236,16 +387,7 @@ export default function VisitorList({ visitors, onVisitorDeleted }: VisitorListP
                     ) : <Dash />}
                   </td>
                   <td className="py-3 pr-4 text-right tabular-nums">
-                    {v.page_view_count > 0 || v.total_engaged_ms > 0 ? (
-                      <div>
-                        <div className="text-white">
-                          {v.page_view_count} {v.page_view_count === 1 ? 'view' : 'views'}
-                        </div>
-                        {v.total_engaged_ms > 0 && (
-                          <div className="text-xs text-white/75">{formatDuration(v.total_engaged_ms)}</div>
-                        )}
-                      </div>
-                    ) : <Dash />}
+                    <EngagementValue v={v} />
                   </td>
                   <td className="py-3 pr-4 text-right text-white">
                     {v.chat_message_count || <Dash />}
@@ -282,6 +424,17 @@ export default function VisitorList({ visitors, onVisitorDeleted }: VisitorListP
         </tbody>
       </table>
       </div>
+
+      <MobileList
+        rows={pageVisitors}
+        sort={sort}
+        onSort={handleSort}
+        selectedId={selectedId}
+        onSelect={setSelectedId}
+        locationFor={locationFor}
+        onVisitorDeleted={onVisitorDeleted}
+        onSaved={(id, override) => setSavedOverrides(prev => ({ ...prev, [id]: override }))}
+      />
 
       {totalPages > 1 && (
         <div className="mt-4 flex items-center justify-between">

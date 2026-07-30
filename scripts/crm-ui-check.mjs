@@ -14,7 +14,10 @@ import { buildFixtures } from './crm-fixtures.mjs'
 
 const BASE = process.argv[2] ?? 'http://localhost:3001'
 const OUT = process.argv[3] ?? '.'
-const WIDTHS = [1440, 1280, 1024, 768]
+// 412 = Pixel 8, 360 = the narrow end of Android. Below `md` the visitor table
+// is replaced by cards, so these widths exercise a different rendering path
+// entirely and a desktop-only sweep would never see it.
+const WIDTHS = [1440, 1280, 1024, 768, 412, 360]
 
 const f = buildFixtures({ count: 28 })
 const target = f.visitors.find(v => v.chat_message_count > 0 && v.contact_count > 0) ?? f.visitors[0]
@@ -107,7 +110,10 @@ for (const width of WIDTHS) {
   await page.screenshot({ path: `${OUT}/crm-${width}-list.png` })
 
   // Expand the target row and open the Activity tab.
-  await page.locator('td', { hasText: target.id.slice(0, 8) }).first().click()
+  const rowSelector = width < 768
+    ? `li button[aria-expanded]`
+    : `td:has-text("${target.id.slice(0, 8)}")`
+  await page.locator(rowSelector).first().click()
   await page.waitForTimeout(700)
   await page.getByRole('tab', { name: /Activity/ }).click()
   await page.waitForTimeout(500)
