@@ -26,12 +26,12 @@ export default function Login({ onSuccess }: LoginProps) {
   return (
     <div className="flex min-h-screen items-center justify-center px-6">
       <Panel
-        variant="white"
-        className="w-full max-w-sm rounded-2xl p-8 shadow-lg shadow-blue-950/5 ring-1 ring-blue-950/4"
+        variant="raised-dark"
+        className="w-full max-w-sm rounded-2xl p-8 shadow-2xl shadow-black/50"
       >
         <div className="mb-6 flex flex-col gap-1">
-          <Eyebrow className="text-blue-950/45">eric.sh</Eyebrow>
-          <H2 className="text-blue-950">Admin</H2>
+          <Eyebrow className="text-white/45">eric.sh</Eyebrow>
+          <H2 className="text-white">Admin</H2>
         </div>
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
           <Input
@@ -44,7 +44,7 @@ export default function Login({ onSuccess }: LoginProps) {
             autoFocus
             disabled={submitting}
           />
-          <Button type="submit" variant="primary" disabled={submitting || !password} className="self-end">
+          <Button type="submit" variant="accent-dark" disabled={submitting || !password} className="self-end">
             {submitting ? 'Signing in…' : 'Sign in'}
           </Button>
         </form>

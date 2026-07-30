@@ -35,7 +35,7 @@ function buildTimeline(messages: ChatMessage[], clearEvents: { created_at: strin
 function ConversationDivider({ timestamp }: { timestamp: string }) {
   return (
     <li className="flex flex-col items-center gap-1.5 py-1 select-none" aria-label="Conversation cleared">
-      <div className="w-full text-blue-950/20" aria-hidden="true">
+      <div className="w-full text-white/20" aria-hidden="true">
         <svg width="100%" height="30" viewBox="0 0 300 30" preserveAspectRatio="none" fill="none">
           <path
             d="M0 15 Q5 1 10 15 Q15 29 20 15 Q25 1 30 15 Q35 29 40 15 Q45 1 50 15 Q55 29 60 15 Q65 1 70 15 Q75 29 80 15 Q85 1 90 15 Q95 29 100 15 Q105 1 110 15 Q115 29 120 15 Q125 1 130 15 Q135 29 140 15 Q145 1 150 15 Q155 29 160 15 Q165 1 170 15 Q175 29 180 15 Q185 1 190 15 Q195 29 200 15 Q205 1 210 15 Q215 29 220 15 Q225 1 230 15 Q235 29 240 15 Q245 1 250 15 Q255 29 260 15 Q265 1 270 15 Q275 29 280 15 Q285 1 290 15 Q295 29 300 15"
@@ -46,7 +46,7 @@ function ConversationDivider({ timestamp }: { timestamp: string }) {
           />
         </svg>
       </div>
-      <span className="text-[10px] uppercase tracking-wide text-blue-950/35">
+      <span className="text-[10px] uppercase tracking-wide text-white/35">
         Conversation cleared · {formatLong(timestamp)}
       </span>
     </li>
@@ -63,7 +63,7 @@ export default function ConversationTimeline({ messages, clearEvents, scrollDep 
   }, [scrollDep])
 
   if (messages.length === 0) {
-    return <p className="text-sm text-blue-950/50">No chat messages.</p>
+    return <p className="text-sm text-white/50">No chat messages.</p>
   }
 
   const timeline = buildTimeline(messages, clearEvents)
@@ -89,7 +89,7 @@ export default function ConversationTimeline({ messages, clearEvents, scrollDep 
                 ? item.data.content
                 : <ReactMarkdown components={adminMdComponents}>{linkifyEmail(item.data.content)}</ReactMarkdown>}
             </Panel>
-            <span className="mt-1.5 px-2 text-[10px] uppercase tracking-wide text-blue-950/70">
+            <span className="mt-1.5 px-2 text-[10px] uppercase tracking-wide text-white/70">
               {formatLong(item.data.created_at)}
             </span>
           </li>

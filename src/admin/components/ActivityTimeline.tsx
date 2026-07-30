@@ -13,8 +13,8 @@ function Stat({ icon: Icon, children, title }: {
   title?: string
 }) {
   return (
-    <span className="inline-flex items-center gap-1 text-blue-950/70" title={title}>
-      <Icon size={11} className="text-blue-950/40" />
+    <span className="inline-flex items-center gap-1 text-white/70" title={title}>
+      <Icon size={11} className="text-white/40" />
       {children}
     </span>
   )
@@ -23,7 +23,7 @@ function Stat({ icon: Icon, children, title }: {
 export default function ActivityTimeline({ sessions, pageViews }: Props) {
   if (sessions.length === 0 && pageViews.length === 0) {
     return (
-      <p className="text-sm text-blue-950/50">
+      <p className="text-sm text-white/50">
         No browsing activity recorded. Visitors who arrived before page-view tracking shipped, or
         who send Global Privacy Control / Do Not Track, won't have sessions here.
       </p>
@@ -49,9 +49,9 @@ export default function ActivityTimeline({ sessions, pageViews }: Props) {
       {sessions.map(s => {
         const views = bySession.get(s.id) ?? []
         return (
-          <div key={s.id} className="rounded-lg border border-blue-950/10 bg-white p-3">
+          <div key={s.id} className="rounded-lg border border-white/10 bg-white/[0.04] p-3">
             <div className="mb-2 flex flex-wrap items-center justify-between gap-x-4 gap-y-1 text-[10px]">
-              <span className="font-semibold text-blue-950">{formatLong(s.started_at)}</span>
+              <span className="font-semibold text-white">{formatLong(s.started_at)}</span>
               <span className="flex flex-wrap items-center gap-3">
                 <Stat icon={Clock} title="Engaged time — counts only while the tab was visible">
                   {formatDuration(s.engaged_ms)}
@@ -66,7 +66,7 @@ export default function ActivityTimeline({ sessions, pageViews }: Props) {
                   <Stat icon={MonitorSmartphone} title="Viewport, and screen size in parentheses">
                     {s.viewport_w}×{s.viewport_h}
                     {s.screen_w && s.screen_h && (
-                      <span className="text-blue-950/40"> ({s.screen_w}×{s.screen_h})</span>
+                      <span className="text-white/40"> ({s.screen_w}×{s.screen_h})</span>
                     )}
                   </Stat>
                 )}
@@ -74,19 +74,19 @@ export default function ActivityTimeline({ sessions, pageViews }: Props) {
             </div>
 
             {s.referrer && (
-              <p className="mb-1.5 truncate text-[10px] text-blue-950/50">
-                Referred by <span className="text-blue-950/70">{s.referrer}</span>
+              <p className="mb-1.5 truncate text-[10px] text-white/50">
+                Referred by <span className="text-white/70">{s.referrer}</span>
               </p>
             )}
 
             {views.length > 0 ? (
-              <ul className="flex flex-col gap-0.5 border-t border-blue-950/5 pt-1.5">
+              <ul className="flex flex-col gap-0.5 border-t border-white/5 pt-1.5">
                 {/* Sort explicitly rather than reversing: a visit reads best
                     oldest-first, and this shouldn't depend on the API's order. */}
                 {[...views].sort((a, b) => a.created_at.localeCompare(b.created_at)).map(v => (
                   <li key={v.id} className="flex items-baseline justify-between gap-3 text-xs">
-                    <span className="truncate font-mono text-blue-950/80">{v.path}</span>
-                    <span className="shrink-0 text-[10px] text-blue-950/40">
+                    <span className="truncate font-mono text-white/80">{v.path}</span>
+                    <span className="shrink-0 text-[10px] text-white/40">
                       {new Date(v.created_at).toLocaleTimeString(undefined, {
                         hour: 'numeric', minute: '2-digit', second: '2-digit',
                       })}
@@ -95,7 +95,7 @@ export default function ActivityTimeline({ sessions, pageViews }: Props) {
                 ))}
               </ul>
             ) : (
-              <p className="border-t border-blue-950/5 pt-1.5 text-[10px] text-blue-950/40">
+              <p className="border-t border-white/5 pt-1.5 text-[10px] text-white/40">
                 Heartbeat only — no page view recorded for this session.
               </p>
             )}
@@ -104,15 +104,15 @@ export default function ActivityTimeline({ sessions, pageViews }: Props) {
       })}
 
       {orphans.length > 0 && (
-        <div className="rounded-lg border border-dashed border-blue-950/15 bg-white p-3">
-          <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-wider text-blue-950/50">
+        <div className="rounded-lg border border-dashed border-white/15 bg-white/[0.03] p-3">
+          <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-wider text-white/50">
             Unattributed views
           </p>
           <ul className="flex flex-col gap-0.5">
             {orphans.map(v => (
               <li key={v.id} className="flex items-baseline justify-between gap-3 text-xs">
-                <span className="truncate font-mono text-blue-950/80">{v.path}</span>
-                <span className="shrink-0 text-[10px] text-blue-950/40">{formatLong(v.created_at)}</span>
+                <span className="truncate font-mono text-white/80">{v.path}</span>
+                <span className="shrink-0 text-[10px] text-white/40">{formatLong(v.created_at)}</span>
               </li>
             ))}
           </ul>

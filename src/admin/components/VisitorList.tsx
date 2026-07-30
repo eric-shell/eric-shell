@@ -22,7 +22,7 @@ function shortId(id: string) {
 
 /** Muted placeholder. Most rows are anonymous readers, so this appears a lot. */
 function Dash() {
-  return <span className="text-blue-950/25">—</span>
+  return <span className="text-white/25">—</span>
 }
 
 export default function VisitorList({ visitors, onVisitorDeleted }: VisitorListProps) {
@@ -81,7 +81,7 @@ export default function VisitorList({ visitors, onVisitorDeleted }: VisitorListP
       <div className="overflow-x-auto">
       <table className="w-full min-w-[54rem] table-fixed text-sm">
         <thead>
-          <tr className="border-b border-blue-950/10 text-left text-xs uppercase tracking-wide text-blue-950/70">
+          <tr className="border-b border-white/10 text-left text-xs uppercase tracking-wide text-white/70">
             <th className="py-2 px-4 font-semibold w-28">Visitor</th>
             <th className="py-2 pr-4 font-semibold w-36">Last seen</th>
             {/* Location takes the spare width, not Contact: most visitors are
@@ -105,13 +105,13 @@ export default function VisitorList({ visitors, onVisitorDeleted }: VisitorListP
                 <tr
                   onClick={() => setSelectedId(isOpen ? null : v.id)}
                   className={twMerge(
-                    'cursor-pointer border-b border-blue-950/5 transition-colors',
-                    isOpen ? 'bg-blue-50' : 'hover:bg-blue-50/60'
+                    'cursor-pointer border-b border-white/5 transition-colors',
+                    isOpen ? 'bg-white/[0.07]' : 'hover:bg-white/[0.035]'
                   )}
                 >
-                  <td className="py-3 px-4 text-blue-950/90 font-mono text-xs font-semibold truncate">{shortId(v.id)}</td>
-                  <td className="py-3 pr-4 text-blue-950/70">{formatShort(v.last_activity_at)}</td>
-                  <td className="py-3 pr-4 text-blue-950/80 truncate">
+                  <td className="py-3 px-4 text-white/90 font-mono text-xs font-semibold truncate">{shortId(v.id)}</td>
+                  <td className="py-3 pr-4 text-white/70">{formatShort(v.last_activity_at)}</td>
+                  <td className="py-3 pr-4 text-white/80 truncate">
                     {location.label
                       ? <span title={location.approximate
                           ? 'Approximate — from IP geolocation'
@@ -120,7 +120,7 @@ export default function VisitorList({ visitors, onVisitorDeleted }: VisitorListP
                           {/* Nearly every location is IP-derived, so marking the
                               exception reads far quieter than marking the rule. */}
                           {!location.approximate && (
-                            <Check size={11} className="ml-1 inline-block align-[-1px] text-blue-950/40" aria-label="corrected" />
+                            <Check size={11} className="ml-1 inline-block align-[-1px] text-white/40" aria-label="corrected" />
                           )}
                         </span>
                       : <Dash />}
@@ -132,10 +132,10 @@ export default function VisitorList({ visitors, onVisitorDeleted }: VisitorListP
                     {v.contact_name || v.contact_email ? (
                       <div className="min-w-0">
                         {v.contact_name && (
-                          <div className="truncate font-semibold text-blue-950/90">{v.contact_name}</div>
+                          <div className="truncate font-semibold text-white/90">{v.contact_name}</div>
                         )}
                         {v.contact_email && (
-                          <div className="truncate text-xs text-blue-950/60">{v.contact_email}</div>
+                          <div className="truncate text-xs text-white/60">{v.contact_email}</div>
                         )}
                       </div>
                     ) : <Dash />}
@@ -143,24 +143,24 @@ export default function VisitorList({ visitors, onVisitorDeleted }: VisitorListP
                   <td className="py-3 pr-4 text-right tabular-nums">
                     {v.page_view_count > 0 || v.total_engaged_ms > 0 ? (
                       <div>
-                        <div className="text-blue-950">
+                        <div className="text-white">
                           {v.page_view_count} {v.page_view_count === 1 ? 'view' : 'views'}
                         </div>
                         {v.total_engaged_ms > 0 && (
-                          <div className="text-xs text-blue-950/60">{formatDuration(v.total_engaged_ms)}</div>
+                          <div className="text-xs text-white/60">{formatDuration(v.total_engaged_ms)}</div>
                         )}
                       </div>
                     ) : <Dash />}
                   </td>
-                  <td className="py-3 pr-4 text-right text-blue-950">
+                  <td className="py-3 pr-4 text-right text-white">
                     {v.chat_message_count || <Dash />}
                   </td>
                   {/* Semantic color earns its place here: a submission is the
                       one real conversion signal in the table. Always paired with
-                      an icon, never color alone. green-700 is 5.96:1 on white. */}
+                      an icon, never color alone. green-400 is 7.04:1 on the canvas. */}
                   <td className="py-3 pr-4 text-right">
                     {v.contact_count ? (
-                      <span className="inline-flex items-center gap-1 font-semibold text-green-700">
+                      <span className="inline-flex items-center gap-1 font-semibold text-green-400">
                         <MailCheck size={12} strokeWidth={2.5} aria-hidden="true" />
                         {v.contact_count}
                       </span>
@@ -190,15 +190,21 @@ export default function VisitorList({ visitors, onVisitorDeleted }: VisitorListP
 
       {totalPages > 1 && (
         <div className="mt-4 flex items-center justify-between">
-          <p className="text-xs text-blue-950/50">
+          <p className="text-xs text-white/50">
             Showing {rangeStart}–{rangeEnd} of {visitors.length}
           </p>
           <div className="flex gap-1">
-            <Button variant="white" size="sm" onClick={() => setPage(p => p - 1)} disabled={page === 1}>
-              <ChevronLeft size={14} />Prev
+            <Button
+              variant="raised-dark" size="sm" onClick={() => setPage(p => p - 1)} disabled={page === 1}
+              leftIcon={<ChevronLeft aria-hidden="true" />}
+            >
+              Prev
             </Button>
-            <Button variant="white" size="sm" onClick={() => setPage(p => p + 1)} disabled={page === totalPages}>
-              Next<ChevronRight size={14} />
+            <Button
+              variant="raised-dark" size="sm" onClick={() => setPage(p => p + 1)} disabled={page === totalPages}
+              rightIcon={<ChevronRight aria-hidden="true" />}
+            >
+              Next
             </Button>
           </div>
         </div>

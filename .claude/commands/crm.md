@@ -80,6 +80,26 @@ Two findings worth remembering before you touch these:
 
 Mark specs the chart implements (from the skill): bars capped at **24px** with the band's leftover left as air, **4px** rounded data-end and square at the baseline, hairline solid baseline (never dashed), the hit target is the full column (not the few-pixel bar), the direct label is selective (hovered/latest only), and every value is also in an `sr-only` list so nothing is gated behind hover. It's built from divs rather than SVG because the old `preserveAspectRatio="none"` stretched non-uniformly and distorted both the corner radius and the gaps.
 
+## Cost & performance
+
+This runs on Vercel + Neon + Upstash, all metered. Telemetry is the highest-volume
+surface on the site, so the defaults matter. Per **one open tab for an hour**:
+
+| | Before | After |
+|---|---|---|
+| Function invocations | 181 | 16 |
+| Postgres round trips | 364 | 16 |
+| Upstash commands | 362 | 16 |
+
+The levers, and why each one is where it is — don't undo these casually:
+
+- **The dashboard polls only while visible.** Neon bills compute-hours and autosuspends an idle endpoint; a background tab firing two aggregate queries every 60s pinned the compute awake around the clock, for data nobody was looking at. `POLL_MS` is 120s, and `visibilitychange` starts/stops the interval and refetches on return.
+- **A pageview is one round trip, not four.** `db.transaction([...])` batches the visitor upsert, session upsert, and page-view insert. The Neon HTTP driver bills and delays *per request*, so the old fan-out cost 4x compute and stacked 4x latency. `readVisitorGeo()` exists so the geo headers can be inlined into that batch instead of paying for a second query.
+- **Heartbeats back off**: 15s, 30s, 60s, 120s, then every 5 minutes — 15 beats an hour instead of 180. Periodic beats only bound data loss when `pagehide`/`visibilitychange` never fire (mobile Safari); the final value comes from that flush. A hidden tab schedules nothing, because it accrues no engaged time and every beat would be a guaranteed no-op write.
+- **Heartbeats never touch `visitors`.** Rewriting `last_seen_at` every beat dirtied a row for nothing — the session's own `last_beat_at` records recency.
+- **`/api/track` uses one rate-limit window, not the burst+hourly pair** the other endpoints use. Each limiter is its own Upstash round trip, and this is the busiest endpoint on the site.
+- **`page_views` is the fastest-growing table** (one row per document load) and the admin list aggregates across all of it. `page_views_visitor_idx` keeps that from degrading into a seq scan. There is still **no automated pruning** — see the retention block in [db/schema.sql](db/schema.sql) and run it periodically.
+
 ## Fixtures & UI checking
 
 There is **no local Postgres** in this project — `POSTGRES_URL` points at the shared Neon branch. Two tools exist so you can work on the admin UI at realistic density anyway:

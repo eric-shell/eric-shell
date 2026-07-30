@@ -7,6 +7,19 @@ export type Variant =
   | 'error-glass'
   | 'success-glass'
   | 'white'
+  /**
+   * Raised surface for a dark canvas — the inverse of `white`. Unlike the
+   * `glass-*` variants it applies no backdrop blur, so it is safe to use on
+   * large, scrolling surfaces (the admin's visitor table) where blur would
+   * repaint on every frame. Used by the admin CRM.
+   */
+  | 'raised-dark'
+  /**
+   * High-chroma call-to-action for a dark canvas. Carries dark ink, never white
+   * — white on the accent is 2.36:1. Admin CRM only; the public site's CTA
+   * stays `primary`.
+   */
+  | 'accent-dark'
 
 export type Size = 'sm' | 'md' | 'lg'
 
@@ -19,6 +32,8 @@ export const SURFACE: Record<Variant, string> = {
   'error-glass':   'text-white glass-blur bg-red-950/85 border border-red-400/50',
   'success-glass': 'text-white glass-blur bg-green-950/85 border border-green-400/50',
   white:     'bg-white border border-blue-950/10 text-blue-950',
+  'raised-dark': 'text-white bg-white/[0.055] border border-white/10',
+  'accent-dark': 'text-blue-950 bg-gradient-to-br from-accent-light to-accent border border-transparent shadow-[inset_0_1px_0_0_rgba(255,255,255,0.35)]',
 }
 
 /**
@@ -36,6 +51,8 @@ export const SURFACE_ICON: Record<Variant, string> = {
   'error-glass':   'bg-red-950/50',
   'success-glass': 'bg-green-950/50',
   white:     'bg-blue-950/6',
+  'raised-dark': 'bg-white/10',
+  'accent-dark': 'bg-blue-950/20',
 }
 
 export const SURFACE_ICON_HOVER: Record<Variant, string> = {
@@ -47,6 +64,8 @@ export const SURFACE_ICON_HOVER: Record<Variant, string> = {
   'error-glass':   'group-hover:bg-red-950/40',
   'success-glass': 'group-hover:bg-green-950/40',
   white:     'group-hover:bg-blue-950/10',
+  'raised-dark': 'group-hover:bg-white/20',
+  'accent-dark': 'group-hover:bg-blue-950/30',
 }
 
 export const SURFACE_HOVER: Record<Variant, string> = {
@@ -58,4 +77,6 @@ export const SURFACE_HOVER: Record<Variant, string> = {
   'error-glass':   'hover:bg-red-700/40 hover:border-red-300/60',
   'success-glass': 'hover:bg-green-800/40 hover:border-green-300/60',
   white:     'hover:bg-blue-50',
+  'raised-dark': 'hover:bg-white/[0.09] hover:border-white/20',
+  'accent-dark': 'hover:from-accent hover:to-accent-deep hover:text-white',
 }

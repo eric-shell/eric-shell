@@ -23,6 +23,20 @@
   --color-blue-950: oklch(0.198 0.025 269.84);
   --color-black: oklch(0.107 0.011 266.51);
 
+  /*
+   * Accent — same hue family as the blue ramp, pushed to a chroma that actually
+   * reads as colour. Every step of blue-50..950 sits below the dataviz chroma
+   * floor (blue-600 is 0.091) and "reads gray" as a data mark, which is exactly
+   * why charts drawn from the ramp looked washed out.
+   *
+   * Used by the admin CRM only — the public site keeps the muted ramp. Dark ink
+   * on `accent` is 7.71:1; white ink on it is 2.36:1, so never set white text
+   * on this. As a mark against the blue-950 canvas it is 7.71:1.
+   */
+  --color-accent:       oklch(0.720 0.150 225.00);
+  --color-accent-light: oklch(0.760 0.150 222.00);
+  --color-accent-deep:  oklch(0.450 0.130 240.00);
+
   --color-red-50:  oklch(0.965 0.014 25.00);
   --color-red-100: oklch(0.918 0.034 25.00);
   --color-red-200: oklch(0.852 0.072 25.00);
