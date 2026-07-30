@@ -49,6 +49,23 @@ const UAS = [
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36 Edg/126.0.0.0',
   'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36',
   'Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Mobile Safari/537.36',
+  // Deliberately includes a CUBOT device: the classifier must NOT flag it.
+  'Mozilla/5.0 (Linux; Android 11; CUBOT NOTE 20) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0 Mobile Safari/537.36',
+]
+
+// Crawlers and automation, so the classifier's tags are actually exercised by
+// the fixture set rather than only by unit cases.
+const BOT_UAS = [
+  'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)',
+  'Mozilla/5.0 (compatible; AhrefsBot/7.0; +http://ahrefs.com/robot/)',
+  'Mozilla/5.0 (compatible; bingbot/2.0; +http://www.bing.com/bingbot.htm)',
+  'python-requests/2.31.0',
+  'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/126.0.0.0 Safari/537.36',
+]
+
+const SPAM_CONTACTS = [
+  ['SEO Services', 'promo@mailinator.com', 'Rank #1 on Google — visit http://cheap-seo.ru for a free audit.'],
+  ['crypto invest http://gains.top', 'x@yopmail.com', 'Double your money in 24h. Click now!!!'],
 ]
 
 const REFERRERS = [
@@ -131,6 +148,9 @@ export function buildFixtures({ count = 28, seed = 20260729, now = Date.now() } 
 
     // Shape the population so the UI gets exercised across its real range:
     // most visitors are drive-by readers, a few are deeply engaged.
+    // ~11% of the population is crawler traffic, which is realistic and makes
+    // the tag column meaningful in the seeded dashboard.
+    const isBot = r() < 0.11
     const kind = r()
     const isBounce = kind < 0.38          // one view, seconds on site
     const isReader = kind >= 0.38 && kind < 0.78
@@ -154,8 +174,9 @@ export function buildFixtures({ count = 28, seed = 20260729, now = Date.now() } 
         firstSeen + s * int(r, 3_600_000, 6 * 86_400_000),
         now - 60_000,
       )
-      const viewCount = isBounce ? 1 : isReader ? int(r, 1, 3) : int(r, 3, 6)
-      const engagedMs = isBounce ? int(r, 900, 14_000)
+      const viewCount = isBot ? int(r, 4, 12) : isBounce ? 1 : isReader ? int(r, 1, 3) : int(r, 3, 6)
+      const engagedMs = isBot ? int(r, 0, 600)
+        : isBounce ? int(r, 900, 14_000)
         : isReader ? int(r, 20_000, 150_000)
         : int(r, 150_000, 900_000)
       const scroll = isBounce ? int(r, 4, 30) : isReader ? int(r, 30, 85) : int(r, 80, 100)
@@ -196,11 +217,13 @@ export function buildFixtures({ count = 28, seed = 20260729, now = Date.now() } 
         chats.push({ id: chatId++, visitor_id: id, role: 'assistant', content: pick(r, ANSWERS), created_at: new Date(at + 4000).toISOString() })
       }
     }
-    if (didContact) {
-      const [name, email] = pick(r, NAMES)
+    if (didContact || (isBot && r() < 0.5)) {
+      const spam = isBot
+      const [name, email] = spam ? pick(r, SPAM_CONTACTS) : pick(r, NAMES)
       contacts.push({
         id: contactId++, visitor_id: id, name, email,
-        message: pick(r, MESSAGES), created_at: new Date(lastSeen - 30_000).toISOString(),
+        message: spam ? pick(r, SPAM_CONTACTS)[2] : pick(r, MESSAGES),
+        created_at: new Date(lastSeen - 30_000).toISOString(),
       })
     }
     if (r() < 0.2) {
@@ -215,7 +238,7 @@ export function buildFixtures({ count = 28, seed = 20260729, now = Date.now() } 
       id,
       first_seen_at: new Date(firstSeen).toISOString(),
       last_seen_at: new Date(lastSeen).toISOString(),
-      user_agent: isBlank ? null : pick(r, UAS),
+      user_agent: isBlank ? null : isBot ? pick(r, BOT_UAS) : pick(r, UAS),
       country: isBlank ? null : country,
       city: isBlank ? null : city,
       region: isBlank ? null : region,

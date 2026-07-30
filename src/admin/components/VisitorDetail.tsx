@@ -83,9 +83,9 @@ export default function VisitorDetail({ id, onClose, onDeleted, onSaved }: Visit
               onChange={e => setLocationOverride(e.target.value)}
               placeholder={ipGuess ? `Correct the IP guess (${ipGuess})…` : 'Set a location…'}
               maxLength={120}
-              className="w-full rounded-lg border border-white/10 bg-white/[0.05] px-3 py-2 text-sm text-white placeholder:text-white/30 outline-none focus:border-accent/60 focus:bg-white/[0.08] transition"
+              className="w-full rounded-lg border border-white/10 bg-white/[0.05] px-3 py-2 text-sm text-white placeholder:text-white/55 outline-none focus:border-accent/60 focus:bg-white/[0.08] transition"
             />
-            <p className="mt-1 text-[10px] text-white/40">
+            <p className="mt-1 text-[10px] text-white/65">
               Overrides IP geolocation, which is approximate and can be off by hundreds of miles. Clear to fall back to the IP guess.
             </p>
 
@@ -95,7 +95,7 @@ export default function VisitorDetail({ id, onClose, onDeleted, onSaved }: Visit
               onChange={e => setNotes(e.target.value)}
               placeholder="Add private notes about this visitor…"
               rows={3}
-              className="w-full resize-y rounded-lg border border-white/10 bg-white/[0.05] px-3 py-2 text-sm text-white placeholder:text-white/30 outline-none focus:border-accent/60 focus:bg-white/[0.08] transition"
+              className="w-full resize-y rounded-lg border border-white/10 bg-white/[0.05] px-3 py-2 text-sm text-white placeholder:text-white/55 outline-none focus:border-accent/60 focus:bg-white/[0.08] transition"
             />
             <div className="mt-2 flex items-center justify-between gap-2">
               <Button

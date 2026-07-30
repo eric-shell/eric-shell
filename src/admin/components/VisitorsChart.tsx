@@ -6,7 +6,7 @@ import { Group } from '@visx/group'
 import { scaleLinear, scaleTime } from '@visx/scale'
 import { ParentSize } from '@visx/responsive'
 import { localPoint } from '@visx/event'
-import { useTooltip, TooltipWithBounds, defaultStyles } from '@visx/tooltip'
+import { useTooltip, useTooltipInPortal, defaultStyles } from '@visx/tooltip'
 import { formatMonthDay } from '../lib/dateFormat'
 import type { StatDay } from '@/../api/_lib/types'
 
@@ -37,6 +37,16 @@ function Chart({ days, width, height }: { days: StatDay[]; width: number; height
   const {
     showTooltip, hideTooltip, tooltipData, tooltipLeft = 0, tooltipTop = 0,
   } = useTooltip<Point>()
+
+  // Portal, not an in-flow tooltip. The metrics row is only ~116px tall, and an
+  // absolutely-positioned tooltip gets clamped inside that box — so a point near
+  // the top or bottom of the plot had its tooltip clipped. Rendering into a
+  // body-level portal bounds it by the viewport instead, and `detectBounds`
+  // flips it to the other side of the cursor near an edge.
+  const { containerRef, TooltipInPortal } = useTooltipInPortal({
+    detectBounds: true,
+    scroll: true,
+  })
 
   // Leaves room for the axis band beneath the plot — a container that clips its
   // own axis labels is the classic dashboard-card scroll bug.
@@ -90,7 +100,7 @@ function Chart({ days, width, height }: { days: StatDay[]; width: number; height
 
   return (
     <div className="relative h-full w-full">
-      <svg width={width} height={height} className="overflow-visible">
+      <svg ref={containerRef} width={width} height={height} className="overflow-visible">
         <LinearGradient id="visitors-area" from={ACCENT} to={DEEP} fromOpacity={0.38} toOpacity={0.02} />
 
         <Group>
@@ -141,8 +151,9 @@ function Chart({ days, width, height }: { days: StatDay[]; width: number; height
       </svg>
 
       {tooltipData && (
-        <TooltipWithBounds
-          top={tooltipTop}
+        <TooltipInPortal
+          // Lift clear of the marker so the pointer never covers the value.
+          top={tooltipTop - 12}
           left={tooltipLeft}
           style={{
             ...defaultStyles,
@@ -158,7 +169,7 @@ function Chart({ days, width, height }: { days: StatDay[]; width: number; height
           {/* Text wears an ink token; the colored mark beside it carries identity. */}
           <span className="font-semibold">{tooltipData.visitors}</span>
           <span className="opacity-60"> · {formatMonthDay(tooltipData.date.toISOString())}</span>
-        </TooltipWithBounds>
+        </TooltipInPortal>
       )}
     </div>
   )
@@ -172,10 +183,10 @@ export default function VisitorsChart({ days }: { days: StatDay[] }) {
   return (
     <figure className="flex h-full w-full flex-col gap-1">
       <figcaption className="flex items-baseline justify-between gap-2">
-        <span className="text-[10px] font-semibold uppercase tracking-wider text-white/45">
+        <span className="text-[10px] font-semibold uppercase tracking-wider text-white/70">
           Visitors / day
         </span>
-        <span className="text-[10px] text-white/45">
+        <span className="text-[10px] text-white/70">
           <span className="font-semibold text-white/80">{total}</span> in {days.length}d
         </span>
       </figcaption>
@@ -186,7 +197,7 @@ export default function VisitorsChart({ days }: { days: StatDay[] }) {
         </ParentSize>
       </div>
 
-      <div className="flex shrink-0 justify-between text-[9px] tabular-nums text-white/30">
+      <div className="flex shrink-0 justify-between text-[9px] tabular-nums text-white/55">
         <span>{formatMonthDay(days[0].date)}</span>
         <span>{formatMonthDay(days[days.length - 1].date)}</span>
       </div>

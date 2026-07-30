@@ -30,7 +30,7 @@ export default function Login({ onSuccess }: LoginProps) {
         className="w-full max-w-sm rounded-2xl p-8 shadow-2xl shadow-black/50"
       >
         <div className="mb-6 flex flex-col gap-1">
-          <Eyebrow className="text-white/45">eric.sh</Eyebrow>
+          <Eyebrow className="text-white/70">eric.sh</Eyebrow>
           <H2 className="text-white">Admin</H2>
         </div>
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">

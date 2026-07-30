@@ -14,7 +14,7 @@ function Stat({ icon: Icon, children, title }: {
 }) {
   return (
     <span className="inline-flex items-center gap-1 text-white/70" title={title}>
-      <Icon size={11} className="text-white/40" />
+      <Icon size={11} className="text-white/65" />
       {children}
     </span>
   )
@@ -66,7 +66,7 @@ export default function ActivityTimeline({ sessions, pageViews }: Props) {
                   <Stat icon={MonitorSmartphone} title="Viewport, and screen size in parentheses">
                     {s.viewport_w}×{s.viewport_h}
                     {s.screen_w && s.screen_h && (
-                      <span className="text-white/40"> ({s.screen_w}×{s.screen_h})</span>
+                      <span className="text-white/65"> ({s.screen_w}×{s.screen_h})</span>
                     )}
                   </Stat>
                 )}
@@ -86,7 +86,7 @@ export default function ActivityTimeline({ sessions, pageViews }: Props) {
                 {[...views].sort((a, b) => a.created_at.localeCompare(b.created_at)).map(v => (
                   <li key={v.id} className="flex items-baseline justify-between gap-3 text-xs">
                     <span className="truncate font-mono text-white/80">{v.path}</span>
-                    <span className="shrink-0 text-[10px] text-white/40">
+                    <span className="shrink-0 text-[10px] text-white/65">
                       {new Date(v.created_at).toLocaleTimeString(undefined, {
                         hour: 'numeric', minute: '2-digit', second: '2-digit',
                       })}
@@ -95,7 +95,7 @@ export default function ActivityTimeline({ sessions, pageViews }: Props) {
                 ))}
               </ul>
             ) : (
-              <p className="border-t border-white/5 pt-1.5 text-[10px] text-white/40">
+              <p className="border-t border-white/5 pt-1.5 text-[10px] text-white/65">
                 Heartbeat only — no page view recorded for this session.
               </p>
             )}
@@ -112,7 +112,7 @@ export default function ActivityTimeline({ sessions, pageViews }: Props) {
             {orphans.map(v => (
               <li key={v.id} className="flex items-baseline justify-between gap-3 text-xs">
                 <span className="truncate font-mono text-white/80">{v.path}</span>
-                <span className="shrink-0 text-[10px] text-white/40">{formatLong(v.created_at)}</span>
+                <span className="shrink-0 text-[10px] text-white/65">{formatLong(v.created_at)}</span>
               </li>
             ))}
           </ul>

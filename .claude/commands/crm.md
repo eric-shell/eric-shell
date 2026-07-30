@@ -80,6 +80,29 @@ Two findings worth remembering before you touch these:
 
 Mark specs the chart implements (from the skill): bars capped at **24px** with the band's leftover left as air, **4px** rounded data-end and square at the baseline, hairline solid baseline (never dashed), the hit target is the full column (not the few-pixel bar), the direct label is selective (hovered/latest only), and every value is also in an `sr-only` list so nothing is gated behind hover. It's built from divs rather than SVG because the old `preserveAspectRatio="none"` stretched non-uniformly and distorted both the corner radius and the gaps.
 
+## Traffic quality tags
+
+[classify.ts](src/admin/lib/classify.ts) labels low-value rows; [VisitorTags.tsx](src/admin/components/VisitorTags.tsx) renders them in the Visitor column.
+
+**These are presentational only.** Nothing is hidden, filtered, deleted, or blocked on the strength of a tag — they exist so a real lead isn't buried under crawler noise. Every tag carries a `reason`, shown as a title, because an unexplained "spam" badge on a genuine visitor is worse than no badge.
+
+| Tag | Fires when |
+|---|---|
+| `Bot` | User agent matches a curated crawler/automation list |
+| `Automated` | Page views recorded but no browser timezone *or* language — a real browser always sends both |
+| `No dwell` | 3+ page views with under 2s engaged — fetched, not read |
+| `Spam?` | A submission with a URL in the name, a malformed or disposable email, or no page view at all |
+| `Bounce` | A single view under 5s, and only when nothing else already explains the row |
+
+Rules that keep it honest, and that you should preserve when tuning:
+
+- **Never match `bot` mid-word.** `CUBOT` is a real Android phone brand, and `Abbott` appears in corporate user agents; a loose `[a-z]bot` pattern flags both. Use `\b` boundaries and the explicit `Bot/` version form.
+- **Engagement outranks heuristics.** A visitor who chatted or submitted the form is never tagged `Bounce`, however brief the visit.
+- **A disposable email alone is never spam** — plenty of real people use them. It only contributes alongside another signal.
+- `Spam?` keeps its question mark on purpose. It is a prompt to read the message, not a verdict.
+
+Signals are limited to what a list row carries (`VisitorSummary`). Anything needing message bodies or scroll depth belongs in the detail view.
+
 ## Cost & performance
 
 This runs on Vercel + Neon + Upstash, all metered. Telemetry is the highest-volume
