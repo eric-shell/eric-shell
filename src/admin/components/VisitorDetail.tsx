@@ -97,16 +97,20 @@ export default function VisitorDetail({ id, onClose, onDeleted, onSaved }: Visit
               rows={3}
               className="w-full resize-y rounded-lg border border-white/10 bg-white/[0.05] px-3 py-2 text-sm text-white placeholder:text-white/55 outline-none focus:border-accent/60 focus:bg-white/[0.08] transition"
             />
-            <div className="mt-2 flex items-center justify-between gap-2">
+            <div className="mt-2 flex items-center justify-end gap-2">
+              {/* Same raised surface as Sign out, but keeps red ink: this wipes
+                  the visitor, their transcripts, and their submissions, so it
+                  should never read as an ordinary neutral action. red-400 is
+                  6.10:1 on the canvas. */}
               <Button
-                variant="ghost"
+                variant="raised-dark"
                 size="sm"
                 onClick={deleteVisitor}
                 disabled={deleting}
                 leftIcon={<Trash2 strokeWidth={2.5} aria-hidden="true" />}
                 className="text-red-400 hover:text-red-300"
               >
-                {deleting ? 'Deleting…' : 'Delete visitor data'}
+                {deleting ? 'Deleting…' : 'Delete'}
               </Button>
               <Button variant="primary" size="sm" onClick={saveDetails} disabled={saving}>
                 {saving ? 'Saving…' : 'Save'}

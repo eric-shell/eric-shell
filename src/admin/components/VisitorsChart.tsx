@@ -53,6 +53,12 @@ function Chart({ days, width, height }: { days: StatDay[]; width: number; height
   const AXIS_H = 16
   const innerH = Math.max(0, height - AXIS_H)
 
+  // Headroom above the peak. The y range used to top out at exactly 0, which put
+  // the highest point on the plot's very edge — so half the 2px stroke, and all
+  // of the 5px hover marker plus its 2px ring, rendered outside the box and got
+  // clipped. 8px clears the marker (5 + 2) and the line's half-stroke.
+  const TOP_PAD = 8
+
   const data = useMemo<Point[]>(
     () => days.map(d => ({ date: new Date(d.date + 'T00:00:00'), visitors: d.visitors })),
     [days],
@@ -68,12 +74,12 @@ function Chart({ days, width, height }: { days: StatDay[]; width: number; height
 
   const yScale = useMemo(
     () => scaleLinear({
-      range: [innerH, 0],
+      range: [innerH, TOP_PAD],
       // Always include zero so area height stays proportional to the value.
       domain: [0, Math.max(...data.map(getCount), 1)],
       nice: true,
     }),
-    [data, innerH],
+    [data, innerH, TOP_PAD],
   )
 
   const handleMove = useCallback(
