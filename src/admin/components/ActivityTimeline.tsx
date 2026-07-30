@@ -13,8 +13,8 @@ function Stat({ icon: Icon, children, title }: {
   title?: string
 }) {
   return (
-    <span className="inline-flex items-center gap-1 text-white/70" title={title}>
-      <Icon size={11} className="text-white/65" />
+    <span className="inline-flex items-center gap-1 text-white/85" title={title}>
+      <Icon size={11} className="text-white/80" />
       {children}
     </span>
   )
@@ -23,7 +23,7 @@ function Stat({ icon: Icon, children, title }: {
 export default function ActivityTimeline({ sessions, pageViews }: Props) {
   if (sessions.length === 0 && pageViews.length === 0) {
     return (
-      <p className="text-sm text-white/50">
+      <p className="text-sm text-white/65">
         No browsing activity recorded. Visitors who arrived before page-view tracking shipped, or
         who send Global Privacy Control / Do Not Track, won't have sessions here.
       </p>
@@ -66,7 +66,7 @@ export default function ActivityTimeline({ sessions, pageViews }: Props) {
                   <Stat icon={MonitorSmartphone} title="Viewport, and screen size in parentheses">
                     {s.viewport_w}×{s.viewport_h}
                     {s.screen_w && s.screen_h && (
-                      <span className="text-white/65"> ({s.screen_w}×{s.screen_h})</span>
+                      <span className="text-white/80"> ({s.screen_w}×{s.screen_h})</span>
                     )}
                   </Stat>
                 )}
@@ -74,8 +74,8 @@ export default function ActivityTimeline({ sessions, pageViews }: Props) {
             </div>
 
             {s.referrer && (
-              <p className="mb-1.5 truncate text-[10px] text-white/50">
-                Referred by <span className="text-white/70">{s.referrer}</span>
+              <p className="mb-1.5 truncate text-[10px] text-white/65">
+                Referred by <span className="text-white/85">{s.referrer}</span>
               </p>
             )}
 
@@ -85,8 +85,8 @@ export default function ActivityTimeline({ sessions, pageViews }: Props) {
                     oldest-first, and this shouldn't depend on the API's order. */}
                 {[...views].sort((a, b) => a.created_at.localeCompare(b.created_at)).map(v => (
                   <li key={v.id} className="flex items-baseline justify-between gap-3 text-xs">
-                    <span className="truncate font-mono text-white/80">{v.path}</span>
-                    <span className="shrink-0 text-[10px] text-white/65">
+                    <span className="truncate font-mono text-white/90">{v.path}</span>
+                    <span className="shrink-0 text-[10px] text-white/80">
                       {new Date(v.created_at).toLocaleTimeString(undefined, {
                         hour: 'numeric', minute: '2-digit', second: '2-digit',
                       })}
@@ -95,7 +95,7 @@ export default function ActivityTimeline({ sessions, pageViews }: Props) {
                 ))}
               </ul>
             ) : (
-              <p className="border-t border-white/5 pt-1.5 text-[10px] text-white/65">
+              <p className="border-t border-white/5 pt-1.5 text-[10px] text-white/80">
                 Heartbeat only — no page view recorded for this session.
               </p>
             )}
@@ -105,14 +105,14 @@ export default function ActivityTimeline({ sessions, pageViews }: Props) {
 
       {orphans.length > 0 && (
         <div className="rounded-lg border border-dashed border-white/15 bg-white/[0.03] p-3">
-          <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-wider text-white/50">
+          <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-wider text-white/65">
             Unattributed views
           </p>
           <ul className="flex flex-col gap-0.5">
             {orphans.map(v => (
               <li key={v.id} className="flex items-baseline justify-between gap-3 text-xs">
-                <span className="truncate font-mono text-white/80">{v.path}</span>
-                <span className="shrink-0 text-[10px] text-white/65">{formatLong(v.created_at)}</span>
+                <span className="truncate font-mono text-white/90">{v.path}</span>
+                <span className="shrink-0 text-[10px] text-white/80">{formatLong(v.created_at)}</span>
               </li>
             ))}
           </ul>

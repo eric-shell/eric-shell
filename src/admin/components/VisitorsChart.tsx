@@ -189,11 +189,11 @@ export default function VisitorsChart({ days }: { days: StatDay[] }) {
   return (
     <figure className="flex h-full w-full flex-col gap-1">
       <figcaption className="flex items-baseline justify-between gap-2">
-        <span className="text-[10px] font-semibold uppercase tracking-wider text-white/70">
+        <span className="text-[10px] font-semibold uppercase tracking-wider text-white/85">
           Visitors / day
         </span>
-        <span className="text-[10px] text-white/70">
-          <span className="font-semibold text-white/80">{total}</span> in {days.length}d
+        <span className="text-[10px] text-white/85">
+          <span className="font-semibold text-white/90">{total}</span> in {days.length}d
         </span>
       </figcaption>
 
@@ -203,7 +203,7 @@ export default function VisitorsChart({ days }: { days: StatDay[] }) {
         </ParentSize>
       </div>
 
-      <div className="flex shrink-0 justify-between text-[9px] tabular-nums text-white/55">
+      <div className="flex shrink-0 justify-between text-[9px] tabular-nums text-white/70">
         <span>{formatMonthDay(days[0].date)}</span>
         <span>{formatMonthDay(days[days.length - 1].date)}</span>
       </div>

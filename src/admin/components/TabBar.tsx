@@ -20,7 +20,7 @@ export default function TabBar<T extends string>({ tabs, active, onChange, class
             'cursor-pointer px-4 py-2 text-xs font-semibold uppercase tracking-wide border-b-2 -mb-px transition-colors',
             active === key
               ? 'border-accent text-white'
-              : 'border-transparent text-white/65 hover:text-white'
+              : 'border-transparent text-white/80 hover:text-white'
           )}
         >
           {label}

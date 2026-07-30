@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Check, Trash2, X } from 'lucide-react'
+import { Save, Trash2, X } from 'lucide-react'
 import { Button, Panel } from '../../components/ui'
 import { useVisitorDetail } from '../hooks/useVisitorDetail'
 import { DetailSkeleton } from './Skeleton'
@@ -76,26 +76,26 @@ export default function VisitorDetail({ id, onClose, onDeleted, onSaved }: Visit
           )}
 
           <div className="mt-5 border-t border-white/10 pt-4">
-            <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-wider text-white/50">Location</p>
+            <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-wider text-white/65">Location</p>
             <input
               type="text"
               value={locationOverride}
               onChange={e => setLocationOverride(e.target.value)}
               placeholder={ipGuess ? `Correct the IP guess (${ipGuess})…` : 'Set a location…'}
               maxLength={120}
-              className="w-full rounded-lg border border-white/10 bg-white/[0.05] px-3 py-2 text-sm text-white placeholder:text-white/55 outline-none focus:border-accent/60 focus:bg-white/[0.08] transition"
+              className="w-full rounded-lg border border-white/10 bg-white/[0.05] px-3 py-2 text-sm text-white placeholder:text-white/70 outline-none focus:border-accent/60 focus:bg-white/[0.08] transition"
             />
-            <p className="mt-1 text-[10px] text-white/65">
+            <p className="mt-1 text-[10px] text-white/80">
               Overrides IP geolocation, which is approximate and can be off by hundreds of miles. Clear to fall back to the IP guess.
             </p>
 
-            <p className="mb-1.5 mt-4 text-[10px] font-semibold uppercase tracking-wider text-white/50">Notes</p>
+            <p className="mb-1.5 mt-4 text-[10px] font-semibold uppercase tracking-wider text-white/65">Notes</p>
             <textarea
               value={notes}
               onChange={e => setNotes(e.target.value)}
               placeholder="Add private notes about this visitor…"
               rows={3}
-              className="w-full resize-y rounded-lg border border-white/10 bg-white/[0.05] px-3 py-2 text-sm text-white placeholder:text-white/55 outline-none focus:border-accent/60 focus:bg-white/[0.08] transition"
+              className="w-full resize-y rounded-lg border border-white/10 bg-white/[0.05] px-3 py-2 text-sm text-white placeholder:text-white/70 outline-none focus:border-accent/60 focus:bg-white/[0.08] transition"
             />
             <div className="mt-2 flex items-center justify-end gap-2">
               {/* `error`, not a tinted neutral: this wipes the visitor, their
@@ -115,7 +115,7 @@ export default function VisitorDetail({ id, onClose, onDeleted, onSaved }: Visit
                 size="sm"
                 onClick={saveDetails}
                 disabled={saving}
-                leftIcon={<Check strokeWidth={2.5} aria-hidden="true" />}
+                leftIcon={<Save strokeWidth={2.5} aria-hidden="true" />}
               >
                 {saving ? 'Saving…' : 'Save'}
               </Button>

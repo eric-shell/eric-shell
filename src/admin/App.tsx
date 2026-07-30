@@ -25,7 +25,7 @@ export default function App() {
       <div className="relative">
         <Toaster />
         {authed === null ? (
-          <div className="flex min-h-screen items-center justify-center text-white/50 text-sm">Loading…</div>
+          <div className="flex min-h-screen items-center justify-center text-white/65 text-sm">Loading…</div>
         ) : authed ? (
           <Dashboard onLogout={() => setAuthed(false)} />
         ) : (

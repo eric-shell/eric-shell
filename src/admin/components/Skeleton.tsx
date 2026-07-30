@@ -26,7 +26,7 @@ export function VisitorTableSkeleton({ rows = 6 }: { rows?: number }) {
   return (
     <table className="w-full table-fixed text-sm animate-pulse">
       <thead>
-        <tr className="border-b border-white/10 text-left text-xs uppercase tracking-wide text-white/50">
+        <tr className="border-b border-white/10 text-left text-xs uppercase tracking-wide text-white/65">
           <th className="py-2 px-4 font-semibold w-28">Visitor</th>
           <th className="py-2 pr-4 font-semibold w-36">Last seen</th>
           <th className="py-2 pr-4 font-semibold w-36">Name</th>

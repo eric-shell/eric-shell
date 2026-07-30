@@ -39,16 +39,16 @@ function StatCard({ label, value, sub, icon: Icon, tone = 'neutral' }: {
           <Icon
             size={11}
             strokeWidth={2.5}
-            className={positive ? 'text-green-400' : 'text-white/60'}
+            className={positive ? 'text-green-400' : 'text-white/75'}
             aria-hidden="true"
           />
         )}
-        <p className="text-[10px] font-semibold uppercase tracking-wide text-white/50">{label}</p>
+        <p className="text-[10px] font-semibold uppercase tracking-wide text-white/65">{label}</p>
       </div>
       {/* Proportional figures, not tabular: tabular-nums makes a value like 121
           look loose at display size. Sans, never the display face. */}
       <p className="mt-1.5 font-sans text-[26px] font-semibold leading-none text-white">{value}</p>
-      <p className={`mt-1 text-xs ${positive ? 'font-medium text-green-400' : 'text-white/70'}`}>{sub}</p>
+      <p className={`mt-1 text-xs ${positive ? 'font-medium text-green-400' : 'text-white/85'}`}>{sub}</p>
     </Panel>
   )
 }
@@ -158,12 +158,12 @@ export default function Dashboard({ onLogout }: DashboardProps) {
     <div className="mx-auto flex max-w-6xl flex-col gap-6 px-6 py-10">
       <header className="flex flex-wrap items-end justify-between gap-4">
         <div className="flex flex-col gap-1">
-          <Eyebrow className="text-white/70">eric.sh</Eyebrow>
+          <Eyebrow className="text-white/85">eric.sh</Eyebrow>
           <H2 className="text-white">CRM</H2>
         </div>
         <div className="flex items-center gap-2">
           {lastLoaded && (
-            <span className="flex items-center gap-1.5 pr-1 text-xs text-white/85">
+            <span className="flex items-center gap-1.5 pr-1 text-xs text-white/90">
               {/* Quietly signals the auto-refresh is alive. */}
               <span className={`h-1.5 w-1.5 rounded-full ${loading ? 'bg-accent animate-pulse' : 'bg-green-400/70'}`} />
               {lastLoaded.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
@@ -233,13 +233,13 @@ export default function Dashboard({ onLogout }: DashboardProps) {
 
       {/* Search */}
       <div className="relative">
-        <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-white/55 pointer-events-none" />
+        <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-white/70 pointer-events-none" />
         <input
           type="search"
           value={query}
           onChange={e => setQuery(e.target.value)}
           placeholder="Search by name, email, or visitor ID…"
-          className="w-full rounded-xl border border-white/10 bg-white/[0.04] py-2.5 pl-9 pr-4 text-sm text-white placeholder:text-white/55 outline-none transition focus:border-accent/60 focus:bg-white/[0.07] focus:shadow-[0_0_0_3px_color-mix(in_oklch,var(--color-accent)_22%,transparent)]"
+          className="w-full rounded-xl border border-white/10 bg-white/[0.04] py-2.5 pl-9 pr-4 text-sm text-white placeholder:text-white/70 outline-none transition focus:border-accent/60 focus:bg-white/[0.07] focus:shadow-[0_0_0_3px_color-mix(in_oklch,var(--color-accent)_22%,transparent)]"
         />
       </div>
 
@@ -254,7 +254,7 @@ export default function Dashboard({ onLogout }: DashboardProps) {
         {filteredVisitors === null ? (
           <VisitorTableSkeleton />
         ) : filteredVisitors.length === 0 ? (
-          <p className="text-sm text-white/50">
+          <p className="text-sm text-white/65">
             {q ? 'No visitors match your search.' : 'No visitors yet.'}
           </p>
         ) : (

@@ -27,7 +27,7 @@ function shortId(id: string) {
  * /45 measured 4.35:1, just under the 4.5:1 text threshold. /50 is 5.04:1.
  */
 function Dash() {
-  return <span className="text-white/50">—</span>
+  return <span className="text-white/65">—</span>
 }
 
 export default function VisitorList({ visitors, onVisitorDeleted }: VisitorListProps) {
@@ -86,7 +86,7 @@ export default function VisitorList({ visitors, onVisitorDeleted }: VisitorListP
       <div className="overflow-x-auto">
       <table className="w-full min-w-[54rem] table-fixed text-sm">
         <thead>
-          <tr className="border-b border-white/10 text-left text-xs uppercase tracking-wide text-white/70">
+          <tr className="border-b border-white/10 text-left text-xs uppercase tracking-wide text-white/85">
             <th className="py-2 px-4 font-semibold w-40">Visitor</th>
             <th className="py-2 pr-4 font-semibold w-36">Last seen</th>
             {/* Location takes the spare width, not Contact: most visitors are
@@ -112,15 +112,15 @@ export default function VisitorList({ visitors, onVisitorDeleted }: VisitorListP
                   onClick={() => setSelectedId(isOpen ? null : v.id)}
                   className={twMerge(
                     'cursor-pointer border-b border-white/5 transition-colors',
-                    isOpen ? 'bg-white/[0.07]' : 'hover:bg-white/[0.035]'
+                    isOpen ? 'bg-black/[0.65]' : 'hover:bg-black/[0.15]'
                   )}
                 >
                   <td className="py-3 px-4 align-top">
-                    <div className="truncate font-mono text-xs font-semibold text-white/90">{shortId(v.id)}</div>
+                    <div className="truncate font-mono text-xs font-semibold text-white/95">{shortId(v.id)}</div>
                     <VisitorTags tags={tags} />
                   </td>
-                  <td className="py-3 pr-4 text-white/70">{formatShort(v.last_activity_at)}</td>
-                  <td className="py-3 pr-4 text-white/80 truncate">
+                  <td className="py-3 pr-4 text-white/85">{formatShort(v.last_activity_at)}</td>
+                  <td className="py-3 pr-4 text-white/90 truncate">
                     {location.label
                       ? <span title={location.approximate
                           ? 'Approximate — from IP geolocation'
@@ -129,7 +129,7 @@ export default function VisitorList({ visitors, onVisitorDeleted }: VisitorListP
                           {/* Nearly every location is IP-derived, so marking the
                               exception reads far quieter than marking the rule. */}
                           {!location.approximate && (
-                            <Check size={11} className="ml-1 inline-block align-[-1px] text-white/65" aria-label="corrected" />
+                            <Check size={11} className="ml-1 inline-block align-[-1px] text-white/80" aria-label="corrected" />
                           )}
                         </span>
                       : <Dash />}
@@ -141,10 +141,10 @@ export default function VisitorList({ visitors, onVisitorDeleted }: VisitorListP
                     {v.contact_name || v.contact_email ? (
                       <div className="min-w-0">
                         {v.contact_name && (
-                          <div className="truncate font-semibold text-white/90">{v.contact_name}</div>
+                          <div className="truncate font-semibold text-white/95">{v.contact_name}</div>
                         )}
                         {v.contact_email && (
-                          <div className="truncate text-xs text-white/60">{v.contact_email}</div>
+                          <div className="truncate text-xs text-white/75">{v.contact_email}</div>
                         )}
                       </div>
                     ) : <Dash />}
@@ -156,7 +156,7 @@ export default function VisitorList({ visitors, onVisitorDeleted }: VisitorListP
                           {v.page_view_count} {v.page_view_count === 1 ? 'view' : 'views'}
                         </div>
                         {v.total_engaged_ms > 0 && (
-                          <div className="text-xs text-white/60">{formatDuration(v.total_engaged_ms)}</div>
+                          <div className="text-xs text-white/75">{formatDuration(v.total_engaged_ms)}</div>
                         )}
                       </div>
                     ) : <Dash />}
@@ -199,7 +199,7 @@ export default function VisitorList({ visitors, onVisitorDeleted }: VisitorListP
 
       {totalPages > 1 && (
         <div className="mt-4 flex items-center justify-between">
-          <p className="text-xs text-white/50">
+          <p className="text-xs text-white/65">
             Showing {rangeStart}–{rangeEnd} of {visitors.length}
           </p>
           <div className="flex gap-1">
