@@ -24,6 +24,16 @@
   --color-black: oklch(0.107 0.011 266.51);
 
   /*
+   * Hover steps for blue-600/700. Same lightness as the ramp step each one
+   * shadows, chroma raised to 97% of the sRGB ceiling at that L — the ramp
+   * itself only varies lightness, which is the one axis a hover must not move
+   * (see the status-fill note below for the derivation). Consumed by the
+   * `primary` gradient's hover and by `info`.
+   */
+  --color-blue-600-vivid: oklch(0.546 0.107 231.50);
+  --color-blue-700-vivid: oklch(0.497 0.098 232.07);
+
+  /*
    * Accent — same hue family as the blue ramp, pushed to a chroma that actually
    * reads as colour. Every step of blue-50..950 sits below the dataviz chroma
    * floor (blue-600 is 0.091) and "reads gray" as a data mark, which is exactly
@@ -40,9 +50,9 @@
   --color-accent-deep:  oklch(0.450 0.130 240.00);
 
   /*
-   * Semantic status fills for the `info` / `success` / `warning` / `error`
-   * button variants. (`info`'s resting fill has no token — it is blue-600
-   * straight off the primary ramp. Only its hover needs one; see below.)
+   * Semantic status fills for the `success` / `warning` / `error` button
+   * variants. (`info` needs no token of its own: it is blue-600 at rest and
+   * blue-600-vivid on hover, both defined above with the ramp.)
    *
    * Derived from the primary blue rather than solved per-hue, so the four
    * status variants read as one family. Both axes are locked:
@@ -74,9 +84,13 @@
    * So L is frozen and hover pushes chroma to 97% of the ceiling instead. The
    * button gains saturation rather than depth — it reads as "lit up" on a
    * light canvas and on a dark one alike, and every contrast figure stays put
-   * (the largest swing across all four is 0.05). This is also why `info`'s
-   * hover cannot be blue-700: the ramp only varies lightness, which is the
-   * one axis that must not move here.
+   * (the largest swing across all four is 0.05).
+   *
+   * `primary` is fixed the same way and for the same reason — it used to hover
+   * to blue-800/blue-900, which is 1.90:1 and 1.25:1 against the dark canvas,
+   * and primary is the documented dark-canvas CTA. It now hovers to the
+   * `-vivid` steps above. That is also why neither it nor `info` can simply
+   * hover one step down the ramp: the ramp only varies lightness.
    *
    * All four clear the three gates in BOTH states, verified:
    *
@@ -93,7 +107,6 @@
    * higher L, which would drop the white label below AA. Do not "fix" it by
    * raising L alone.
    */
-  --color-info-hover:     oklch(0.546 0.107 231.50);
   --color-success:        oklch(0.546 0.141 145.00);
   --color-success-hover:  oklch(0.546 0.167 145.00);
   --color-warning:        oklch(0.546 0.095 75.00);

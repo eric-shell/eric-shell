@@ -76,7 +76,10 @@ export const SURFACE_ICON: Record<Variant, string> = {
 }
 
 export const SURFACE_ICON_HOVER: Record<Variant, string> = {
-  primary:   'group-hover:bg-blue-950/35',
+  // /45 rather than /35, for the same reason as the status variants below:
+  // primary's surface now holds its lightness on hover, so the slab is what
+  // supplies the sense of depth.
+  primary:   'group-hover:bg-blue-950/45',
   secondary: 'group-hover:bg-blue-950/20',
   ghost:     'group-hover:bg-blue-950/10',
   'glass-light': 'group-hover:bg-blue-950/25',
@@ -95,10 +98,37 @@ export const SURFACE_ICON_HOVER: Record<Variant, string> = {
   error:     'group-hover:bg-blue-950/45',
 }
 
+/** Strengthened top highlight + inset hairline ring, shared by every fill that
+ *  holds its lightness on hover. Inset, so it reads against the fill rather
+ *  than the canvas and behaves the same on light and dark. */
+const HOVER_LIFT =
+  'hover:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.40),inset_0_0_0_1px_rgba(255,255,255,0.22)]'
+
 export const SURFACE_HOVER: Record<Variant, string> = {
-  primary:   'hover:from-blue-800 hover:to-blue-900',
+  /**
+   * Gains chroma at a fixed lightness rather than darkening. The old hover
+   * (blue-800 -> blue-900) was a light-canvas idiom, but `primary` is also the
+   * dark-canvas CTA: against blue-950 it fell to 1.90:1 and 1.25:1, so the
+   * button dissolved into the panel behind it at the moment it was pointed at.
+   * The `-vivid` steps hold blue-600/700's lightness, keeping the boundary at
+   * 3.76:1 / 3.05:1 while still reading as a clear state change.
+   */
+  primary:   `hover:from-blue-600-vivid hover:to-blue-700-vivid ${HOVER_LIFT}`,
+  /**
+   * Left inverting on purpose. Unlike primary this one does not have the
+   * contrast bug — going white -> blue-600 takes its boundary against the light
+   * canvas from 1.14:1 up to 4.85:1, so the hover is what makes it legible.
+   * Worth knowing before you put the two side by side: the hovered state is
+   * exactly primary's *resting* fill, so hovering a secondary "Cancel" next to
+   * a primary "Save" makes the two momentarily identical. That is a
+   * variant-identity question rather than a contrast one, so it is left as is
+   * — but it is the reason to avoid pairing them in a single button row.
+   */
   secondary: 'hover:text-white hover:from-blue-600 hover:to-blue-700',
-  ghost:     'hover:text-blue-950',
+  /** Tertiary. The text shift alone is the state (4.76:1 -> 18.20:1, both AA);
+   *  the wash just gives the hit area a visible edge without adding a fill that
+   *  would cost it its "barely there" character. */
+  ghost:     'hover:text-blue-950 hover:bg-blue-950/6',
   'glass-light': 'hover:bg-blue-950/50 hover:border-blue-950/20',
   'glass-dark':  'hover:bg-blue-950/50 hover:border-blue-950/20',
   'error-glass':   'hover:bg-red-700/40 hover:border-red-300/60',
@@ -113,8 +143,8 @@ export const SURFACE_HOVER: Record<Variant, string> = {
    * (no `leftIcon`/`rightIcon`, `iconSlab={false}`, or `shape="square"`).
    * Inset, so it reads against the fill and behaves the same on either canvas.
    */
-  info:      'hover:bg-info-hover hover:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.40),inset_0_0_0_1px_rgba(255,255,255,0.22)]',
-  success:   'hover:bg-success-hover hover:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.40),inset_0_0_0_1px_rgba(255,255,255,0.22)]',
-  warning:   'hover:bg-warning-hover hover:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.40),inset_0_0_0_1px_rgba(255,255,255,0.22)]',
-  error:     'hover:bg-error-hover hover:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.40),inset_0_0_0_1px_rgba(255,255,255,0.22)]',
+  info:      `hover:bg-blue-600-vivid ${HOVER_LIFT}`,
+  success:   `hover:bg-success-hover ${HOVER_LIFT}`,
+  warning:   `hover:bg-warning-hover ${HOVER_LIFT}`,
+  error:     `hover:bg-error-hover ${HOVER_LIFT}`,
 }

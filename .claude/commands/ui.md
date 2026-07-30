@@ -18,12 +18,28 @@ type Variant =
   | 'error-glass'   // glass-blur + red-950/85 tint + red-400/50 border + white text  (Toast error state)
   | 'success-glass' // glass-blur + green-950/85 tint + green-400/50 border + white text (Toast success state)
   | 'white'         // solid white, blue-950/10 border, blue-950 text — Card, inactive Pill
+  | 'raised-dark'   // white/5.5 fill + white/10 border — raised surface on a dark canvas, no blur (admin CRM)
+  | 'info'          // solid blue-600, white text — neutral/informational status
+  | 'success'       // solid green fill, white text
+  | 'warning'       // solid bronze fill, white text
+  | 'error'         // solid red fill, white text — destructive actions
 ```
 
-Each variant has two exported tokens:
+Each variant has up to four exported tokens:
 
 - `SURFACE[variant]` — background + border + text color. Static surface styling.
-- `SURFACE_HOVER[variant]` — hover transition (e.g. `hover:from-blue-800 hover:to-blue-900`). Opt-in; a Panel does not apply hover by default, Button always does.
+- `SURFACE_HOVER[variant]` — hover transition (e.g. `hover:from-blue-600-vivid`). Opt-in; a Panel does not apply hover by default, Button always does.
+- `SURFACE_ICON[variant]` / `SURFACE_ICON_HOVER[variant]` — the translucent slab behind a Button's `leftIcon`/`rightIcon`. Alpha-only, so it tracks whatever the surface beneath it is doing.
+
+### The hover rule
+
+**Hover moves chroma, not lightness.** `primary` and the four status variants hold their fill's OKLCH lightness across rest and hover and raise chroma to ~97% of the sRGB ceiling instead. Darkening on hover is a light-canvas idiom, and these variants land on both canvases — the old `primary` hover fell to 1.25:1 against the dark admin canvas, dissolving into the panel exactly when pointed at. Lightening fails the other way, dropping the white label below AA. Both accessibility gates are functions of lightness and pull in opposite directions, so lightness is the one axis a hover must not touch.
+
+Consequences worth knowing:
+
+- Neither `primary` nor `info` can hover one step down the ramp — the blue ramp only varies lightness. That is what `--color-blue-600-vivid` / `--color-blue-700-vivid` exist for.
+- Because the surface no longer supplies depth, these variants deepen their icon slab further (`/45` vs `/35`) and add an inset hairline ring on hover. The ring is what gives a hover cue to buttons the slab cannot reach — no icons, `iconSlab={false}`, or `shape="square"`.
+- `secondary` is exempt: it inverts white → blue-600 on hover, which *raises* its boundary against the light canvas from 1.14:1 to 4.85:1. Note that its hovered state equals `primary`'s resting fill, so avoid pairing the two in one button row.
 
 Pick a variant by **intent + surrounding surface**, not by color name:
 
@@ -32,6 +48,8 @@ Pick a variant by **intent + surrounding surface**, not by color name:
 - Is the primary call-to-action → `primary` (blue gradient fill).
 - Inactive chip / tag → `white`; active chip → `primary` (this is how `Pill` picks).
 - Toast feedback → `error-glass` / `success-glass` (and plain `glass-*` for info).
+- Carries status rather than emphasis → `info` / `success` / `warning` / `error`. Reach for `primary` for a CTA; `info` is the same blue but means "informational", not "main action here".
+- Sits on the admin's dark canvas → `raised-dark` for surfaces, `primary` for CTAs.
 
 ---
 
