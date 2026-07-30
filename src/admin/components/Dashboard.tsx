@@ -175,7 +175,7 @@ export default function Dashboard({ onLogout }: DashboardProps) {
               looked like plain inline icons. No `size` needed: the CSS variable
               beats lucide's width/height attributes. */}
           <Button
-            variant="accent-dark" size="sm" onClick={load} disabled={loading}
+            variant="primary" size="sm" onClick={load} disabled={loading}
             leftIcon={<RefreshCw className={loading ? 'animate-spin' : ''} aria-hidden="true" />}
           >
             Refresh

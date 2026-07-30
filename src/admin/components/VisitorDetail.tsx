@@ -108,7 +108,7 @@ export default function VisitorDetail({ id, onClose, onDeleted, onSaved }: Visit
               >
                 {deleting ? 'Deleting…' : 'Delete visitor data'}
               </Button>
-              <Button variant="accent-dark" size="sm" onClick={saveDetails} disabled={saving}>
+              <Button variant="primary" size="sm" onClick={saveDetails} disabled={saving}>
                 {saving ? 'Saving…' : 'Save'}
               </Button>
             </div>

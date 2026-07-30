@@ -29,12 +29,14 @@
    * floor (blue-600 is 0.091) and "reads gray" as a data mark, which is exactly
    * why charts drawn from the ramp looked washed out.
    *
-   * Used by the admin CRM only — the public site keeps the muted ramp. Dark ink
-   * on `accent` is 7.71:1; white ink on it is 2.36:1, so never set white text
-   * on this. As a mark against the blue-950 canvas it is 7.71:1.
+   * Used by the admin CRM only — the public site keeps the muted ramp.
+   *
+   * NON-TEXT USES ONLY: chart marks, focus rings, the active-tab underline. As a
+   * mark against the blue-950 canvas it is 7.71:1. Do NOT put white text on it
+   * (2.36:1) — an `accent-dark` button variant tried and was removed. A CTA on
+   * the dark canvas uses `primary`, which clears AA in every state.
    */
   --color-accent:       oklch(0.720 0.150 225.00);
-  --color-accent-light: oklch(0.760 0.150 222.00);
   --color-accent-deep:  oklch(0.450 0.130 240.00);
 
   --color-red-50:  oklch(0.965 0.014 25.00);

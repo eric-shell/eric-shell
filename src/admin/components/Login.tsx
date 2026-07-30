@@ -44,7 +44,7 @@ export default function Login({ onSuccess }: LoginProps) {
             autoFocus
             disabled={submitting}
           />
-          <Button type="submit" variant="accent-dark" disabled={submitting || !password} className="self-end">
+          <Button type="submit" variant="primary" disabled={submitting || !password} className="self-end">
             {submitting ? 'Signing in…' : 'Sign in'}
           </Button>
         </form>
