@@ -1,5 +1,8 @@
 import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { Check, ChevronDown, ChevronLeft, ChevronRight, ChevronUp, MailCheck, MessageSquare } from 'lucide-react'
+import {
+  ArrowDownWideNarrow, ArrowUpNarrowWide, Check, ChevronDown, ChevronLeft,
+  ChevronRight, ChevronUp, MailCheck, MessageSquare,
+} from 'lucide-react'
 import VisitorDetail from './VisitorDetail'
 import { Button } from '../../components/ui'
 import { twMerge } from 'tailwind-merge'
@@ -137,33 +140,42 @@ function MobileList({
   const dirLabel = sort.dir === 'asc' ? 'ascending' : 'descending'
   return (
     <div className="md:hidden">
-      <div className="mb-3 flex items-center gap-2">
-        <label htmlFor="visitor-sort" className="shrink-0 text-[10px] font-semibold uppercase tracking-wide text-white/75">
-          Sort
+      <div className="mb-3 flex flex-col gap-1.5">
+        <label htmlFor="visitor-sort" className="text-[10px] font-semibold uppercase tracking-wide text-white/75">
+          Sort by
         </label>
-        <select
-          id="visitor-sort"
-          value={sort.key}
-          onChange={e => onSort(e.target.value as SortKey)}
-          className="min-w-0 flex-1 rounded-lg border border-white/10 bg-white/[0.05] px-2.5 py-2 text-sm text-white outline-none focus:border-accent/60"
-        >
-          {(Object.keys(SORT_LABEL) as SortKey[]).map(k => (
-            // Native option lists can't be styled on Android, so give them an
-            // explicit dark background rather than inheriting white-on-white.
-            <option key={k} value={k} className="bg-blue-950 text-white">
-              {SORT_LABEL[k]}
-            </option>
-          ))}
-        </select>
-        <button
-          type="button"
-          onClick={() => onSort(sort.key)}
-          aria-label={`Sort ${dirLabel}, tap to reverse`}
-          title={`Sorted ${dirLabel}`}
-          className="flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-lg border border-white/10 bg-white/[0.05] text-white/90 transition-colors hover:bg-white/[0.09]"
-        >
-          {sort.dir === 'asc' ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
-        </button>
+        <div className="flex items-stretch gap-2">
+          <select
+            id="visitor-sort"
+            value={sort.key}
+            onChange={e => onSort(e.target.value as SortKey)}
+            className="min-w-0 flex-1 rounded-lg border border-white/10 bg-white/[0.05] px-2.5 py-2 text-sm text-white outline-none focus:border-accent/60"
+          >
+            {(Object.keys(SORT_LABEL) as SortKey[]).map(k => (
+              // Native option lists can't be styled on Android, so give them an
+              // explicit dark background rather than inheriting white-on-white.
+              <option key={k} value={k} className="bg-blue-950 text-white">
+                {SORT_LABEL[k]}
+              </option>
+            ))}
+          </select>
+          {/* Directional arrows, not a chevron. The native select draws its own
+              chevron immediately to the left, and two chevrons side by side read
+              as two dropdowns rather than a select plus a direction toggle. The
+              word carries it too, so the control never depends on the glyph. */}
+          <button
+            type="button"
+            onClick={() => onSort(sort.key)}
+            aria-label={`Sorted ${dirLabel}. Activate to reverse.`}
+            title={`Sorted ${dirLabel} — tap to reverse`}
+            className="flex shrink-0 cursor-pointer items-center gap-1.5 rounded-lg border border-white/10 bg-white/[0.05] px-2.5 text-xs font-semibold text-white/90 transition-colors hover:bg-white/[0.09]"
+          >
+            {sort.dir === 'asc'
+              ? <ArrowUpNarrowWide size={15} aria-hidden="true" />
+              : <ArrowDownWideNarrow size={15} aria-hidden="true" />}
+            {sort.dir === 'asc' ? 'Asc' : 'Desc'}
+          </button>
+        </div>
       </div>
 
       <ul className="flex flex-col gap-2">

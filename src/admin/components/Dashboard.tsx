@@ -3,7 +3,7 @@ import {
   type LucideIcon, LogOut, MailCheck, MessageSquare, MousePointer2,
   RefreshCw, Search, Users, X,
 } from 'lucide-react'
-import { Button, Eyebrow, H2, Panel } from '../../components/ui'
+import { Button, Container, Eyebrow, H2, Panel } from '../../components/ui'
 import VisitorList from './VisitorList'
 import VisitorsChart from './VisitorsChart'
 import { MetricsRowSkeleton, Skeleton, VisitorTableSkeleton } from './Skeleton'
@@ -168,7 +168,7 @@ export default function Dashboard({ onLogout }: DashboardProps) {
   const totalEngagedMs = visitors?.reduce((s, v) => s + v.total_engaged_ms, 0) ?? 0
 
   return (
-    <div className="mx-auto flex max-w-6xl flex-col gap-4 px-4 py-6 sm:gap-6 sm:px-6 sm:py-10">
+    <Container className="flex flex-col gap-4 px-4 py-6 sm:gap-6 sm:px-6 sm:py-10">
       <header className="flex flex-wrap items-end justify-between gap-4">
         <div className="flex flex-col gap-1">
           <Eyebrow className="text-white/85">eric.sh</Eyebrow>
@@ -201,10 +201,16 @@ export default function Dashboard({ onLogout }: DashboardProps) {
 
       {/* Metrics row. On a phone the five tiles cannot sit on one line — they
           forced the document wider than the viewport, so the browser zoomed the
-          whole page out to fit. Two-up grid instead, chart full-width below.
-          Min-height only applies once it is a row; in the grid each cell sizes
-          to its own content. */}
-      <div className="grid grid-cols-2 gap-3 sm:flex sm:items-stretch sm:min-h-[116px]">
+          whole page out to fit.
+          Two-up on a phone, four-up once there is room, and the chart only
+          joins the row at `xl`. `lg` is nearer 1100px numerically, but it puts
+          the plot at ~446px — narrower than the ~522px that prompted this — so
+          it would not have fixed anything. At `xl` the inline plot is ~702px,
+          and every width below that gets the full-width stacked version, which
+          is always wider than the inline one would have been.
+          Min-height applies once it is a row; in the grid each cell sizes to
+          its own content. */}
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-4 xl:flex xl:items-stretch xl:min-h-[116px]">
         {visitors === null ? (
           <MetricsRowSkeleton />
         ) : (
@@ -231,7 +237,7 @@ export default function Dashboard({ onLogout }: DashboardProps) {
               icon={MailCheck}
               tone="positive"
             />
-            <Panel variant="raised-dark" className="col-span-2 min-h-[116px] rounded-2xl p-4 sm:col-span-1 sm:flex-1">
+            <Panel variant="raised-dark" className="col-span-2 min-h-[116px] rounded-2xl p-4 md:col-span-4 xl:col-span-1 xl:flex-1">
               {stats
                 ? <VisitorsChart days={stats} />
                 : <Skeleton className="h-full w-full min-h-[48px]" />}
@@ -297,6 +303,6 @@ export default function Dashboard({ onLogout }: DashboardProps) {
           )}
         </div>
       </Panel>
-    </div>
+    </Container>
   )
 }
