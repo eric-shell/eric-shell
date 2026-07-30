@@ -3,7 +3,21 @@ import { getVisitorId } from './visitorId'
 const SESSION_KEY = 'eric.sh:sess'
 /** Inactivity gap that rolls a visit over into a new session (GA4 uses 30min). */
 const SESSION_TIMEOUT_MS = 30 * 60 * 1000
-const HEARTBEAT_MS = 20_000
+
+/**
+ * Escalating heartbeat schedule, in ms since the last beat.
+ *
+ * A fixed 20s beat sent ~180 requests/hour for a single open tab — each one a
+ * serverless invocation, a Postgres write, and an Upstash command, to record a
+ * number that the `pagehide` / `visibilitychange` flush captures anyway.
+ * Periodic beats exist only to bound data loss when those events never fire
+ * (notoriously, mobile Safari), so they back off hard: dense early, when a
+ * visitor is most likely to leave, then sparse.
+ *
+ * Cumulatively: 15s, 45s, 1m45, 3m45, 8m45, then every 5 minutes. An hour-long
+ * session costs 15 beats instead of 180.
+ */
+const HEARTBEAT_SCHEDULE_MS = [15_000, 30_000, 60_000, 120_000, 300_000]
 
 interface StoredSession {
   id: string
@@ -141,6 +155,25 @@ export function initTelemetry() {
     if (!visible) flush(true)
   })
 
-  setInterval(() => flush(false), HEARTBEAT_MS)
-  window.addEventListener('pagehide', () => flush(true))
+  // setTimeout chain rather than setInterval, so the gap can grow. A hidden tab
+  // stops scheduling entirely — it accrues no engaged time, so every beat it
+  // would send is a guaranteed no-op write.
+  let beat = 0
+  let timer: ReturnType<typeof setTimeout> | undefined
+
+  function schedule() {
+    clearTimeout(timer)
+    const delay = HEARTBEAT_SCHEDULE_MS[Math.min(beat, HEARTBEAT_SCHEDULE_MS.length - 1)]
+    timer = setTimeout(() => {
+      beat++
+      if (visible) flush(false)
+      schedule()
+    }, delay)
+  }
+  schedule()
+
+  window.addEventListener('pagehide', () => {
+    clearTimeout(timer)
+    flush(true)
+  })
 }

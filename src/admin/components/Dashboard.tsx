@@ -19,7 +19,7 @@ import type { StatDay, StatsPayload, VisitorListPayload, VisitorSummary } from '
  *
  * `tone` marks a genuine signal, never decoration: `positive` is only for a
  * conversion. Semantic color always ships with an icon so it is never
- * color-alone. green-700 is 5.96:1 on white — AA text.
+ * color-alone. green-400 is 7.04:1 on the blue-950 canvas — AA text.
  */
 function StatCard({ label, value, sub, icon: Icon, tone = 'neutral' }: {
   label: string
@@ -31,27 +31,31 @@ function StatCard({ label, value, sub, icon: Icon, tone = 'neutral' }: {
   const positive = tone === 'positive' && value !== 0
   return (
     <Panel
-      variant="white"
-      className="group relative flex min-w-[120px] flex-col justify-between overflow-hidden rounded-2xl p-4 shadow-sm ring-1 ring-blue-950/4 transition-shadow hover:shadow-md"
+      variant="raised-dark"
+      className="group relative flex min-w-[120px] flex-col justify-between overflow-hidden rounded-2xl p-4 shadow-sm transition-shadow hover:shadow-md"
     >
       <div className="flex items-center gap-1.5">
         {Icon && (
           <Icon
             size={11}
             strokeWidth={2.5}
-            className={positive ? 'text-green-700' : 'text-blue-950/35'}
+            className={positive ? 'text-green-400' : 'text-white/35'}
             aria-hidden="true"
           />
         )}
-        <p className="text-[10px] font-semibold uppercase tracking-wide text-blue-950/50">{label}</p>
+        <p className="text-[10px] font-semibold uppercase tracking-wide text-white/50">{label}</p>
       </div>
       {/* Proportional figures, not tabular: tabular-nums makes a value like 121
           look loose at display size. Sans, never the display face. */}
-      <p className="mt-1.5 font-sans text-[26px] font-semibold leading-none text-blue-950">{value}</p>
-      <p className={`mt-1 text-xs ${positive ? 'font-medium text-green-700' : 'text-blue-950/45'}`}>{sub}</p>
+      <p className="mt-1.5 font-sans text-[26px] font-semibold leading-none text-white">{value}</p>
+      <p className={`mt-1 text-xs ${positive ? 'font-medium text-green-400' : 'text-white/45'}`}>{sub}</p>
     </Panel>
   )
 }
+
+// 60s was pure habit. The visitor list is not a live feed — two minutes is
+// indistinguishable in use and halves the query volume of an open tab.
+const POLL_MS = 120_000
 
 interface DashboardProps {
   onLogout: () => void
@@ -91,9 +95,40 @@ export default function Dashboard({ onLogout }: DashboardProps) {
 
   useEffect(() => { fetchData() }, [fetchData])
 
+  // Poll only while the tab is actually visible.
+  //
+  // Neon bills compute-hours and autosuspends an idle endpoint. A dashboard tab
+  // left open in the background used to fire two aggregate queries every 60s
+  // forever, which pinned the compute awake around the clock — by far the
+  // largest recurring cost in this stack, and for data nobody was looking at.
+  // Refetch once on becoming visible so it still feels live.
   useEffect(() => {
-    const id = setInterval(load, 60_000)
-    return () => clearInterval(id)
+    let id: ReturnType<typeof setInterval> | undefined
+
+    const start = () => {
+      if (id !== undefined) return
+      id = setInterval(load, POLL_MS)
+    }
+    const stop = () => {
+      if (id === undefined) return
+      clearInterval(id)
+      id = undefined
+    }
+    const onVisibility = () => {
+      if (document.visibilityState === 'visible') {
+        load()
+        start()
+      } else {
+        stop()
+      }
+    }
+
+    if (document.visibilityState === 'visible') start()
+    document.addEventListener('visibilitychange', onVisibility)
+    return () => {
+      stop()
+      document.removeEventListener('visibilitychange', onVisibility)
+    }
   }, [load])
 
   async function logout() {
@@ -123,20 +158,37 @@ export default function Dashboard({ onLogout }: DashboardProps) {
     <div className="mx-auto flex max-w-6xl flex-col gap-6 px-6 py-10">
       <header className="flex flex-wrap items-end justify-between gap-4">
         <div className="flex flex-col gap-1">
-          <Eyebrow className="text-blue-950/45">eric.sh</Eyebrow>
-          <H2 className="text-blue-950">CRM</H2>
+          <Eyebrow className="text-white/45">eric.sh</Eyebrow>
+          <H2 className="text-white">CRM</H2>
         </div>
         <div className="flex items-center gap-2">
           {lastLoaded && (
-            <span className="flex items-center gap-1.5 pr-1 text-xs text-blue-950/55">
-              {/* Quietly signals the 60s auto-refresh is alive. */}
-              <span className={`h-1.5 w-1.5 rounded-full ${loading ? 'bg-blue-600 animate-pulse' : 'bg-green-700/60'}`} />
+            <span className="flex items-center gap-1.5 pr-1 text-xs text-white/55">
+              {/* Quietly signals the auto-refresh is alive. */}
+              <span className={`h-1.5 w-1.5 rounded-full ${loading ? 'bg-accent animate-pulse' : 'bg-green-400/70'}`} />
               {lastLoaded.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
             </span>
           )}
-          <Button variant="primary" size="sm" onClick={load} disabled={loading}><RefreshCw size={14} className={loading ? 'animate-spin' : ''} />Refresh</Button>
-          <Button variant="white" size="sm" href={window.location.origin} target="_blank"><ExternalLink size={14} />Visit Website</Button>
-          <Button variant="white" size="sm" onClick={logout}><LogOut size={14} />Sign out</Button>
+          {/* Icons go through leftIcon, not children — that is what renders the
+              full-height tinted slab and applies `icon-optical` sizing. Passing
+              them as children silently opts out of both, which is why these
+              looked like plain inline icons. No `size` needed: the CSS variable
+              beats lucide's width/height attributes. */}
+          <Button
+            variant="accent-dark" size="sm" onClick={load} disabled={loading}
+            leftIcon={<RefreshCw className={loading ? 'animate-spin' : ''} aria-hidden="true" />}
+          >
+            Refresh
+          </Button>
+          <Button
+            variant="raised-dark" size="sm" href={window.location.origin} target="_blank"
+            leftIcon={<ExternalLink aria-hidden="true" />}
+          >
+            Visit Website
+          </Button>
+          <Button variant="raised-dark" size="sm" onClick={logout} leftIcon={<LogOut aria-hidden="true" />}>
+            Sign out
+          </Button>
         </div>
       </header>
 
@@ -170,7 +222,7 @@ export default function Dashboard({ onLogout }: DashboardProps) {
               icon={MailCheck}
               tone="positive"
             />
-            <Panel variant="white" className="flex-1 rounded-2xl p-4 shadow-sm ring-1 ring-blue-950/4">
+            <Panel variant="raised-dark" className="flex-1 rounded-2xl p-4 ">
               {stats
                 ? <VisitorsChart days={stats} />
                 : <Skeleton className="h-full w-full min-h-[48px]" />}
@@ -181,28 +233,28 @@ export default function Dashboard({ onLogout }: DashboardProps) {
 
       {/* Search */}
       <div className="relative">
-        <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-blue-950/30 pointer-events-none" />
+        <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-white/30 pointer-events-none" />
         <input
           type="search"
           value={query}
           onChange={e => setQuery(e.target.value)}
           placeholder="Search by name, email, or visitor ID…"
-          className="w-full rounded-xl border border-blue-950/10 bg-white py-2.5 pl-9 pr-4 text-sm text-blue-950 shadow-sm placeholder:text-blue-950/30 outline-none transition-shadow focus:border-blue-600/40 focus:shadow-[0_0_0_3px_oklch(0.546_0.091_231.5/0.12)]"
+          className="w-full rounded-xl border border-white/10 bg-white/[0.04] py-2.5 pl-9 pr-4 text-sm text-white placeholder:text-white/30 outline-none transition focus:border-accent/60 focus:bg-white/[0.07] focus:shadow-[0_0_0_3px_color-mix(in_oklch,var(--color-accent)_22%,transparent)]"
         />
       </div>
 
       {/* Hold the previous render at reduced opacity on refetch rather than
           flashing a skeleton — no layout jump. */}
       <Panel
-        variant="white"
-        className={`rounded-2xl p-6 shadow-sm ring-1 ring-blue-950/4 transition-opacity duration-300 ${
+        variant="raised-dark"
+        className={`rounded-2xl p-6 shadow-sm transition-opacity duration-300 ${
           loading && visitors !== null ? 'opacity-40' : 'opacity-100'
         }`}
       >
         {filteredVisitors === null ? (
           <VisitorTableSkeleton />
         ) : filteredVisitors.length === 0 ? (
-          <p className="text-sm text-blue-950/50">
+          <p className="text-sm text-white/50">
             {q ? 'No visitors match your search.' : 'No visitors yet.'}
           </p>
         ) : (

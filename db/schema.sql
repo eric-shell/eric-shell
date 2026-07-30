@@ -94,6 +94,23 @@ create index if not exists page_views_visitor_created_idx
   on page_views (visitor_id, created_at desc);
 create index if not exists page_views_session_idx
   on page_views (session_id);
+-- The admin list aggregates count(*)/max(created_at) per visitor across the
+-- whole table. Without this it plans a seq scan, which is fine at hundreds of
+-- rows and not fine at hundreds of thousands — page_views grows one row per
+-- document load, faster than anything else here.
+create index if not exists page_views_visitor_idx
+  on page_views (visitor_id);
+
+-- RETENTION. Nothing reads page views older than a few months; the admin detail
+-- view caps at 500 rows and the activity chart looks back 30 days. Run this
+-- periodically (Neon SQL editor, or a scheduled job) to keep the table — and
+-- therefore the aggregate scans behind the visitor list — bounded:
+--
+--   delete from page_views where created_at < now() - interval '6 months';
+--   delete from visitor_sessions where last_beat_at < now() - interval '6 months';
+--
+-- Both are safe to run any time: sessions and page views are derived telemetry,
+-- and deleting them never touches a visitor, chat transcript, or submission.
 
 create table if not exists visitor_events (
   id          bigserial primary key,

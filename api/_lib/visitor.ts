@@ -28,22 +28,42 @@ function readGeoHeader(req: VercelRequest, name: string): string | null {
   }
 }
 
+export interface VisitorGeo {
+  userAgent: string | null
+  country: string | null
+  city: string | null
+  region: string | null
+  timezone: string | null
+  referrer: string | null
+}
+
+/**
+ * Pull everything we record off the request headers, without writing.
+ *
+ * Split out from `upsertVisitor` so a caller that is already batching SQL
+ * (see api/track.ts) can inline these values into its own statement instead of
+ * paying for a second round trip.
+ */
+export function readVisitorGeo(req: VercelRequest): VisitorGeo {
+  const ua = req.headers['user-agent']
+  const rawReferrer = req.headers['x-referrer']
+  return {
+    userAgent: typeof ua === 'string' ? ua.slice(0, 500) : null,
+    // All four geo values are absent outside Vercel's edge network, so local
+    // `vercel dev` and any non-edge invocation legitimately reads nulls.
+    country:  readGeoHeader(req, 'x-vercel-ip-country'),
+    city:     readGeoHeader(req, 'x-vercel-ip-city'),
+    region:   readGeoHeader(req, 'x-vercel-ip-country-region'),
+    timezone: readGeoHeader(req, 'x-vercel-ip-timezone'),
+    referrer: typeof rawReferrer === 'string' ? rawReferrer.slice(0, 500) || null : null,
+  }
+}
+
 export async function upsertVisitor(req: VercelRequest): Promise<string | null> {
   const id = readVisitorId(req)
   if (!id) return null
 
-  const ua = req.headers['user-agent']
-  const userAgent = typeof ua === 'string' ? ua.slice(0, 500) : null
-
-  // All four are absent outside Vercel's edge network, so local `vercel dev`
-  // and any non-edge invocation legitimately writes nulls here.
-  const country  = readGeoHeader(req, 'x-vercel-ip-country')
-  const city     = readGeoHeader(req, 'x-vercel-ip-city')
-  const region   = readGeoHeader(req, 'x-vercel-ip-country-region')
-  const timezone = readGeoHeader(req, 'x-vercel-ip-timezone')
-
-  const rawReferrer = req.headers['x-referrer']
-  const referrer = typeof rawReferrer === 'string' ? rawReferrer.slice(0, 500) || null : null
+  const { userAgent, country, city, region, timezone, referrer } = readVisitorGeo(req)
 
   // coalesce(existing, new) keeps the first non-null sighting and backfills
   // columns that are still null — so a row created without geo (an events-only
