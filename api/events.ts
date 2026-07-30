@@ -1,6 +1,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 import { sql } from './_lib/db.js'
 import { checkRateLimit } from './_lib/ratelimit.js'
+import { readVisitorId, upsertVisitor } from './_lib/visitor.js'
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 const VALID_TYPES = ['ada_toggle', 'chat_cleared']
@@ -25,10 +26,20 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   try {
     const db = sql()
-    await db`
-      insert into visitors (id) values (${id})
-      on conflict (id) do update set last_seen_at = now()
-    `
+    // Prefer the shared upsert: it captures user-agent, IP-derived geo, and
+    // referrer from this request. Falling back to a bare insert would create a
+    // metadata-less row, and an events-only visitor (toggled high-contrast but
+    // never sent a message) would never reach chat.ts/contact.ts to be filled in.
+    // upsertVisitor keys off the X-Visitor-Id header, so only use it when that
+    // agrees with the body id — otherwise we'd enrich one row and FK-insert the
+    // event against another that may not exist.
+    const upserted = readVisitorId(req) === id ? await upsertVisitor(req) : null
+    if (!upserted) {
+      await db`
+        insert into visitors (id) values (${id})
+        on conflict (id) do update set last_seen_at = now()
+      `
+    }
     await db`
       insert into visitor_events (visitor_id, type, metadata)
       values (${id}, ${type}, ${metadata ? JSON.stringify(metadata) : null})

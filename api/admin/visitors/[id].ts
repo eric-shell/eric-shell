@@ -1,7 +1,9 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 import { requireAdmin } from '../../_lib/auth.js'
 import { sql } from '../../_lib/db.js'
-import type { ChatMessage, ContactSubmission, Visitor, VisitorDetailPayload } from '../../_lib/types.js'
+import type {
+  ChatMessage, ContactSubmission, PageView, Visitor, VisitorDetailPayload, VisitorSession,
+} from '../../_lib/types.js'
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
@@ -17,14 +19,33 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
 
   if (req.method === 'PATCH') {
     try {
-      const { notes } = (req.body ?? {}) as { notes?: unknown }
-      const notesVal = typeof notes === 'string' ? notes.trim() || null : null
+      const body = (req.body ?? {}) as { notes?: unknown; location_override?: unknown }
+
+      // Only touch fields the caller actually sent. Reading an absent key as
+      // `null` would let a location-only PATCH silently wipe the notes.
+      const toText = (v: unknown, max: number) =>
+        typeof v === 'string' ? v.trim().slice(0, max) || null : null
+      const notes = 'notes' in body ? toText(body.notes, 5000) : undefined
+      const location = 'location_override' in body ? toText(body.location_override, 120) : undefined
+
+      if (notes === undefined && location === undefined) {
+        res.status(400).json({ error: 'Nothing to update' })
+        return
+      }
+
       const db = sql()
-      await db`update visitors set notes = ${notesVal} where id = ${id}`
+      // Two narrow statements instead of dynamic SQL — keeps every value
+      // parameterized through the tagged template.
+      if (notes !== undefined) {
+        await db`update visitors set notes = ${notes} where id = ${id}`
+      }
+      if (location !== undefined) {
+        await db`update visitors set location_override = ${location} where id = ${id}`
+      }
       res.status(200).json({ ok: true })
     } catch (err) {
-      console.error('Admin visitor notes error:', err)
-      res.status(500).json({ error: 'Failed to save notes' })
+      console.error('Admin visitor patch error:', err)
+      res.status(500).json({ error: 'Failed to save changes' })
     }
     return
   }
@@ -57,7 +78,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
   try {
     const db = sql()
     const visitorRows = (await db`
-      select id, first_seen_at, last_seen_at, user_agent, country, city, referrer, notes
+      select id, first_seen_at, last_seen_at, user_agent, country, city,
+             region, timezone, location_override, client_timezone, language,
+             referrer, notes
       from visitors
       where id = ${id}
     `) as Visitor[]
@@ -91,12 +114,31 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
       where visitor_id = ${id} and type = 'chat_cleared'
       order by created_at asc
     `) as { created_at: string }[]
+    const sessions = (await db`
+      select s.id, s.started_at, s.last_beat_at, s.engaged_ms, s.max_scroll_pct,
+             s.entry_path, s.referrer, s.viewport_w, s.viewport_h, s.screen_w, s.screen_h,
+             (select count(*) from page_views p where p.session_id = s.id)::int as page_view_count
+      from visitor_sessions s
+      where s.visitor_id = ${id}
+      order by s.started_at desc
+      limit 100
+    `) as VisitorSession[]
+    const pageViews = (await db`
+      select id, session_id, path, referrer, created_at
+      from page_views
+      where visitor_id = ${id}
+      order by created_at desc
+      limit 500
+    `) as PageView[]
+
     const payload: VisitorDetailPayload = {
       visitor: visitorRows[0],
       messages,
       submissions,
       events,
       clearEvents,
+      sessions,
+      pageViews,
     }
     res.status(200).json(payload)
   } catch (err) {

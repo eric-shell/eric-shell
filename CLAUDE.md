@@ -57,12 +57,12 @@ src/
 │       ├── variants.ts    # Shared SURFACE + SURFACE_HOVER maps (single source of truth)
 │       └── index.ts       # Barrel export for all ui components
 ├── admin/                 # Admin CRM SPA (separate Vite entry; see /crm)
-│   ├── components/        # Dashboard, Login, VisitorList, VisitorDetail (orchestrator), VisitorMetaGrid, ConversationTimeline, ContactSubmissionList, TabBar, Skeleton
-│   ├── hooks/             # useVisitorDetail (fetch + notes + delete)
-│   └── lib/               # api.ts (apiCall helper), dateFormat.ts
+│   ├── components/        # Dashboard, Login, VisitorList, VisitorDetail (orchestrator), VisitorMetaGrid, ConversationTimeline, ActivityTimeline, VisitorsChart, ContactSubmissionList, TabBar, Skeleton
+│   ├── hooks/             # useVisitorDetail (fetch + notes/location save + delete)
+│   └── lib/               # api.ts (apiCall helper), dateFormat.ts, location.ts (resolveLocation), userAgent.ts
 ├── data/                  # Typed data files (work.ts, testimonials.ts, instagram.ts, navigation.ts, resume.ts, chat-context.ts)
 ├── hooks/                 # useChat, useCarousel, useIntersectionObserver, useParallax, useTitleCycle
-├── lib/                   # Browser-side helpers (visitorId.ts, markdown.tsx)
+├── lib/                   # Browser-side helpers (visitorId.ts, telemetry.ts, markdown.tsx)
 ├── utils/                 # Utilities (analytics.ts, htmlToCanvas.ts)
 ├── assets/                # Images, fonts, static files
 ├── App.tsx                # Root component — assembles sections, routes /resume and /privacy
@@ -74,7 +74,8 @@ api/                       # Vercel serverless functions (auto-discovered)
 ├── admin/                 # Password-gated CRM endpoints — see /crm
 ├── chat.ts                # Groq streaming + chat persistence (rate-limited)
 ├── contact.ts             # Resend email + contact persistence (rate-limited)
-└── events.ts              # ada_toggle / chat_cleared event log (rate-limited)
+├── events.ts              # ada_toggle / chat_cleared event log (rate-limited)
+└── track.ts               # page views + session engagement beacon (rate-limited)
 
 db/schema.sql              # Postgres schema (Neon) — apply manually, see /crm
 ```
@@ -126,6 +127,8 @@ npm run build     # production build → dist/
 npm run preview   # preview production build locally
 npm run lint      # ESLint
 npm run lqip      # regenerate src/data/lqip.ts blur-up placeholders (run after `npm run images` adds Instagram posts)
+npm run seed:crm  # seed fake CRM visitors/sessions/page views (see /crm); :clean removes, :status counts
+npm run check:crm-ui -- http://localhost:3000 ./out   # screenshot the CRM at 4 widths, report overflow (no DB writes)
 ```
 
 Env vars for `vercel dev` come from the linked Vercel project (cloud), not `.env.local`. Use `npx vercel env add NAME [development|preview|production]` to add new keys per-environment.
@@ -158,14 +161,18 @@ Home section order in `App.tsx`:
 
 ## Admin CRM
 
-A password-gated admin page at `/dashboard` (served from `dashboard.html`) records every chat thread and contact submission to Neon Postgres, keyed by an anonymous client-generated visitor UUID. Persistence is best-effort (wrapped in try/catch after the user-visible response) — DB outages can never break the public chat or contact form.
+A password-gated admin page at `/dashboard` (served from `dashboard.html`) records page views, session engagement, every chat thread, and every contact submission to Neon Postgres, keyed by an anonymous client-generated visitor UUID. Persistence is best-effort (wrapped in try/catch after the user-visible response) — DB outages can never break the public chat or contact form.
 
 - Reference: run `/crm` for the full file map, schema, auth model, security caveats, and gotchas.
 - **`X-Visitor-Id` is client-controlled and pseudonymous only** — any caller can send any UUID. Never use it for authorization or any trusted decision; gate sensitive endpoints with `requireAdmin` instead.
 - Schema lives in [db/schema.sql](db/schema.sql) (apply manually via Neon SQL editor).
-- Required env vars: `POSTGRES_URL` (auto-set by Neon ↔ Vercel integration; **always verify the value isn't empty** with `npx vercel env pull`), `ADMIN_PASSWORD`, `ADMIN_SESSION_SECRET`, `UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN` (the Upstash vars enable rate limiting on `/api/chat`, `/api/contact`, and `/api/events`; if absent the limiter soft-fails open).
+- **Stored location is IP-derived and unreliable** — it can be hundreds of miles off. Render it via `resolveLocation()` ([src/admin/lib/location.ts](src/admin/lib/location.ts)), which prefers the human-entered `location_override` and flags anything IP-derived as approximate. Never concatenate `city`/`country` at a call site.
+- **Telemetry honors Global Privacy Control / Do Not Track** — [src/lib/telemetry.ts](src/lib/telemetry.ts) sends nothing when either is set. Deliberate product decision; don't remove it.
+- **Any new field the telemetry collects must be disclosed** in [Privacy.tsx](src/components/sections/Privacy/Privacy.tsx) in the same commit.
+- Required env vars: `POSTGRES_URL` (auto-set by Neon ↔ Vercel integration; **always verify the value isn't empty** with `npx vercel env pull`), `ADMIN_PASSWORD`, `ADMIN_SESSION_SECRET`, `UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN` (the Upstash vars enable rate limiting on `/api/chat`, `/api/contact`, `/api/events`, and `/api/track`; if absent the limiter soft-fails open).
 - Adding admin endpoints: first line of every handler under `api/admin/` must be `if (!requireAdmin(req, res)) return`.
 - The admin SPA is a separate Vite entry (`dashboard.html`); admin code never ships to public visitors.
+- **The admin reuses the site's visual language** (ambient `Backdrop`, `Eyebrow`+`H2`, elevation) rather than its own chrome — no new hues, no dark mode. Chart colors are validator-checked; run `/crm` before changing them, and note the brand blue is below the chroma floor, so this palette cannot carry a multi-series categorical chart.
 
 ## Deployment
 

@@ -1,6 +1,7 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import App from './App.tsx'
+import { initTelemetry } from './lib/telemetry'
 
 console.log(
   '%ceric.sh%c\n\nYou opened the console — my kind of visitor.\nBuilt with React 19, Tailwind v4, and restraint.\nTalk shop: ericjshell@gmail.com',
@@ -16,3 +17,11 @@ createRoot(root).render(
     <App />
   </StrictMode>,
 )
+
+// Outside the React tree on purpose: StrictMode double-invokes effects in dev,
+// which would double-count the pageview. Never let telemetry break the render.
+try {
+  initTelemetry()
+} catch (err) {
+  if (import.meta.env.DEV) console.warn('Telemetry init failed:', err)
+}

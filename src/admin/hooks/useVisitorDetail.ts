@@ -6,12 +6,15 @@ import type { VisitorDetailPayload } from '@/../api/_lib/types'
 interface Options {
   onClose: () => void
   onDeleted?: (id: string) => void
+  /** Lets the parent list re-render its Location cell without a refetch. */
+  onSaved?: (id: string, locationOverride: string | null) => void
 }
 
-export function useVisitorDetail(id: string, { onClose, onDeleted }: Options) {
+export function useVisitorDetail(id: string, { onClose, onDeleted, onSaved }: Options) {
   const [data, setData] = useState<VisitorDetailPayload | null>(null)
   const [notes, setNotes] = useState('')
-  const [notesSaving, setNotesSaving] = useState(false)
+  const [locationOverride, setLocationOverride] = useState('')
+  const [saving, setSaving] = useState(false)
   const [deleting, setDeleting] = useState(false)
 
   useEffect(() => {
@@ -22,23 +25,32 @@ export function useVisitorDetail(id: string, { onClose, onDeleted }: Options) {
       if (json && !cancelled) {
         setData(json)
         setNotes(json.visitor?.notes ?? '')
+        setLocationOverride(json.visitor?.location_override ?? '')
       }
     })
     return () => { cancelled = true }
   }, [id])
 
-  async function saveNotes() {
+  async function saveDetails() {
     if (!data) return
-    setNotesSaving(true)
+    setSaving(true)
     const result = await apiCall(`/api/admin/visitors/${id}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ notes }),
-    }, { errorMessage: 'Failed to save notes.' })
-    setNotesSaving(false)
+      body: JSON.stringify({ notes, location_override: locationOverride }),
+    }, { errorMessage: 'Failed to save changes.' })
+    setSaving(false)
     if (result) {
-      setData(prev => prev ? { ...prev, visitor: { ...prev.visitor, notes: notes.trim() || null } } : prev)
-      toast.success('Notes saved.')
+      setData(prev => prev ? {
+        ...prev,
+        visitor: {
+          ...prev.visitor,
+          notes: notes.trim() || null,
+          location_override: locationOverride.trim() || null,
+        },
+      } : prev)
+      onSaved?.(id, locationOverride.trim() || null)
+      toast.success('Changes saved.')
     }
   }
 
@@ -57,5 +69,11 @@ export function useVisitorDetail(id: string, { onClose, onDeleted }: Options) {
     }
   }
 
-  return { data, notes, setNotes, notesSaving, saveNotes, deleting, deleteVisitor }
+  return {
+    data,
+    notes, setNotes,
+    locationOverride, setLocationOverride,
+    saving, saveDetails,
+    deleting, deleteVisitor,
+  }
 }

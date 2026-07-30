@@ -48,7 +48,11 @@ export default function Privacy() {
                   </div>
                   <div>
                     <dt className="font-semibold">Approximate location and device</dt>
-                    <dd className="text-blue-950/80">Country, city, browser user-agent string, and the page that referred you here. Derived from your IP at request time and stored alongside the visitor ID.</dd>
+                    <dd className="text-blue-950/80">Country, region, city, timezone, browser user-agent string, and the page that referred you here. The location fields are estimated from your IP at request time — they're often imprecise and can be wrong by hundreds of miles. Your IP address itself is not stored. Your browser's own language setting, reported timezone, and window and screen dimensions are also recorded.</dd>
+                  </div>
+                  <div>
+                    <dt className="font-semibold">Pages viewed and time spent</dt>
+                    <dd className="text-blue-950/80">Which pages you open, when, and the page that referred you, grouped into a visit. Each visit also records how long this tab was actually in the foreground and how far down the page you scrolled. Nothing about what you type, hover, or click is captured, and this stops at the boundary of this site — there is no tracking of where you go next.</dd>
                   </div>
                   <div>
                     <dt className="font-semibold">Chat transcripts</dt>
@@ -77,6 +81,15 @@ export default function Privacy() {
 
             <CascadeItem index={2}>
               <div className="flex flex-col gap-4">
+                <H2>Opting out</H2>
+                <p className="font-sans text-base md:text-lg leading-relaxed">
+                  If your browser sends Global Privacy Control or Do Not Track, no page views, visit durations, or scroll depths are recorded — the tracking script exits before it sends anything. Neither signal is legally binding in the US; this site honors them anyway. Clearing your browser's localStorage for this site discards your visitor ID, after which you're indistinguishable from a new visitor.
+                </p>
+              </div>
+            </CascadeItem>
+
+            <CascadeItem index={3}>
+              <div className="flex flex-col gap-4">
                 <H2>Retention</H2>
                 <p className="font-sans text-base md:text-lg leading-relaxed">
                   Records are kept indefinitely by default. If you'd like your visitor record, chat transcripts, or contact submission removed, email <a href="mailto:ericjshell@gmail.com?subject=Privacy%20request" className="font-semibold underline underline-offset-2 hover:opacity-70 transition-opacity">ericjshell@gmail.com</a> with the visitor ID shown below (if you have it) or the email you used to contact me. I'll delete the record promptly.
@@ -84,7 +97,7 @@ export default function Privacy() {
               </div>
             </CascadeItem>
 
-            <CascadeItem index={3}>
+            <CascadeItem index={4}>
               <div className="flex flex-col gap-4">
                 <H2>Cookies</H2>
                 <p className="font-sans text-base md:text-lg leading-relaxed">

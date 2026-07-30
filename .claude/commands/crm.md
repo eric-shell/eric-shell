@@ -13,22 +13,88 @@ A password-gated admin page at `/crm.html` for viewing every chat thread and con
 | Admin endpoints | [api/admin/login.ts](api/admin/login.ts), [api/admin/logout.ts](api/admin/logout.ts), [api/admin/visitors.ts](api/admin/visitors.ts), [api/admin/visitors/[id].ts](api/admin/visitors/%5Bid%5D.ts) |
 | Chat persistence wiring | [api/chat.ts](api/chat.ts) (after `res.end()`) |
 | Contact persistence wiring | [api/contact.ts](api/contact.ts) (after Resend send) |
+| Page-view / session telemetry endpoint | [api/track.ts](api/track.ts) — `pageview` + `heartbeat` ops |
+| Client telemetry beacon | [src/lib/telemetry.ts](src/lib/telemetry.ts) — init'd from [src/main.tsx](src/main.tsx), outside the React tree |
+| Location display resolver | [src/admin/lib/location.ts](src/admin/lib/location.ts) — `resolveLocation()` |
 | Client visitor ID generator | [src/lib/visitorId.ts](src/lib/visitorId.ts) — `localStorage['eric.sh:vid']` |
+| Client session ID | [src/lib/telemetry.ts](src/lib/telemetry.ts) — `localStorage['eric.sh:sess']`, 30-min inactivity rollover |
 | Visitor ID is sent on | [src/hooks/useChat.ts](src/hooks/useChat.ts), [src/components/ui/ContactForm/ContactForm.tsx](src/components/ui/ContactForm/ContactForm.tsx) — `X-Visitor-Id` header |
 | Admin SPA entry | [crm.html](crm.html) → [src/admin/main.tsx](src/admin/main.tsx) → [src/admin/App.tsx](src/admin/App.tsx) |
-| Admin SPA components | [src/admin/components/](src/admin/components/) — Login, Dashboard, VisitorList, VisitorDetail |
+| Admin SPA components | [src/admin/components/](src/admin/components/) — Login, Dashboard, VisitorList, VisitorDetail, VisitorMetaGrid, ConversationTimeline, ActivityTimeline, ContactSubmissionList |
 | Multi-page Vite config | [vite.config.ts](vite.config.ts) — `rollupOptions.input` includes both `main` and `admin` |
 | Indexer hint | [public/robots.txt](public/robots.txt) — disallows `/crm` and `/api/admin/` |
 
 ## Architecture facts
 
-- **Storage**: Neon Postgres (Vercel marketplace integration). Three tables: `visitors`, `chat_messages`, `contact_submissions`. Schema is checked into [db/schema.sql](db/schema.sql) and applied manually — no migration tool.
+- **Storage**: Neon Postgres (Vercel marketplace integration). Tables: `visitors`, `chat_messages`, `contact_submissions`, `visitor_events`, `visitor_sessions`, `page_views`. Schema is checked into [db/schema.sql](db/schema.sql) and applied manually — no migration tool.
 - **DB client**: `@neondatabase/serverless` over HTTP (not the WebSocket pool). The `sql()` helper in [api/_lib/db.ts](api/_lib/db.ts) caches one client per process.
 - **Visitor identity**: client generates `crypto.randomUUID()` on first interaction, stores at `localStorage['eric.sh:vid']`, sends as `X-Visitor-Id` on every `/api/chat` and `/api/contact` POST. Server validates the format with a UUID regex before any DB write. **Trust model: anonymous, best-effort attribution.** Anyone with someone else's UUID could write to that visitor's thread; UUIDs are random so this is impractical to exploit but worth knowing.
 - **Persistence is best-effort and order matters.** Both handlers wrap DB writes in try/catch so a Postgres outage can't break the public surface. **`contact.ts` persists BEFORE `res.json()`** — Vercel can freeze the function container as soon as a discrete response is flushed, silently dropping any trailing async work (we hit this on first deploy: chat persisted, contact didn't). **`chat.ts` persists AFTER `res.end()`** because the assistant reply isn't known until the stream completes; this works in practice (the streaming socket keeps the function alive long enough for the trailing DB write to land), but if it ever stops working, switch to `waitUntil()` from `@vercel/functions`.
 - **Admin auth**: shared password (`ADMIN_PASSWORD` env) → HMAC-SHA256-signed timestamp cookie (`ADMIN_SESSION_SECRET` env, 30-day max-age, `HttpOnly` + `Secure` + `SameSite=Lax`). Verified with `timingSafeEqual`. Login endpoint sleeps a constant `LOGIN_DELAY_MS` (1500ms) on every attempt regardless of outcome — invisible to a human, lethal to brute-force. Single user only; no multi-account support.
 - **Admin SPA is a separate Vite entry point** (`crm.html` at project root) so the admin bundle never ships with the public site (~7KB vs the main 60KB+). Login state is detected by probing `/api/admin/visitors` on mount; 401 → show login, 200 → show dashboard.
 - **No analytics on the admin path** — admin is internal-only and shouldn't fire gtag events.
+- **Location is IP-derived and genuinely unreliable.** `country` / `city` / `region` / `timezone` come from Vercel edge headers (`x-vercel-ip-country`, `-city`, `-country-region`, `-timezone`). Mobile carriers, CGNAT, and VPNs routinely report a city hundreds of miles off — we saw a San Luis Obispo visitor land as "Redding". `location_override` is the human-entered correction; it always wins on display, and the raw IP values are kept so the original claim stays auditable. Resolve for display with `resolveLocation()` in [src/admin/lib/location.ts](src/admin/lib/location.ts) — never concatenate `city`/`country` at a call site, and always mark IP-derived values as approximate in the UI.
+- **All geo headers are absent outside the edge**, so local `vercel dev` legitimately writes nulls. A blank location with a non-null `user_agent` is almost always a dev-session row.
+- **Every visitor-row writer must go through `upsertVisitor`** ([api/_lib/visitor.ts](api/_lib/visitor.ts)). `events.ts` originally did a bare `insert into visitors (id)`, which stranded events-only visitors (opened the chat, toggled high-contrast, never sent a message) with no UA, geo, or referrer — permanently, since nothing later backfills them. The `on conflict` clause uses `coalesce(existing, new)`, which keeps the first non-null sighting *and* backfills columns still null, so a later edge request repairs an incomplete row.
+- **`x-vercel-ip-city` is percent-encoded.** Decode via `readGeoHeader`, which try/catches `decodeURIComponent` — a malformed sequence used to reject the whole `upsertVisitor` promise, and in `chat.ts` that discarded the entire transcript, not just the city.
+
+## Page-view / session telemetry
+
+Before this existed the CRM was really a *chat* log: every `visitors` row was a byproduct of `/api/chat`, `/api/contact`, or `/api/events`, so an ordinary reader who never touched the chat widget was invisible, and `user_agent` was only captured if they happened to hit a handler that called `upsertVisitor`.
+
+- **[api/track.ts](api/track.ts) takes two op types.** `pageview` fires once per document load as a real `fetch`, so it carries `X-Visitor-Id` *and* the Vercel edge geo headers — that is the only place enrichment happens. `heartbeat` goes out via `navigator.sendBeacon`, which **cannot set headers**, so it only ever updates engagement. Don't move enrichment into the heartbeat path.
+- **Routing is MPA**, so no SPA router integration is needed: [App.tsx](src/App.tsx) reads `window.location.pathname` once and navigation uses real `<a href>` with cross-document view transitions. Every route change is a fresh document load and a fresh `pageview`.
+- **`engaged_ms` / `max_scroll_pct` are monotonic.** The client sends *cumulative* totals; the server applies `greatest(existing, incoming)`. A late or out-of-order beacon therefore can't walk a session backwards. Keep that property if you add fields.
+- **Engaged time only accrues while the tab is visible** (`visibilitychange`), so a page parked in a background tab doesn't inflate to hours. It is not the same as wall-clock session length.
+- **Flush happens on both `visibilitychange→hidden` and `pagehide`**, both via `sendBeacon`. Mobile Safari frequently never fires `pagehide`, so the visibility path is the one that actually saves the last beat there.
+- **Sessions live in `localStorage`, not `sessionStorage`** (`eric.sh:sess`), with a 30-minute inactivity rollover, so a visit spanning several tabs stitches into one session. Private mode / disabled storage falls back to a per-load id — pageviews still land, they just don't stitch.
+- **GPC / DNT are honored**: `initTelemetry()` returns before sending anything if `navigator.globalPrivacyControl` is true or DNT is `1`/`yes`. This is a deliberate product decision, not a legal requirement — don't "fix" it. Verified with Playwright.
+- **`initTelemetry()` is called from [src/main.tsx](src/main.tsx) outside the React tree**, because StrictMode double-invokes effects in dev and would double-count every pageview.
+- **Rate limits are much looser than the other endpoints** (burst 20/min, hourly 400) because heartbeats are timer-driven: a continuously-open tab sends ~180/hour at `HEARTBEAT_MS = 20s`. The client also skips no-op beats, so a parked tab stops generating writes. `/api/track` always answers `204`, even when limited or when the payload is junk — telemetry must never surface anything to a visitor.
+- **Cast summed durations to `::float8`, never `::bigint`.** The Neon driver returns `int8` as a *string*, which silently violates the numeric types on `VisitorSummary`.
+- **`visitor_sessions` and `page_views` both cascade** from `visitors`, so the existing GDPR delete path in [api/admin/visitors/[id].ts](api/admin/visitors/%5Bid%5D.ts) already covers them. Verified.
+- **[Privacy.tsx](src/components/sections/Privacy/Privacy.tsx) must stay in sync** with whatever this collects — it discloses pageviews, visit duration, scroll depth, viewport/screen, browser language and timezone, and the GPC/DNT opt-out. Update it in the same commit as any new field.
+
+## Visual language
+
+The admin deliberately reuses the public site's design vocabulary rather than inventing admin chrome — it used to read as generic Tailwind scaffolding. **No new hues were added; the fixed palette decision in CLAUDE.md still holds, and there is no dark mode here either.**
+
+- **Ambient canvas**: [src/admin/App.tsx](src/admin/App.tsx) renders `<Backdrop tone="light" className="fixed" />`. The `fixed` override matters — Backdrop defaults to `absolute`, which on a long scrolling visitor table would stretch the blobs to the full document height. It sits behind every panel, so it never reduces text contrast.
+- **Elevation over borders**: panels use `shadow-sm ring-1 ring-blue-950/4` for layered depth. The expanded visitor detail is tinted `bg-blue-50/60` with `shadow-inner` so it reads as a drawer off the selected row, not another flat top-level card.
+- **Type**: `Eyebrow` + `H2` pairing in the header and login, matching the site's section headers. Stat-tile labels stay **uppercase micro-type** to match the `Eyebrow` idiom — a deliberate departure from the dataviz skill's sentence-case stat-tile default, since casing is a design-system parameter.
+- **Semantic color is reserved for one thing**: a contact submission. Used on the "Converted" tile and the table's `Sent` column, always with a `MailCheck` icon so it is never color-alone. `green-700` is 5.96:1 on white (AA text).
+
+### Chart colors — validated, not eyeballed
+
+[VisitorsChart.tsx](src/admin/components/VisitorsChart.tsx) is a single series, so **it has no legend** (the caption names it). Colors come from the brand ramp and were run through the dataviz skill's `validate_palette.js`:
+
+| Role | Token | Hex | Result |
+|---|---|---|---|
+| Bar body (de-emphasis) | `blue-400` | `#64a3c0` | light-end contrast 2.78:1 vs white ✅ |
+| Current / hovered period (accent) | `blue-700` | `#186b8e` | ordinal pair: monotone L, ΔL ≥ 0.06, hue spread 3° ✅ |
+
+Two findings worth remembering before you touch these:
+
+- **`blue-200` fails** the ordinal light-end floor at **1.60:1** vs white — bars would nearly vanish on a white panel. Don't reach for it as a "subtle" bar fill. `blue-300` (2.05:1) passes but `blue-400` is the comfortable choice.
+- **The brand blue is below the validator's chroma floor** (`blue-600` chroma 0.091, "reads gray"). That's fine for a lone series where no adjacent-pair discrimination is needed, but it means **this palette can't carry a multi-series categorical chart** — green↔red already fail CVD separation at ΔE 3.0. If you ever need more than one series, use small multiples or faceting, not more hues.
+
+Mark specs the chart implements (from the skill): bars capped at **24px** with the band's leftover left as air, **4px** rounded data-end and square at the baseline, hairline solid baseline (never dashed), the hit target is the full column (not the few-pixel bar), the direct label is selective (hovered/latest only), and every value is also in an `sr-only` list so nothing is gated behind hover. It's built from divs rather than SVG because the old `preserveAspectRatio="none"` stretched non-uniformly and distorted both the corner radius and the gaps.
+
+## Fixtures & UI checking
+
+There is **no local Postgres** in this project — `POSTGRES_URL` points at the shared Neon branch. Two tools exist so you can work on the admin UI at realistic density anyway:
+
+| Command | What it does |
+|---|---|
+| `npm run seed:crm [count]` | Insert `count` (default 28) fake visitors with sessions, page views, chats, contacts, events. Idempotent — reseeding replaces rather than duplicating. |
+| `npm run seed:crm:clean` | Remove every fixture row. |
+| `npm run seed:crm:status` | Print real vs. fake row counts. Read-only — run it before and after to prove nothing real moved. |
+| `npm run check:crm-ui -- <baseUrl> <outDir>` | Render the dashboard at 1440/1280/1024/768 against fixtures, screenshot each, and report page errors + horizontal-overflow offenders. **Stubs `/api/admin/*` in the browser, so it writes nothing and needs no admin password.** |
+
+- **Fixture data is shared** between the seeder and the UI harness via [scripts/crm-fixtures.mjs](scripts/crm-fixtures.mjs), and is deterministic (seeded PRNG), so both show identical data and screenshots are diffable run to run.
+- **Cleanup contract**: every fixture visitor id is `5eedNNNN-…`. `clean` deletes `where id::text like '5eed%'` *and* re-checks each id against the full fixture shape, so a real UUID that happens to start with `5eed` is refused rather than deleted.
+- **Prefer the UI harness over seeding** when you only need to look at the UI — it never touches the database. Seed only when you need to click through the real app (saving notes, editing a location override, deleting a visitor).
+- The fixture population is deliberately shaped like real traffic: ~38% single-view bounces, a slice with no geo/UA at all (mimicking pre-telemetry rows and GPC opt-outs), and only the most engaged tail having chats or contact submissions. If you make the UI look good only on rich rows, you have tested the wrong thing.
 
 ## Adding a new admin endpoint
 
@@ -76,6 +142,8 @@ If `/api/admin/visitors` returns 500, check `vercel dev` terminal output for the
 |---|---|
 | Show a new column in the visitor table | Update the `select` in [api/admin/visitors.ts](api/admin/visitors.ts), then add the field to `VisitorSummary` in [src/admin/components/VisitorList.tsx](src/admin/components/VisitorList.tsx) and a `<td>` for it |
 | Capture extra metadata about a chat message | Add a column to `chat_messages` in [db/schema.sql](db/schema.sql), apply the alter to Neon, then write the value in [api/chat.ts](api/chat.ts) |
+| Capture another IP-derived field | Add a `readGeoHeader` call in [api/_lib/visitor.ts](api/_lib/visitor.ts) + the column, the `insert`, and the `on conflict` coalesce; then `Visitor`/`VisitorSummary` in [api/_lib/types.ts](api/_lib/types.ts) and both admin `select`s |
+| Add another admin-editable visitor field | Extend the `PATCH` branch in [api/admin/visitors/[id].ts](api/admin/visitors/%5Bid%5D.ts) — it only updates keys actually present in the body, so a partial PATCH can't wipe a sibling field; then thread it through [useVisitorDetail.ts](src/admin/hooks/useVisitorDetail.ts) |
 | Change the login throttle | `LOGIN_DELAY_MS` constant in [api/admin/login.ts](api/admin/login.ts) |
 | Bump cookie lifetime | `MAX_AGE_SECONDS` in [api/_lib/auth.ts](api/_lib/auth.ts) |
 | Force everyone to re-login | Rotate `ADMIN_SESSION_SECRET` in Vercel env (any environment) |
@@ -85,6 +153,8 @@ If `/api/admin/visitors` returns 500, check `vercel dev` terminal output for the
 
 - **No in-app reply.** The admin is read-only by design. There's no email collected at chat time, so there's nothing to reply to. If you ever want a reply path, it requires durable visitor identity + a polling/SSE channel back to the visitor's browser.
 - **No pagination.** The visitor list query has `limit 500`. Add pagination when you actually have hundreds of visitors.
+- **No retention/pruning job for `page_views`.** It's the fastest-growing table by far (one row per document load). When it gets unwieldy, add a scheduled delete for rows older than N months — nothing depends on old page views.
+- **No section-impression or click tracking.** Deliberately scoped out: what someone scrolled past and what they clicked is a meaningfully bigger privacy footprint than "which pages, how long". `visitor_events` already has a `jsonb metadata` column if that changes — widen its `type` check constraint rather than adding tables.
 - **No GDPR delete-my-data endpoint.** Trivial to add (`delete from visitors where id = $1` cascades to chat_messages and nulls contact_submissions.visitor_id) — write it when you actually need it.
 - **No rate-limiting on `/api/chat` or `/api/contact`.** Existing honeypot field on both is the only protection. Add Vercel KV-backed throttling if abuse becomes a problem.
 - **No audit log of admin reads.** Single user, low traffic — not worth the noise.
