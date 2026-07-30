@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import {
   type LucideIcon, LogOut, MailCheck, MessageSquare, MousePointer2,
-  RefreshCw, Search, Users,
+  RefreshCw, Search, Users, X,
 } from 'lucide-react'
 import { Button, Eyebrow, H2, Panel } from '../../components/ui'
 import VisitorList from './VisitorList'
@@ -59,6 +59,19 @@ const POLL_MS = 120_000
 
 interface DashboardProps {
   onLogout: () => void
+}
+
+/**
+ * Case- and accent-insensitive key for search.
+ *
+ * A plain `toLowerCase().includes()` is accent-sensitive, so typing "zurich"
+ * matched nothing against "Zürich, ZH, CH" — and the field advertises location
+ * search. Decomposing to NFD and dropping the combining marks makes o/ö, u/ü,
+ * and e/é interchangeable, which matches how the columns already sort
+ * (localeCompare with sensitivity 'base').
+ */
+function fold(s: string | null | undefined): string {
+  return (s ?? '').normalize('NFD').replace(/\p{Diacritic}/gu, '').toLowerCase()
 }
 
 function pct(n: number, total: number) {
@@ -140,12 +153,12 @@ export default function Dashboard({ onLogout }: DashboardProps) {
     setVisitors(prev => prev?.filter(v => v.id !== deletedId) ?? null)
   }, [])
 
-  const q = query.trim().toLowerCase()
+  const q = fold(query.trim())
   const filteredVisitors = !q || !visitors ? visitors : visitors.filter(v =>
     v.id.startsWith(q) ||
-    v.contact_name?.toLowerCase().includes(q) ||
-    v.contact_email?.toLowerCase().includes(q) ||
-    resolveLocation(v).label?.toLowerCase().includes(q)
+    fold(v.contact_name).includes(q) ||
+    fold(v.contact_email).includes(q) ||
+    fold(resolveLocation(v).label).includes(q)
   )
 
   const totalVisitors = visitors?.length ?? 0
@@ -225,35 +238,62 @@ export default function Dashboard({ onLogout }: DashboardProps) {
         )}
       </div>
 
-      {/* Search */}
-      <div className="relative">
-        <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-white/70 pointer-events-none" />
-        <input
-          type="search"
-          value={query}
-          onChange={e => setQuery(e.target.value)}
-          placeholder="Search by name, email, or visitor ID…"
-          className="w-full rounded-xl border border-white/10 bg-white/[0.04] py-2.5 pl-9 pr-4 text-sm text-white placeholder:text-white/70 outline-none transition focus:border-accent/60 focus:bg-white/[0.07] focus:shadow-[0_0_0_3px_color-mix(in_oklch,var(--color-accent)_22%,transparent)]"
-        />
-      </div>
-
       {/* Hold the previous render at reduced opacity on refetch rather than
           flashing a skeleton — no layout jump. */}
       <Panel
         variant="raised-dark"
-        className={`rounded-2xl p-6 shadow-sm transition-opacity duration-300 ${
+        className={`rounded-2xl shadow-sm transition-opacity duration-300 ${
           loading && visitors !== null ? 'opacity-40' : 'opacity-100'
         }`}
       >
-        {filteredVisitors === null ? (
-          <VisitorTableSkeleton />
-        ) : filteredVisitors.length === 0 ? (
-          <p className="text-sm text-white/65">
-            {q ? 'No visitors match your search.' : 'No visitors yet.'}
-          </p>
-        ) : (
-          <VisitorList visitors={filteredVisitors} onVisitorDeleted={handleVisitorDeleted} />
-        )}
+        {/* Search lives inside the panel it filters. As a free-floating field it
+            wore the same surface as the panels around it and read as another
+            section rather than a control on this table. Here it is a toolbar
+            row: no border, no fill of its own, just a divider against the
+            results below it. */}
+        <div className="flex items-center gap-2.5 border-b border-white/10 px-4 py-3">
+          <Search size={15} className="shrink-0 text-white/70" aria-hidden="true" />
+          <input
+            type="search"
+            value={query}
+            onChange={e => setQuery(e.target.value)}
+            placeholder="Search by name, email, location, or visitor ID…"
+            aria-label="Search visitors"
+            className="min-w-0 flex-1 bg-transparent text-sm text-white placeholder:text-white/70 outline-none"
+          />
+          {/* Only while filtering: confirms the search is scoped to this table
+              and that an empty result is a filter, not an empty database. */}
+          {q && (
+            <>
+              {filteredVisitors !== null && (
+                <span className="shrink-0 text-xs tabular-nums text-white/70">
+                  {filteredVisitors.length} of {visitors?.length ?? 0}
+                </span>
+              )}
+              <button
+                type="button"
+                onClick={() => setQuery('')}
+                aria-label="Clear search"
+                title="Clear search"
+                className="shrink-0 cursor-pointer rounded p-0.5 text-white/70 transition-colors hover:text-white"
+              >
+                <X size={14} aria-hidden="true" />
+              </button>
+            </>
+          )}
+        </div>
+
+        <div className="p-6">
+          {filteredVisitors === null ? (
+            <VisitorTableSkeleton />
+          ) : filteredVisitors.length === 0 ? (
+            <p className="text-sm text-white/65">
+              {q ? 'No visitors match your search.' : 'No visitors yet.'}
+            </p>
+          ) : (
+            <VisitorList visitors={filteredVisitors} onVisitorDeleted={handleVisitorDeleted} />
+          )}
+        </div>
       </Panel>
     </div>
   )
