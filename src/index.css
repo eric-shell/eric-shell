@@ -40,29 +40,53 @@
   --color-accent-deep:  oklch(0.450 0.130 240.00);
 
   /*
-   * Semantic status fills for the `info` / `success` / `warning` / `error`
-   * button variants. Solved numerically rather than picked from the ramps,
-   * because a shared variant can land on either canvas and had to satisfy all
-   * three constraints at once:
+   * Semantic status fills for the `success` / `warning` / `error` button
+   * variants. (`info` has no token — it consumes the primary ramp directly,
+   * blue-600/blue-700. See variants.ts.)
    *
-   *   white label on the fill   >= 4.5:1  (AA text)
-   *   fill vs the light canvas  >= 3:1    (component boundary, WCAG 1.4.11)
-   *   fill vs the dark canvas   >= 3:1
+   * Derived from the primary blue rather than solved per-hue, so the four
+   * status variants read as one family. Two axes are locked to blue-600 /
+   * blue-700, the primary gradient's stops:
    *
-   * The existing ramp steps could not: red-600/700 is only 2.62:1 against
-   * blue-950, and amber with white ink was 3.71:1. Each value below is the
-   * highest chroma that clears all three — measured, not chosen by eye.
+   *   lightness  L 0.546 (base) / 0.497 (hover) — identical for every hue,
+   *              so all four fills carry the same contrast against both
+   *              canvases and the same weight next to a white label.
+   *   chroma     82% of the max in-gamut chroma at that L and hue (base),
+   *              92% (hover) — the ratios blue-600/700 themselves sit at.
+   *
+   * Chroma is matched as a *fraction of the sRGB gamut*, not as a raw OKLCH
+   * number. Raw C is not comparable across hues here: at L 0.546 the ceiling
+   * is 0.111 at the blue hue but 0.221 at the red one, so an equal-C red
+   * lands at 41% of its ceiling and reads visibly duller than the blue at
+   * 82% (it goes dusty-mauve, #9f5a55). Equal gamut fraction is what actually
+   * looks like equal vibrance. This is also the bug in the previous values:
+   * every one of them was pinned at 100% of its own ceiling, which is why
+   * error (C 0.238) screamed next to info (C 0.110).
+   *
+   * All four base fills still clear the three gates the earlier derivation
+   * set, verified after the change:
+   *
+   *   white label on the fill   >= 4.5:1  -> 4.64 - 5.42
+   *   fill vs the light canvas  >= 3:1    -> 4.64 - 5.42
+   *   fill vs the dark canvas   >= 3:1    -> 3.36 - 3.93
+   *
+   * The `-hover` steps run 2.72 - 3.18 against the dark canvas. Hover is a
+   * transient state on an already-identified component, and primary's own
+   * hover (blue-800 -> blue-900) is 1.90:1 there, so this is consistent with
+   * the ramp — the resting fill carries the boundary.
    *
    * `warning` has no counterpart in the blue/red/green ramps; hue 75 is new.
+   * It reads bronze rather than amber, and cannot read otherwise: at L 0.546
+   * the sRGB ceiling at this hue is only C 0.115. A vivid amber needs a much
+   * higher L, which would drop the white label below AA. Do not "fix" it by
+   * raising L alone.
    */
-  --color-info:           oklch(0.545 0.110 231.50);
-  --color-info-hover:     oklch(0.482 0.098 231.50);
-  --color-success:        oklch(0.542 0.170 145.00);
-  --color-success-hover:  oklch(0.480 0.150 145.00);
-  --color-warning:        oklch(0.560 0.118 75.00);
-  --color-warning-hover:  oklch(0.500 0.105 75.00);
-  --color-error:          oklch(0.587 0.238 25.00);
-  --color-error-hover:    oklch(0.525 0.213 25.00);
+  --color-success:        oklch(0.546 0.141 145.00);
+  --color-success-hover:  oklch(0.497 0.143 145.00);
+  --color-warning:        oklch(0.546 0.095 75.00);
+  --color-warning-hover:  oklch(0.497 0.096 75.00);
+  --color-error:          oklch(0.546 0.182 25.00);
+  --color-error-hover:    oklch(0.497 0.185 25.00);
 
   --color-red-50:  oklch(0.965 0.014 25.00);
   --color-red-100: oklch(0.918 0.034 25.00);

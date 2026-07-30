@@ -20,9 +20,15 @@ export type Variant =
    * validated for a white label AND for its boundary against both the light and
    * dark canvases — see the derivation note in index.css.
    *
-   * `info` is deliberately close to `primary`. They differ in intent, not
-   * looks: `primary` is "this is the main action here", `info` is "this action
-   * carries neutral/informational status". Reach for `primary` for a CTA.
+   * The four are one family, not four independent picks: all share `primary`'s
+   * lightness (blue-600 base / blue-700 hover) and sit at the same fraction of
+   * their hue's available chroma, so they read at matching contrast and
+   * vibrance and differ only in hue.
+   *
+   * `info` has no token of its own — it *is* the primary blue, flat rather than
+   * gradient. It differs from `primary` in intent, not looks: `primary` is
+   * "this is the main action here", `info` is "this action carries
+   * neutral/informational status". Reach for `primary` for a CTA.
    */
   | 'info'
   | 'success'
@@ -41,7 +47,7 @@ export const SURFACE: Record<Variant, string> = {
   'success-glass': 'text-white glass-blur bg-green-950/85 border border-green-400/50',
   white:     'bg-white border border-blue-950/10 text-blue-950',
   'raised-dark': 'text-white bg-white/[0.055] border border-white/10',
-  info:      'text-white bg-info border border-transparent shadow-[inset_0_1px_0_0_rgba(255,255,255,0.25)]',
+  info:      'text-white bg-blue-600 border border-transparent shadow-[inset_0_1px_0_0_rgba(255,255,255,0.25)]',
   success:   'text-white bg-success border border-transparent shadow-[inset_0_1px_0_0_rgba(255,255,255,0.25)]',
   warning:   'text-white bg-warning border border-transparent shadow-[inset_0_1px_0_0_rgba(255,255,255,0.25)]',
   error:     'text-white bg-error border border-transparent shadow-[inset_0_1px_0_0_rgba(255,255,255,0.25)]',
@@ -95,7 +101,7 @@ export const SURFACE_HOVER: Record<Variant, string> = {
   'success-glass': 'hover:bg-green-800/40 hover:border-green-300/60',
   white:     'hover:bg-blue-50',
   'raised-dark': 'hover:bg-white/[0.09] hover:border-white/20',
-  info:      'hover:bg-info-hover',
+  info:      'hover:bg-blue-700',
   success:   'hover:bg-success-hover',
   warning:   'hover:bg-warning-hover',
   error:     'hover:bg-error-hover',
