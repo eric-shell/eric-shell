@@ -1,5 +1,5 @@
-import { Fragment, useEffect, useRef, useState } from 'react'
-import { Check, ChevronLeft, ChevronRight, MailCheck } from 'lucide-react'
+import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { Check, ChevronDown, ChevronLeft, ChevronRight, ChevronUp, MailCheck } from 'lucide-react'
 import VisitorDetail from './VisitorDetail'
 import { Button } from '../../components/ui'
 import { twMerge } from 'tailwind-merge'
@@ -8,6 +8,10 @@ import { formatDuration, formatShort } from '../lib/dateFormat'
 import { resolveLocation } from '../lib/location'
 import { classifyVisitor } from '../lib/classify'
 import VisitorTags from './VisitorTags'
+import {
+  DEFAULT_SORT, SORT_LABEL, nextSort, sortVisitors,
+  type SortKey, type SortState,
+} from '../lib/sortVisitors'
 
 export type { VisitorSummary }
 
@@ -20,6 +24,50 @@ interface VisitorListProps {
 
 function shortId(id: string) {
   return id.slice(0, 8)
+}
+
+/**
+ * Sortable column header. The button carries the interaction so the column is
+ * reachable by keyboard; `aria-sort` on the cell is what a screen reader
+ * actually announces. The arrow only appears on the active column — an
+ * indicator on every header is noise, since only one can be active.
+ */
+function SortHeader({ label, sortKey, sort, onSort, className, align = 'left', title }: {
+  label: string
+  sortKey: SortKey
+  sort: SortState
+  onSort: (key: SortKey) => void
+  className?: string
+  align?: 'left' | 'right'
+  title?: string
+}) {
+  const active = sort.key === sortKey
+  const Arrow = sort.dir === 'asc' ? ChevronUp : ChevronDown
+  return (
+    <th
+      scope="col"
+      aria-sort={active ? (sort.dir === 'asc' ? 'ascending' : 'descending') : 'none'}
+      className={twMerge('py-2 pr-4 font-semibold', className)}
+    >
+      <button
+        type="button"
+        onClick={() => onSort(sortKey)}
+        title={title ?? `Sort by ${SORT_LABEL[sortKey]}`}
+        className={twMerge(
+          'group inline-flex cursor-pointer items-center gap-1 uppercase tracking-wide transition-colors hover:text-white',
+          align === 'right' && 'flex-row-reverse',
+          active ? 'text-white' : 'text-white/85',
+        )}
+      >
+        {label}
+        <Arrow
+          size={12}
+          aria-hidden="true"
+          className={active ? 'opacity-100' : 'opacity-0 transition-opacity group-hover:opacity-40'}
+        />
+      </button>
+    </th>
+  )
 }
 
 /**
@@ -39,6 +87,38 @@ export default function VisitorList({ visitors, onVisitorDeleted }: VisitorListP
   // Locally applied location corrections, so the cell updates on save without
   // refetching the whole list.
   const [savedOverrides, setSavedOverrides] = useState<Record<string, string | null>>({})
+  const [sort, setSort] = useState<SortState>(DEFAULT_SORT)
+
+  // Sort against the label the cell actually shows, override included, so the
+  // Location column can never order by something different from what's on screen.
+  const labelFor = useCallback(
+    (v: VisitorSummary) => resolveLocation(
+      v.id in savedOverrides ? { ...v, location_override: savedOverrides[v.id] } : v
+    ).label,
+    [savedOverrides],
+  )
+
+  const sorted = useMemo(
+    () => sortVisitors(visitors, sort, labelFor),
+    [visitors, sort, labelFor],
+  )
+
+  // Mirror of `sorted` for the restore-from-URL effect below. That effect must
+  // stay keyed on the `visitors` prop alone — depending on `sorted` would make
+  // it re-run on every sort click and on every saved location override, which
+  // would quietly reset pagination each time.
+  // `useRef(sorted)` seeds it for the mount pass; the effect keeps it current
+  // afterwards. Writing a ref during render is unsafe under concurrent
+  // rendering, and the lint rule is right to reject it.
+  const sortedRef = useRef(sorted)
+  useEffect(() => { sortedRef.current = sorted }, [sorted])
+
+  const handleSort = useCallback((key: SortKey) => {
+    setSort(current => nextSort(current, key))
+    // Back to the top: you asked for a new ordering, so page 3 of the old one is
+    // meaningless. The selection survives in the URL either way.
+    setPage(1)
+  }, [])
 
   // On first visitors load: restore selectedId's page from URL. On subsequent
   // changes (search filtering): reset to page 1, close detail if no longer visible.
@@ -47,7 +127,7 @@ export default function VisitorList({ visitors, onVisitorDeleted }: VisitorListP
       didRestore.current = true
       setSelectedId(current => {
         if (!current) return current
-        const idx = visitors.findIndex(v => v.id === current)
+        const idx = sortedRef.current.findIndex(v => v.id === current)
         if (idx === -1) return null
         setPage(Math.floor(idx / PAGE_SIZE) + 1)
         return current
@@ -73,10 +153,10 @@ export default function VisitorList({ visitors, onVisitorDeleted }: VisitorListP
     history.replaceState(null, '', qs ? `?${qs}` : window.location.pathname)
   }, [selectedId])
 
-  const totalPages = Math.ceil(visitors.length / PAGE_SIZE)
-  const pageVisitors = visitors.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
+  const totalPages = Math.ceil(sorted.length / PAGE_SIZE)
+  const pageVisitors = sorted.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
   const rangeStart = (page - 1) * PAGE_SIZE + 1
-  const rangeEnd = Math.min(page * PAGE_SIZE, visitors.length)
+  const rangeEnd = Math.min(page * PAGE_SIZE, sorted.length)
 
   return (
     <div>
@@ -87,16 +167,22 @@ export default function VisitorList({ visitors, onVisitorDeleted }: VisitorListP
       <table className="w-full min-w-[54rem] table-fixed text-sm">
         <thead>
           <tr className="border-b border-white/10 text-left text-xs uppercase tracking-wide text-white/85">
-            <th className="py-2 px-4 font-semibold w-40">Visitor</th>
-            <th className="py-2 pr-4 font-semibold w-36">Last seen</th>
+            <SortHeader label="Visitor"  sortKey="visitor"  sort={sort} onSort={handleSort} className="px-4 w-40" />
+            <SortHeader label="Last seen" sortKey="lastSeen" sort={sort} onSort={handleSort} className="w-36" />
             {/* Location takes the spare width, not Contact: most visitors are
                 anonymous, so a flexible Contact column just grew whitespace,
                 while a corrected location can be a long hand-typed string. */}
-            <th className="py-2 pr-4 font-semibold">Location</th>
-            <th className="py-2 pr-4 font-semibold w-56">Contact</th>
-            <th className="py-2 pr-4 font-semibold text-right w-28" title="Page views and engaged time across all sessions">Engagement</th>
-            <th className="py-2 pr-4 font-semibold text-right w-16" title="Chat messages">Chat</th>
-            <th className="py-2 pr-4 font-semibold text-right w-20" title="Contact form submissions">Sent</th>
+            <SortHeader label="Location" sortKey="location" sort={sort} onSort={handleSort} />
+            <SortHeader label="Contact"  sortKey="contact"  sort={sort} onSort={handleSort} className="w-56" />
+            <SortHeader
+              label="Engagement" sortKey="engagement" sort={sort} onSort={handleSort}
+              className="text-right w-28" align="right"
+              title="Page views and engaged time across all sessions. Sorts by views, then engaged time."
+            />
+            <SortHeader label="Chat" sortKey="chat" sort={sort} onSort={handleSort}
+              className="text-right w-16" align="right" title="Chat messages" />
+            <SortHeader label="Sent" sortKey="sent" sort={sort} onSort={handleSort}
+              className="text-right w-20" align="right" title="Contact form submissions" />
           </tr>
         </thead>
         <tbody>

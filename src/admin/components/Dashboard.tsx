@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import {
-  type LucideIcon, ExternalLink, LogOut, MailCheck, MessageSquare, MousePointer2,
+  type LucideIcon, LogOut, MailCheck, MessageSquare, MousePointer2,
   RefreshCw, Search, Users,
 } from 'lucide-react'
 import { Button, Eyebrow, H2, Panel } from '../../components/ui'
@@ -179,12 +179,6 @@ export default function Dashboard({ onLogout }: DashboardProps) {
             leftIcon={<RefreshCw className={loading ? 'animate-spin' : ''} aria-hidden="true" />}
           >
             Refresh
-          </Button>
-          <Button
-            variant="raised-dark" size="sm" href={window.location.origin} target="_blank"
-            leftIcon={<ExternalLink aria-hidden="true" />}
-          >
-            Visit Website
           </Button>
           <Button variant="raised-dark" size="sm" onClick={logout} leftIcon={<LogOut aria-hidden="true" />}>
             Sign out
