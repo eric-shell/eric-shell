@@ -12,6 +12,10 @@
     "preview": "vite preview",
     "images": "node scripts/generate-responsive-images.mjs",
     "lqip": "node scripts/generate-lqip.mjs",
+    "seed:crm": "node scripts/seed-crm.mjs seed",
+    "seed:crm:clean": "node scripts/seed-crm.mjs clean",
+    "seed:crm:status": "node scripts/seed-crm.mjs status",
+    "check:crm-ui": "node scripts/crm-ui-check.mjs",
     "storybook": "storybook dev -p 6006",
     "build-storybook": "storybook build"
   },
