@@ -80,6 +80,20 @@ Two findings worth remembering before you touch these:
 
 Mark specs the chart implements (from the skill): bars capped at **24px** with the band's leftover left as air, **4px** rounded data-end and square at the baseline, hairline solid baseline (never dashed), the hit target is the full column (not the few-pixel bar), the direct label is selective (hovered/latest only), and every value is also in an `sr-only` list so nothing is gated behind hover. It's built from divs rather than SVG because the old `preserveAspectRatio="none"` stretched non-uniformly and distorted both the corner radius and the gaps.
 
+### Mobile sort uses a native `<select>`, on purpose
+
+Below `md` the visitor table becomes cards, so there are no column headers to
+click and sorting moves to a control in [VisitorList.tsx](src/admin/components/VisitorList.tsx).
+That control is a plain `<select>` rather than the shared [Dropdown](src/components/ui/Dropdown/Dropdown.tsx) — **don't "fix" it**:
+
+- It is `md:hidden`, so it only ever renders on a phone. On Android a native select opens the **OS picker** — a full-width sheet with large touch targets — where `Dropdown` renders a `position: fixed` in-page listbox sized for a mouse.
+- `Dropdown`'s keyboard navigation is its main advantage, and it does nothing on a touch screen.
+- `Dropdown` hardcodes `variant="primary"` on its trigger (a solid blue CTA, far too loud beside a direction toggle) and a light listbox (`bg-white`, `text-blue-950`). Using it here would mean adding a trigger `variant` prop plus dark listbox styling to a shared component, for one mobile-only call site.
+
+Reconsider only if `Dropdown` picks up a dark variant for some other reason, or if a desktop sort control ever appears — sorting on desktop is the column headers.
+
+The direction toggle deliberately uses `ArrowUpNarrowWide` / `ArrowDownWideNarrow`, never a chevron: the native select draws its own chevron immediately to the left, and two side by side read as two dropdowns. It also carries the word Asc/Desc so it never depends on the glyph.
+
 ## Traffic quality tags
 
 [classify.ts](src/admin/lib/classify.ts) labels low-value rows; [VisitorTags.tsx](src/admin/components/VisitorTags.tsx) renders them in the Visitor column.

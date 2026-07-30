@@ -29,14 +29,19 @@ export const INITIAL_DIR: Record<SortKey, SortDir> = {
   sent: 'desc',
 }
 
+/**
+ * Display label for a sort key — the column name, capitalised, short enough to
+ * sit in a select. Columns needing more explanation (Engagement sorts by views
+ * then engaged time) carry a fuller `title` at the header call site.
+ */
 export const SORT_LABEL: Record<SortKey, string> = {
-  visitor: 'visitor ID',
-  lastSeen: 'last seen',
-  location: 'location',
-  contact: 'contact name',
-  engagement: 'page views, then engaged time',
-  chat: 'chat messages',
-  sent: 'contact submissions',
+  visitor: 'Visitor ID',
+  lastSeen: 'Last seen',
+  location: 'Location',
+  contact: 'Contact',
+  engagement: 'Engagement',
+  chat: 'Chat',
+  sent: 'Sent',
 }
 
 type Cell = { s: string | null } | { n: number | null }
