@@ -110,8 +110,11 @@ export default function VisitorDetail({ id, onClose, onDeleted, onSaved }: Visit
               >
                 {deleting ? 'Deleting…' : 'Delete'}
               </Button>
+              {/* `success` opposite Delete's `error`: the pair reads as commit
+                  vs destroy at a glance, rather than a generic CTA beside a red
+                  one. */}
               <Button
-                variant="primary"
+                variant="success"
                 size="sm"
                 onClick={saveDetails}
                 disabled={saving}
