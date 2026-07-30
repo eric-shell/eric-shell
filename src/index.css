@@ -306,9 +306,34 @@
   }
 }
 
+/* The footer closes the page, so it needs the section shear on its top edge
+   and a flat bottom edge that sits square against the window. skewY() can't
+   do that — it tilts both edges, which lifted the bottom-right corner off the
+   page (exposing the black canvas in a wedge) and spilled the bottom-left
+   corner ~13px past it as dead scroll. Clipping the top corner instead leaves
+   the box axis-aligned, so the gradient runs to the true bottom edge and
+   nothing overflows.
+     --shear is the rise of a 1deg slope across the viewport. The negative
+   margin is the old -2rem overlap plus the half-shear the rotation about the
+   element's centre used to contribute, so the visible edge lands where it
+   always did. ::before redraws the hairline the top border used to carry —
+   a border follows the box, not the clip, so it would survive only as a
+   sliver; skewed about its own centre at top: shear/2, the bar traces the
+   clip edge exactly. */
 @utility skew-footer {
-  transform: skewY(-1deg);
-  margin-top: -2rem;
+  --shear: calc(100vw * tan(1deg));
+  margin-top: calc(-2rem - var(--shear) / 2);
+  clip-path: polygon(0 var(--shear), 100% 0, 100% 100%, 0 100%);
+
+  &::before {
+    content: '';
+    position: absolute;
+    inset-inline: 0;
+    top: calc(var(--shear) / 2);
+    height: 1px;
+    background: --alpha(var(--color-white) / 10%);
+    transform: skewY(-1deg);
+  }
 }
 
 /* Mirror of skew-footer for a page's opening block (/resume): the bottom
@@ -323,6 +348,13 @@
 
 @utility unskew-inner {
   transform: skewY(0.5deg);
+}
+
+/* Sections settle their content at -0.5deg (a -1deg shear plus unskew-inner's
+   +0.5deg). skew-footer clips instead of shearing, so its content applies that
+   same residual tilt directly. */
+@utility skew-inner {
+  transform: skewY(-0.5deg);
 }
 
 @layer base {
@@ -389,6 +421,19 @@
   .cascade-item.opacity-0 :is(h1, h2, h3) {
     transition: none;
     font-variation-settings: 'wght' 860;
+  }
+
+  /* The canvas — what fills the rubber-band gutter past either end of the
+     document. The root's background is the one that extends there, and its
+     edge pixels are what get stretched, so two hard stops give the top
+     overscroll black (the Hero photo's surround) and the bottom overscroll the
+     footer's end colour, carrying the footer to the window's bottom edge. */
+  html {
+    background-image: linear-gradient(
+      to bottom,
+      var(--color-black) 0 50%,
+      var(--color-blue-900) 50% 100%
+    );
   }
 
   body {

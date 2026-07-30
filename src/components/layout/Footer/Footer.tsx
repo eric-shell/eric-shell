@@ -4,12 +4,15 @@ import { navLinks, connectLinks, socialLinks } from '@/data'
 export default function Footer() {
   const year = new Date().getFullYear()
 
+  // The block padding lives on the footer rather than the Container because
+  // skew-inner shears the Container — inside the padding its low corner has
+  // room; on the footer's own edge it would hang past the page and add scroll.
   return (
-    <footer className="relative z-50 bg-gradient-to-br from-blue-950 to-blue-900 text-white border-t border-white/10 skew-footer">
+    <footer className="relative z-50 pt-12 pb-16 md:pt-24 md:pb-28 bg-gradient-to-br from-blue-950 to-blue-900 text-white skew-footer">
       {/* flip so the blob layout doesn't mirror the /resume hero's dark
           Backdrop on the same page. */}
       <Backdrop tone="dark" flip />
-      <Container className="pt-12 pb-12 md:pt-24 md:pb-24 flex flex-col items-center gap-10 md:flex-row md:items-center md:justify-between md:gap-12 unskew-inner">
+      <Container className="flex flex-col items-center gap-10 md:flex-row md:items-center md:justify-between md:gap-12 skew-inner">
 
         <CascadeGroup className="flex flex-col items-center gap-6 order-1 md:order-2 md:items-end" threshold={0.2}>
           <CascadeItem index={0}>
