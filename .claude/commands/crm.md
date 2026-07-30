@@ -108,6 +108,35 @@ The direction toggle deliberately uses `ArrowUpNarrowWide` / `ArrowDownWideNarro
 | `Spam?` | A submission with a URL in the name, a malformed or disposable email, or no page view at all |
 | `Bounce` | A single view under 5s, and only when nothing else already explains the row |
 
+### Filters
+
+Two opt-in toggles sit in a `FILTER` row above the table (not inside the search
+field — search is a lookup, these change which rows count at all). Both persist
+in `localStorage` and both report how many rows they remove, so hiding is never
+silent.
+
+| Toggle | Removes |
+|---|---|
+| `Hide bots` | Rows whose tags carry `automated` — Bot, Automated, No dwell |
+| `Engaged only` | Rows that neither chatted nor submitted the form |
+
+**They narrow the metric tiles too**, deliberately. Search does not. A filter is
+a statement about which traffic counts, so leaving the tiles reading 28 while
+the table showed 25 — with conversion percentages still diluted by crawlers —
+would defeat the point. Typing a name is just a lookup and must not rewrite the
+totals above it.
+
+**`Spam?` and `Bounce` are never auto-hidden.** A bounce is a real person who
+left quickly, and hiding those would delete most genuine traffic. A spam flag is
+a prompt to *read* a submission, not a verdict — the heuristics have false
+positives, and hiding a real enquiry costs far more than showing a junk one. A
+spammer that is also a bot disappears under the bot rule anyway. This is encoded
+as `VisitorTag.automated`, so the distinction lives with the classifier rather
+than in the UI.
+
+Considered and rejected: a "Hide bounces" toggle (hides real humans) and a
+"Hide spam" toggle (see above).
+
 Rules that keep it honest, and that you should preserve when tuning:
 
 - **Never match `bot` mid-word.** `CUBOT` is a real Android phone brand, and `Abbott` appears in corporate user agents; a loose `[a-z]bot` pattern flags both. Use `\b` boundaries and the explicit `Bot/` version form.

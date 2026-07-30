@@ -199,7 +199,7 @@ function MobileList({
                   <span className="font-mono text-xs font-semibold text-white/95">{shortId(v.id)}</span>
                   <span className="shrink-0 text-xs text-white/85">{formatShort(v.last_activity_at)}</span>
                 </div>
-                {tags.length > 0 && <VisitorTags tags={tags} />}
+                {tags.length > 0 && <VisitorTags tags={tags} className="mt-1" />}
 
                 <div className="mt-1.5 truncate text-sm text-white/90">
                   <LocationValue location={location} />
@@ -340,10 +340,14 @@ export default function VisitorList({ visitors, onVisitorDeleted }: VisitorListP
           viewport, which made the browser zoom the whole page out. Below `md`
           the same rows render as cards instead — see MobileList. */}
       <div className="hidden overflow-x-auto md:block">
-      <table className="w-full min-w-[54rem] table-fixed text-sm">
+      <table className="w-full min-w-[58rem] table-fixed text-sm">
         <thead>
           <tr className="border-b border-white/10 text-left text-xs uppercase tracking-wide text-white/85">
-            <SortHeader label="Visitor"  sortKey="visitor"  sort={sort} onSort={handleSort} className="px-4 w-40" />
+            <SortHeader label="Visitor"  sortKey="visitor"  sort={sort} onSort={handleSort} className="px-4 w-32" />
+            <SortHeader
+              label="Flags" sortKey="flags" sort={sort} onSort={handleSort} className="w-44"
+              title="Heuristic traffic-quality flags. Sorts by severity — possible spam first, then automated, then bounces."
+            />
             <SortHeader label="Last seen" sortKey="lastSeen" sort={sort} onSort={handleSort} className="w-36" />
             {/* Location takes the spare width, not Contact: most visitors are
                 anonymous, so a flexible Contact column just grew whitespace,
@@ -377,7 +381,9 @@ export default function VisitorList({ visitors, onVisitorDeleted }: VisitorListP
                 >
                   <td className="py-3 px-4 align-top">
                     <div className="truncate font-mono text-xs font-semibold text-white/95">{shortId(v.id)}</div>
-                    <VisitorTags tags={tags} />
+                  </td>
+                  <td className="py-3 pr-4 align-top">
+                    {tags.length > 0 ? <VisitorTags tags={tags} /> : <Dash />}
                   </td>
                   <td className="py-3 pr-4 text-white/85">{formatShort(v.last_activity_at)}</td>
                   <td className="py-3 pr-4 text-white/90 truncate">
@@ -418,7 +424,7 @@ export default function VisitorList({ visitors, onVisitorDeleted }: VisitorListP
                 </tr>
                 {isOpen && (
                   <tr>
-                    <td colSpan={7} className="pb-3 pt-0">
+                    <td colSpan={8} className="pb-3 pt-0">
                       <VisitorDetail
                         id={v.id}
                         onClose={() => setSelectedId(null)}

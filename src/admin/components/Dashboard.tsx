@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useState } from 'react'
 import {
   type LucideIcon, LogOut, MailCheck, MessageSquare, MousePointer2,
-  RefreshCw, Search, Users, X,
+  Bot, EyeOff, RefreshCw, Search, Users, X,
 } from 'lucide-react'
+import { twMerge } from 'tailwind-merge'
 import { Button, Container, Eyebrow, H2, Panel } from '../../components/ui'
 import VisitorList from './VisitorList'
 import VisitorsChart from './VisitorsChart'
@@ -10,6 +11,7 @@ import { MetricsRowSkeleton, Skeleton, VisitorTableSkeleton } from './Skeleton'
 import { apiCall } from '../lib/api'
 import { formatDuration } from '../lib/dateFormat'
 import { resolveLocation } from '../lib/location'
+import { isAutomated } from '../lib/classify'
 import type { StatDay, StatsPayload, VisitorListPayload, VisitorSummary } from '@/../api/_lib/types'
 
 /**
@@ -53,6 +55,39 @@ function StatCard({ label, value, sub, icon: Icon, tone = 'neutral' }: {
   )
 }
 
+const HIDE_BOTS_KEY = 'eric.sh:crm:hide-bots'
+const ENGAGED_ONLY_KEY = 'eric.sh:crm:engaged-only'
+
+/**
+ * Toolbar filter toggle. `aria-pressed` rather than a checkbox: it is a control
+ * that changes the view, not a value being submitted.
+ */
+function FilterChip({ active, onClick, icon: Icon, title, children }: {
+  active: boolean
+  onClick: () => void
+  icon: LucideIcon
+  title: string
+  children: React.ReactNode
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-pressed={active}
+      title={title}
+      className={twMerge(
+        'flex h-7 shrink-0 cursor-pointer items-center gap-1.5 rounded-md px-2 text-xs font-semibold ring-1 ring-inset transition-colors',
+        active
+          ? 'bg-accent/15 text-white ring-accent/40'
+          : 'text-white/85 ring-white/15 hover:bg-white/[0.06] hover:text-white',
+      )}
+    >
+      <Icon size={13} aria-hidden="true" />
+      {children}
+    </button>
+  )
+}
+
 // 60s was pure habit. The visitor list is not a live feed — two minutes is
 // indistinguishable in use and halves the query volume of an open tab.
 const POLL_MS = 120_000
@@ -84,6 +119,25 @@ export default function Dashboard({ onLogout }: DashboardProps) {
   const [stats, setStats] = useState<StatDay[] | null>(null)
   const [loading, setLoading] = useState(false)
   const [query, setQuery] = useState('')
+  // Persisted: if you want crawler noise out of the way, you want it out of the
+  // way tomorrow too. Defaults to off so nothing is hidden until asked, and the
+  // toolbar always reports the count so it can never hide rows silently.
+  const [hideBots, setHideBots] = useState(() => {
+    try { return window.localStorage.getItem(HIDE_BOTS_KEY) === '1' } catch { return false }
+  })
+
+  // Narrows to visitors who actually did something — chatted or submitted the
+  // form. The most common question this dashboard gets asked.
+  const [engagedOnly, setEngagedOnly] = useState(() => {
+    try { return window.localStorage.getItem(ENGAGED_ONLY_KEY) === '1' } catch { return false }
+  })
+
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(HIDE_BOTS_KEY, hideBots ? '1' : '0')
+      window.localStorage.setItem(ENGAGED_ONLY_KEY, engagedOnly ? '1' : '0')
+    } catch { /* private mode */ }
+  }, [hideBots, engagedOnly])
   const [lastLoaded, setLastLoaded] = useState<Date | null>(null)
 
   const fetchData = useCallback(() => {
@@ -153,19 +207,36 @@ export default function Dashboard({ onLogout }: DashboardProps) {
     setVisitors(prev => prev?.filter(v => v.id !== deletedId) ?? null)
   }, [])
 
+  // Two different kinds of narrowing, applied at different levels on purpose.
+  //
+  // The bot filter is a data-quality decision, so it defines the working set —
+  // the metric tiles read from it too. Otherwise the header would claim 28
+  // visitors while the table showed 25, and the conversion percentages would
+  // stay diluted by crawler traffic, which is the whole reason to hide it.
+  //
+  // Search is a lookup, not a statement about the data, so it narrows only the
+  // table. Typing a name shouldn't rewrite the totals above it.
+  const hasEngaged = (v: VisitorSummary) => v.chat_message_count > 0 || v.contact_count > 0
+  const botCount = visitors?.filter(isAutomated).length ?? 0
+  // Counted after the bot filter, so the label doesn't promise to hide rows
+  // that are already gone.
+  const afterBots = hideBots && visitors ? visitors.filter(v => !isAutomated(v)) : visitors
+  const quietCount = afterBots?.filter(v => !hasEngaged(v)).length ?? 0
+  const baseVisitors = engagedOnly && afterBots ? afterBots.filter(hasEngaged) : afterBots
+
   const q = fold(query.trim())
-  const filteredVisitors = !q || !visitors ? visitors : visitors.filter(v =>
+  const filteredVisitors = !q || !baseVisitors ? baseVisitors : baseVisitors.filter(v =>
     v.id.startsWith(q) ||
     fold(v.contact_name).includes(q) ||
     fold(v.contact_email).includes(q) ||
     fold(resolveLocation(v).label).includes(q)
   )
 
-  const totalVisitors = visitors?.length ?? 0
-  const engaged = visitors?.filter(v => v.chat_message_count > 0).length ?? 0
-  const converted = visitors?.filter(v => v.contact_count > 0).length ?? 0
-  const totalViews = visitors?.reduce((s, v) => s + v.page_view_count, 0) ?? 0
-  const totalEngagedMs = visitors?.reduce((s, v) => s + v.total_engaged_ms, 0) ?? 0
+  const totalVisitors = baseVisitors?.length ?? 0
+  const engaged = baseVisitors?.filter(v => v.chat_message_count > 0).length ?? 0
+  const converted = baseVisitors?.filter(v => v.contact_count > 0).length ?? 0
+  const totalViews = baseVisitors?.reduce((s, v) => s + v.page_view_count, 0) ?? 0
+  const totalEngagedMs = baseVisitors?.reduce((s, v) => s + v.total_engaged_ms, 0) ?? 0
 
   return (
     <Container className="flex flex-col gap-4 px-4 py-6 sm:gap-6 sm:px-6 sm:py-10">
@@ -289,7 +360,42 @@ export default function Dashboard({ onLogout }: DashboardProps) {
               </button>
             </>
           )}
+
         </div>
+
+        {/* Filters sit on their own row rather than inside the search field.
+            Search is a lookup; these change which rows count at all, including
+            in the metric tiles above — different jobs, different row. */}
+        {(botCount > 0 || quietCount > 0) && (
+          <div className="flex flex-wrap items-center gap-2 border-b border-white/10 px-4 py-2.5">
+            <span className="mr-0.5 text-[10px] font-semibold uppercase tracking-wide text-white/70">
+              Filter
+            </span>
+            {botCount > 0 && (
+              <FilterChip
+                active={hideBots}
+                onClick={() => setHideBots(h => !h)}
+                icon={hideBots ? EyeOff : Bot}
+                title={
+                  `${hideBots ? 'Hiding' : 'Hides'} ${botCount} automated ${botCount === 1 ? 'visitor' : 'visitors'} — ` +
+                  'crawlers, headless clients, and fetch-without-reading. Bounces and possible spam always stay visible.'
+                }
+              >
+                {hideBots ? `${botCount} bots hidden` : 'Hide bots'}
+              </FilterChip>
+            )}
+            {quietCount > 0 && (
+              <FilterChip
+                active={engagedOnly}
+                onClick={() => setEngagedOnly(e => !e)}
+                icon={MessageSquare}
+                title={`Show only visitors who chatted or submitted the contact form. Hides ${quietCount} who did neither.`}
+              >
+                {engagedOnly ? `${quietCount} quiet hidden` : 'Engaged only'}
+              </FilterChip>
+            )}
+          </div>
+        )}
 
         <div className="p-6">
           {filteredVisitors === null ? (

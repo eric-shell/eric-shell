@@ -8,13 +8,29 @@ export interface VisitorTag {
   tone: TagTone
   /** Why it fired — surfaced as a title so a judgement is never unexplained. */
   reason: string
+  /**
+   * This row is a machine, not a person, and is safe to hide behind the
+   * "Hide bots" toggle.
+   *
+   * Deliberately NOT set on `Bounce` or `Spam?`:
+   *  - A bounce is a real human who left quickly. Brief is not bogus, and
+   *    hiding those would quietly delete most of the genuine traffic.
+   *  - A spam flag is a prompt to READ a submission, not a verdict on it. The
+   *    heuristics have false positives, and hiding a real enquiry costs far
+   *    more than showing a junk one. A spammer that is also a bot is hidden by
+   *    the bot rule anyway.
+   */
+  automated?: true
 }
 
 /**
  * Heuristic labelling of low-value traffic.
  *
- * This is PRESENTATIONAL ONLY. Nothing is hidden, filtered, or deleted on the
- * strength of a tag — it exists so a real lead isn't buried under crawler noise.
+ * Nothing is ever DELETED on the strength of a tag, and by default nothing is
+ * hidden either. The one exception is opt-in: the "Hide bots" toggle filters
+ * rows carrying an `automated` tag, and it reports how many it removed so the
+ * hiding is never silent. Everything else — including `Spam?` — stays visible.
+ *
  * Every tag carries a `reason`, because an unexplained "spam" badge on a
  * genuine visitor is worse than no badge at all.
  *
@@ -58,6 +74,7 @@ export function classifyVisitor(v: VisitorSummary): VisitorTag[] {
   if (uaIsBot) {
     tags.push({
       label: 'Bot',
+      automated: true,
       tone: 'muted',
       reason: `User agent matches a known crawler or automation client: ${ua.slice(0, 80)}`,
     })
@@ -68,6 +85,7 @@ export function classifyVisitor(v: VisitorSummary): VisitorTag[] {
   if (!uaIsBot && views > 0 && !v.client_timezone && !v.language) {
     tags.push({
       label: 'Automated',
+      automated: true,
       tone: 'muted',
       reason: 'Recorded page views but reported no browser timezone or language, which a real browser always sends.',
     })
@@ -77,6 +95,7 @@ export function classifyVisitor(v: VisitorSummary): VisitorTag[] {
   if (!uaIsBot && views >= 3 && engaged < NO_DWELL_MS) {
     tags.push({
       label: 'No dwell',
+      automated: true,
       tone: 'muted',
       reason: `${views} page views but under ${Math.round(NO_DWELL_MS / 1000)}s of engaged time — pages were fetched, not read.`,
     })
@@ -115,4 +134,14 @@ export function classifyVisitor(v: VisitorSummary): VisitorTag[] {
   }
 
   return tags
+}
+
+/**
+ * True when a row is machine traffic rather than a person.
+ *
+ * This is what the "Hide bots" toggle filters on — see `VisitorTag.automated`
+ * for why `Bounce` and `Spam?` are deliberately excluded.
+ */
+export function isAutomated(v: VisitorSummary): boolean {
+  return classifyVisitor(v).some(t => t.automated)
 }

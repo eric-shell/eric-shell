@@ -1,3 +1,4 @@
+import { twMerge } from 'tailwind-merge'
 import { AlertTriangle, Bot, MoonStar } from 'lucide-react'
 import type { TagTone, VisitorTag } from '../lib/classify'
 
@@ -28,10 +29,12 @@ const ICON: Record<string, typeof Bot> = {
   'Spam?': AlertTriangle,
 }
 
-export default function VisitorTags({ tags }: { tags: VisitorTag[] }) {
+export default function VisitorTags({ tags, className }: { tags: VisitorTag[]; className?: string }) {
   if (tags.length === 0) return null
   return (
-    <span className="mt-1 flex flex-wrap items-center gap-1">
+    // No margin of its own — it sits in a table cell on desktop and stacked
+    // under the id on a phone, which want different spacing.
+    <span className={twMerge('flex flex-wrap items-center gap-1', className)}>
       {tags.map(t => {
         const Icon = ICON[t.label] ?? Bot
         return (

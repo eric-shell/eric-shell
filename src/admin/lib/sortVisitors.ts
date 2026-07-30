@@ -1,7 +1,8 @@
 import type { VisitorSummary } from '@/../api/_lib/types'
+import { classifyVisitor } from './classify'
 
 export type SortKey =
-  | 'visitor' | 'lastSeen' | 'location' | 'contact' | 'engagement' | 'chat' | 'sent'
+  | 'visitor' | 'flags' | 'lastSeen' | 'location' | 'contact' | 'engagement' | 'chat' | 'sent'
 export type SortDir = 'asc' | 'desc'
 
 export interface SortState {
@@ -21,6 +22,7 @@ export const DEFAULT_SORT: SortState = { key: 'lastSeen', dir: 'desc' }
  */
 export const INITIAL_DIR: Record<SortKey, SortDir> = {
   visitor: 'asc',
+  flags: 'desc',
   lastSeen: 'desc',
   location: 'asc',
   contact: 'asc',
@@ -36,6 +38,7 @@ export const INITIAL_DIR: Record<SortKey, SortDir> = {
  */
 export const SORT_LABEL: Record<SortKey, string> = {
   visitor: 'Visitor ID',
+  flags: 'Flags',
   lastSeen: 'Last seen',
   location: 'Location',
   contact: 'Contact',
@@ -65,6 +68,10 @@ const RAW_KEYS = new Set<SortKey>(['visitor', 'lastSeen'])
 function cellFor(v: VisitorSummary, key: SortKey, locationLabel: string | null): Cell {
   switch (key) {
     case 'visitor':    return { s: v.id }
+    // Rank by how much the row wants attention: a possible spam submission
+    // outranks a crawler, which outranks a bounce. Unflagged rows are null, so
+    // they sink under the blanks-last rule rather than crowding the top.
+    case 'flags':      return { n: flagRank(v) || null }
     case 'lastSeen':   return { s: v.last_activity_at }   // ISO-8601 sorts lexicographically
     case 'location':   return { s: locationLabel }
     case 'contact':    return { s: v.contact_name ?? v.contact_email ?? null }
@@ -77,6 +84,12 @@ function cellFor(v: VisitorSummary, key: SortKey, locationLabel: string | null):
     case 'chat':       return { n: v.chat_message_count || null }
     case 'sent':       return { n: v.contact_count || null }
   }
+}
+
+const TONE_RANK = { danger: 3, muted: 2, warn: 1 } as const
+
+function flagRank(v: VisitorSummary): number {
+  return classifyVisitor(v).reduce((max, t) => Math.max(max, TONE_RANK[t.tone] ?? 0), 0)
 }
 
 /** Empty is "no data", not "lowest value" — see the nulls-last rule below. */
