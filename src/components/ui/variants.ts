@@ -85,10 +85,14 @@ export const SURFACE_ICON_HOVER: Record<Variant, string> = {
   'success-glass': 'group-hover:bg-green-950/40',
   white:     'group-hover:bg-blue-950/10',
   'raised-dark': 'group-hover:bg-white/20',
-  info:      'group-hover:bg-blue-950/35',
-  success:   'group-hover:bg-blue-950/35',
-  warning:   'group-hover:bg-blue-950/35',
-  error:     'group-hover:bg-blue-950/35',
+  // Status variants deepen the slab further than the rest (/25 -> /45). Their
+  // surface deliberately holds its lightness on hover, so the slab carries the
+  // depth cue instead — and being alpha over a small region, it costs the
+  // button nothing in contrast against the canvas behind it.
+  info:      'group-hover:bg-blue-950/45',
+  success:   'group-hover:bg-blue-950/45',
+  warning:   'group-hover:bg-blue-950/45',
+  error:     'group-hover:bg-blue-950/45',
 }
 
 export const SURFACE_HOVER: Record<Variant, string> = {
@@ -101,8 +105,16 @@ export const SURFACE_HOVER: Record<Variant, string> = {
   'success-glass': 'hover:bg-green-800/40 hover:border-green-300/60',
   white:     'hover:bg-blue-50',
   'raised-dark': 'hover:bg-white/[0.09] hover:border-white/20',
-  info:      'hover:bg-blue-700',
-  success:   'hover:bg-success-hover',
-  warning:   'hover:bg-warning-hover',
-  error:     'hover:bg-error-hover',
+  /**
+   * Status hovers gain chroma at a fixed lightness rather than darkening — see
+   * the derivation in index.css. The paired shadow does the rest of the work:
+   * it strengthens the existing top highlight and adds an inset hairline ring,
+   * which is what gives a hover cue to buttons the icon slab can't reach
+   * (no `leftIcon`/`rightIcon`, `iconSlab={false}`, or `shape="square"`).
+   * Inset, so it reads against the fill and behaves the same on either canvas.
+   */
+  info:      'hover:bg-info-hover hover:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.40),inset_0_0_0_1px_rgba(255,255,255,0.22)]',
+  success:   'hover:bg-success-hover hover:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.40),inset_0_0_0_1px_rgba(255,255,255,0.22)]',
+  warning:   'hover:bg-warning-hover hover:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.40),inset_0_0_0_1px_rgba(255,255,255,0.22)]',
+  error:     'hover:bg-error-hover hover:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.40),inset_0_0_0_1px_rgba(255,255,255,0.22)]',
 }

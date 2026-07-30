@@ -11,7 +11,26 @@ import {
 
 type Shape = 'pill' | 'square'
 
-const BASE = 'group inline-flex items-center justify-center font-sans font-semibold transition cursor-pointer overflow-hidden'
+/**
+ * `transition` already covers `transform`, so the scale rides the same easing
+ * as the surface colours. It is deliberately tiny — 1.5% — because these sit in
+ * dense rows in the admin and anything larger reads as the button jumping.
+ * `motion-safe:` drops it entirely under `prefers-reduced-motion`, where the
+ * colour and shadow shifts still carry the state.
+ *
+ * The press scale is *below* 1 so a click always moves opposite the hover,
+ * which keeps the two states distinguishable on a touch device that fires both.
+ *
+ * `disabled:` only binds on `<button>` — an `<a>` cannot be disabled, and a
+ * disabled link should not be rendered as one. `pointer-events-none` is what
+ * actually suppresses the hover and press states; without it a disabled button
+ * still lights up under the cursor, which is what `VisitorDetail`'s Delete
+ * button did for the whole duration of a delete.
+ */
+const BASE =
+  'group inline-flex items-center justify-center font-sans font-semibold transition cursor-pointer overflow-hidden ' +
+  'motion-safe:hover:scale-[1.015] motion-safe:active:scale-[0.985] ' +
+  'disabled:pointer-events-none disabled:opacity-50 disabled:shadow-none'
 
 const SIZE_PILL: Record<Size, string> = {
   sm: 'px-3 py-1.5 rounded-lg text-xs',
