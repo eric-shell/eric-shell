@@ -163,7 +163,7 @@ export default function Dashboard({ onLogout }: DashboardProps) {
         </div>
         <div className="flex items-center gap-2">
           {lastLoaded && (
-            <span className="flex items-center gap-1.5 pr-1 text-xs text-white/55">
+            <span className="flex items-center gap-1.5 pr-1 text-xs text-white/85">
               {/* Quietly signals the auto-refresh is alive. */}
               <span className={`h-1.5 w-1.5 rounded-full ${loading ? 'bg-accent animate-pulse' : 'bg-green-400/70'}`} />
               {lastLoaded.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}

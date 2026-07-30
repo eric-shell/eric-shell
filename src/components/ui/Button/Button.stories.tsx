@@ -16,6 +16,13 @@ export default meta
 type Story = StoryObj<typeof meta>
 
 const variants: Variant[] = ['secondary', 'ghost', 'glass-light', 'glass-dark']
+
+/**
+ * Solid status fills. Each is validated for a white label AND for its boundary
+ * against both the light and dark canvases, so they are safe on either — see
+ * the derivation note in index.css.
+ */
+const semanticVariants: Variant[] = ['info', 'success', 'warning', 'error']
 const sizes: Size[] = ['sm', 'md', 'lg']
 
 export const Default: Story = {
@@ -37,6 +44,29 @@ export const AllVariants: Story = {
         <Button key={variant} variant={variant}>
           {variant}
         </Button>
+      ))}
+    </div>
+  ),
+}
+
+export const SemanticVariants: Story = {
+  parameters: { controls: { disable: true } },
+  render: () => (
+    <div className="flex flex-col gap-6">
+      {[
+        ['on the light canvas', 'bg-blue-50'],
+        ['on the dark canvas', 'bg-blue-950'],
+      ].map(([label, bg]) => (
+        <div key={label} className="flex flex-col gap-2">
+          <p className="text-xs font-semibold uppercase tracking-wide opacity-60">{label}</p>
+          <div className={`flex flex-wrap gap-3 rounded-xl p-4 ${bg}`}>
+            {semanticVariants.map((variant) => (
+              <Button key={variant} variant={variant}>
+                {variant}
+              </Button>
+            ))}
+          </div>
+        </div>
       ))}
     </div>
   ),

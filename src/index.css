@@ -39,6 +39,31 @@
   --color-accent:       oklch(0.720 0.150 225.00);
   --color-accent-deep:  oklch(0.450 0.130 240.00);
 
+  /*
+   * Semantic status fills for the `info` / `success` / `warning` / `error`
+   * button variants. Solved numerically rather than picked from the ramps,
+   * because a shared variant can land on either canvas and had to satisfy all
+   * three constraints at once:
+   *
+   *   white label on the fill   >= 4.5:1  (AA text)
+   *   fill vs the light canvas  >= 3:1    (component boundary, WCAG 1.4.11)
+   *   fill vs the dark canvas   >= 3:1
+   *
+   * The existing ramp steps could not: red-600/700 is only 2.62:1 against
+   * blue-950, and amber with white ink was 3.71:1. Each value below is the
+   * highest chroma that clears all three — measured, not chosen by eye.
+   *
+   * `warning` has no counterpart in the blue/red/green ramps; hue 75 is new.
+   */
+  --color-info:           oklch(0.545 0.110 231.50);
+  --color-info-hover:     oklch(0.482 0.098 231.50);
+  --color-success:        oklch(0.542 0.170 145.00);
+  --color-success-hover:  oklch(0.480 0.150 145.00);
+  --color-warning:        oklch(0.560 0.118 75.00);
+  --color-warning-hover:  oklch(0.500 0.105 75.00);
+  --color-error:          oklch(0.587 0.238 25.00);
+  --color-error-hover:    oklch(0.525 0.213 25.00);
+
   --color-red-50:  oklch(0.965 0.014 25.00);
   --color-red-100: oklch(0.918 0.034 25.00);
   --color-red-200: oklch(0.852 0.072 25.00);
