@@ -97,6 +97,7 @@ export const values: ResumeValue[] = [
 ]
 
 export const certifications: string[] = [
+  'Department of the Interior (DOI) Government Clearance',
   'Acquia Certified Drupal Front End Specialist',
   'Acquia Certified Drupal Site Builder',
 ]

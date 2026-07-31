@@ -41,13 +41,13 @@ export const navLinks: NavLink[] = [
     label: 'Chat',
     href: '/#hero',
     Icon: MessagesSquare,
-    tooltip: "You're already talking to me.",
+    tooltip: "You're already talking to me!",
   },
   {
     label: 'Work',
     href: '/#work',
     Icon: Briefcase,
-    tooltip: 'Yep, this is the work.',
+    tooltip: 'Yep, there\'s a lot of work.',
   },
   {
     label: 'Testimonials',
@@ -59,13 +59,13 @@ export const navLinks: NavLink[] = [
     label: 'Visuals',
     href: '/#visuals',
     Icon: Palette,
-    tooltip: 'Still worth the scroll.',
+    tooltip: 'Would you just look at it?',
   },
   {
     label: 'Contact',
     href: '/#contact',
     Icon: Form,
-    tooltip: "I'm right here — say hi.",
+    tooltip: "I'm right here, say hi!",
   },
 ]
 
