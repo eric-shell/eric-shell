@@ -11,6 +11,7 @@ import { MetricsRowSkeleton, Skeleton } from './Skeleton'
 import { apiCall } from '../lib/api'
 import { formatDuration } from '../lib/dateFormat'
 import { isAutomated } from '../lib/classify'
+import { DEFAULT_TIMEFRAME, isTimeframe, withinTimeframe, type Timeframe } from '../lib/timeframe'
 import type { StatDay, StatsPayload, VisitorListPayload, VisitorSummary } from '@/../api/_lib/types'
 import type { InsightsPayload } from '@/../api/_lib/insights-types'
 
@@ -57,6 +58,7 @@ function StatCard({ label, value, sub, icon: Icon, tone = 'neutral' }: {
 
 const HIDE_BOTS_KEY = 'eric.sh:crm:hide-bots'
 const ENGAGED_ONLY_KEY = 'eric.sh:crm:engaged-only'
+const TIMEFRAME_KEY = 'eric.sh:crm:timeframe'
 
 // 60s was pure habit. The visitor list is not a live feed — two minutes is
 // indistinguishable in use and halves the query volume of an open tab.
@@ -89,12 +91,23 @@ export default function Dashboard({ onLogout }: DashboardProps) {
     try { return window.localStorage.getItem(ENGAGED_ONLY_KEY) === '1' } catch { return false }
   })
 
+  // The window everything on this page describes. Defaults to `all` so a fresh
+  // session is never quietly hiding history, and is persisted alongside the
+  // chips because a chosen window is a working preference, not a one-off.
+  const [timeframe, setTimeframe] = useState<Timeframe>(() => {
+    try {
+      const saved = window.localStorage.getItem(TIMEFRAME_KEY)
+      return isTimeframe(saved) ? saved : DEFAULT_TIMEFRAME
+    } catch { return DEFAULT_TIMEFRAME }
+  })
+
   useEffect(() => {
     try {
       window.localStorage.setItem(HIDE_BOTS_KEY, hideBots ? '1' : '0')
       window.localStorage.setItem(ENGAGED_ONLY_KEY, engagedOnly ? '1' : '0')
+      window.localStorage.setItem(TIMEFRAME_KEY, timeframe)
     } catch { /* private mode */ }
-  }, [hideBots, engagedOnly])
+  }, [hideBots, engagedOnly, timeframe])
   const [lastLoaded, setLastLoaded] = useState<Date | null>(null)
 
   // One fetch pass for the whole dashboard. The insights aggregate joins this
@@ -172,18 +185,26 @@ export default function Dashboard({ onLogout }: DashboardProps) {
 
   // Two different kinds of narrowing, applied at different levels on purpose.
   //
-  // The bot filter is a data-quality decision, so it defines the working set —
-  // the metric tiles read from it too. Otherwise the header would claim 28
-  // visitors while the table showed 25, and the conversion percentages would
-  // stay diluted by crawler traffic, which is the whole reason to hide it.
+  // Timeframe and the bot filter are statements about which data counts, so
+  // they define the working set — the metric tiles read from it too. Otherwise
+  // the header would claim 28 visitors while the table showed 25, and the
+  // conversion percentages would stay diluted by crawler traffic, which is the
+  // whole reason to hide it.
   //
   // Search is a lookup, not a statement about the data, so it narrows only the
   // table. Typing a name shouldn't rewrite the totals above it.
+  //
+  // Timeframe goes first, so every count below it — including the chip labels —
+  // describes the window on screen rather than all of history. Note the per-
+  // visitor totals (page views, engaged time) are lifetime figures on rows that
+  // fall in the window, not a re-aggregate of the window itself; the row data
+  // isn't broken out by day.
   const hasEngaged = (v: VisitorSummary) => v.chat_message_count > 0 || v.contact_count > 0
-  const botCount = visitors?.filter(isAutomated).length ?? 0
+  const inWindow = visitors && withinTimeframe(visitors, timeframe)
+  const botCount = inWindow?.filter(isAutomated).length ?? 0
   // Counted after the bot filter, so the label doesn't promise to hide rows
   // that are already gone.
-  const afterBots = hideBots && visitors ? visitors.filter(v => !isAutomated(v)) : visitors
+  const afterBots = hideBots && inWindow ? inWindow.filter(v => !isAutomated(v)) : inWindow
   const quietCount = afterBots?.filter(v => !hasEngaged(v)).length ?? 0
   const baseVisitors = engagedOnly && afterBots ? afterBots.filter(hasEngaged) : afterBots
 
@@ -282,9 +303,14 @@ export default function Dashboard({ onLogout }: DashboardProps) {
           too — so the chips live down there but their state lives up here. */}
       <VisitorsPanel
         visitors={baseVisitors}
-        totalCount={visitors?.length ?? 0}
+        // The in-window count, not the all-time one: the "N of M" readout beside
+        // the search field would otherwise measure results against rows the
+        // timeframe has already excluded.
+        totalCount={inWindow?.length ?? 0}
         loading={loading}
         hasAnyVisitors={visitors !== null && visitors.length > 0}
+        timeframe={timeframe}
+        onTimeframeChange={setTimeframe}
         hideBots={hideBots}
         botCount={botCount}
         onToggleBots={() => setHideBots(h => !h)}

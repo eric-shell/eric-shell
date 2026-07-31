@@ -5,6 +5,7 @@ import { Eyebrow, Panel } from '../../components/ui'
 import VisitorList from './VisitorList'
 import { VisitorTableSkeleton } from './Skeleton'
 import { resolveLocation } from '../lib/location'
+import { TIMEFRAMES, type Timeframe } from '../lib/timeframe'
 import type { VisitorSummary } from '@/../api/_lib/types'
 
 /**
@@ -39,7 +40,10 @@ function FilterChip({ active, onClick, icon: Icon, title, disabled, children }: 
       disabled={disabled}
       title={title}
       className={twMerge(
-        'flex h-7 shrink-0 items-center gap-1.5 rounded-md px-2 text-xs font-semibold ring-1 ring-inset transition-colors',
+        // Taller and wider on a phone: at h-7 these are 28px of tappable height
+        // sitting right next to each other, which is a miss waiting to happen.
+        // Back to the compact size once there's a pointer driving them.
+        'flex h-9 shrink-0 items-center gap-1.5 rounded-md px-2.5 text-xs font-semibold ring-1 ring-inset transition-colors sm:h-7 sm:px-2',
         disabled
           ? 'cursor-default text-white/40 ring-white/10'
           : active
@@ -52,6 +56,115 @@ function FilterChip({ active, onClick, icon: Icon, title, disabled, children }: 
     </button>
   )
 }
+
+/**
+ * Timeframe segments — the toolbar's left-hand control, from `sm` up.
+ *
+ * A segmented control rather than a dropdown at this width: there are four
+ * mutually exclusive values, all of them a few characters wide, and which one
+ * is active is the single most important thing about the numbers on this page.
+ * A menu would hide three of the four behind a click to save no space at all.
+ * The phone gets `TimeframeSelect` below instead, where that trade flips.
+ *
+ * `radiogroup` semantics, unlike the `aria-pressed` chips on the right: these
+ * are one value chosen from a set, not independent toggles, so arrow keys and
+ * a single tab stop are what a screen-reader user should get.
+ */
+function TimeframeSegments({ value, onChange, labelledBy }: {
+  value: Timeframe
+  onChange: (v: Timeframe) => void
+  /** The visible "Last seen" text, so the group's name matches what's on screen. */
+  labelledBy: string
+}) {
+  return (
+    <div
+      role="radiogroup"
+      aria-labelledby={labelledBy}
+      className="flex items-center gap-0.5 rounded-md p-0.5 ring-1 ring-inset ring-white/15"
+    >
+      {TIMEFRAMES.map(({ value: v, label, title }) => {
+        const active = v === value
+        return (
+          <button
+            key={v}
+            type="button"
+            role="radio"
+            aria-checked={active}
+            // Only the active segment is tabbable; arrows move within the group.
+            tabIndex={active ? 0 : -1}
+            onClick={() => onChange(v)}
+            onKeyDown={e => {
+              const step = e.key === 'ArrowRight' || e.key === 'ArrowDown' ? 1
+                : e.key === 'ArrowLeft' || e.key === 'ArrowUp' ? -1
+                  : 0
+              if (!step) return
+              e.preventDefault()
+              const i = TIMEFRAMES.findIndex(t => t.value === value)
+              const next = TIMEFRAMES[(i + step + TIMEFRAMES.length) % TIMEFRAMES.length]
+              onChange(next.value)
+              // Follow the selection, or focus would sit on a segment that is no
+              // longer the tabbable one.
+              const el = e.currentTarget.parentElement?.querySelector<HTMLElement>(
+                `[data-timeframe="${next.value}"]`,
+              )
+              el?.focus()
+            }}
+            data-timeframe={v}
+            title={title}
+            className={twMerge(
+              'flex h-6 cursor-pointer items-center rounded px-2 text-xs font-semibold tabular-nums transition-colors',
+              active
+                ? 'bg-accent/15 text-white ring-1 ring-inset ring-accent/40'
+                : 'text-white/70 hover:bg-white/[0.06] hover:text-white',
+            )}
+          >
+            {label}
+          </button>
+        )
+      })}
+    </div>
+  )
+}
+
+/**
+ * The same choice on a phone, as a native `<select>` — matching how sorting
+ * already degrades in `VisitorList`. Four segments plus their label, sharing a
+ * row with two filter chips, does not survive a 390px screen; and a native
+ * select opens the OS picker, which beats a row of 24px-wide tap targets.
+ *
+ * It carries its own `<label>` rather than sharing one with the segmented
+ * control: only one of the two is ever in the accessibility tree (the other is
+ * `display: none`), and each wants a different association.
+ */
+function TimeframeSelect({ value, onChange }: {
+  value: Timeframe
+  onChange: (v: Timeframe) => void
+}) {
+  return (
+    <div className="flex flex-col gap-1.5 sm:hidden">
+      <label htmlFor="visitor-timeframe" className={LABEL_CLASS}>
+        Last seen
+      </label>
+      <select
+        id="visitor-timeframe"
+        value={value}
+        onChange={e => onChange(e.target.value as Timeframe)}
+        className="w-full rounded-lg border border-white/10 bg-white/[0.05] px-2.5 py-2 text-sm text-white outline-none focus:border-accent/60"
+      >
+        {TIMEFRAMES.map(({ value: v, full }) => (
+          // Native option lists can't be styled on Android, so give them an
+          // explicit dark background rather than inheriting white-on-white.
+          <option key={v} value={v} className="bg-blue-950 text-white">
+            {full}
+          </option>
+        ))}
+      </select>
+    </div>
+  )
+}
+
+/** The uppercase micro-type both toolbar groups label themselves with. */
+const LABEL_CLASS = 'text-[10px] font-semibold uppercase tracking-wide text-white/70'
 
 /**
  * Case- and accent-insensitive key for search.
@@ -75,6 +188,8 @@ interface VisitorsPanelProps {
   loading: boolean
   /** False when there are no rows at all, which hides the filter row entirely. */
   hasAnyVisitors: boolean
+  timeframe: Timeframe
+  onTimeframeChange: (v: Timeframe) => void
   hideBots: boolean
   botCount: number
   onToggleBots: () => void
@@ -89,6 +204,8 @@ export default function VisitorsPanel({
   totalCount,
   loading,
   hasAnyVisitors,
+  timeframe,
+  onTimeframeChange,
   hideBots,
   botCount,
   onToggleBots,
@@ -175,44 +292,79 @@ export default function VisitorsPanel({
             currently matches nothing. Hiding it made the feature invisible on
             clean data — you could not tell whether it existed or had silently
             failed. A disabled chip with a count of zero says the same thing
-            honestly. */}
+            honestly — and a timeframe that empties the table must never take
+            away the control you'd use to widen it again.
+
+            Two groups, pushed apart: the timeframe on the left sets the window
+            everything on the page describes, the chips on the right subtract
+            from within it. Reading order matches that dependency.
+
+            The two only sit on one line from `sm` up. Below that they stack,
+            each under its own label — four segments and two chips on a 390px
+            screen would wrap into an unreadable scramble, and `justify-between`
+            on a wrapped row leaves lonely items stranded mid-line. */}
         {hasAnyVisitors && (
-          <div className="flex flex-wrap items-center gap-2 border-b border-white/10 px-4 py-2.5">
-            <span className="mr-0.5 text-[10px] font-semibold uppercase tracking-wide text-white/70">
-              Filter
-            </span>
-            <FilterChip
-                active={hideBots}
-                disabled={botCount === 0}
-                onClick={onToggleBots}
-                icon={hideBots ? EyeOff : Bot}
-                title={botCount === 0
-                  ? 'No automated traffic detected in this data, so there is nothing to hide.'
-                  : `${hideBots ? 'Hiding' : 'Hides'} ${botCount} automated ${botCount === 1 ? 'visitor' : 'visitors'} — ` +
-                    'crawlers, headless clients, and fetch-without-reading. Bounces and possible spam always stay visible.'}
-              >
-                {hideBots && botCount > 0 ? `${botCount} bots hidden` : 'Hide bots'}
-              </FilterChip>
-            <FilterChip
-                active={engagedOnly}
-                disabled={quietCount === 0}
-                onClick={onToggleEngaged}
-                icon={MessageSquare}
-                title={quietCount === 0
-                  ? 'Every visitor here chatted or submitted the form, so there is nothing to hide.'
-                  : `Show only visitors who chatted or submitted the contact form. Hides ${quietCount} who did neither.`}
-              >
-                {engagedOnly && quietCount > 0 ? `${quietCount} quiet hidden` : 'Engaged only'}
-              </FilterChip>
+          <div className="flex flex-col gap-3 border-b border-white/10 px-4 py-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between sm:gap-x-4 sm:gap-y-2 sm:py-2.5">
+            <div className="hidden items-center gap-2 sm:flex">
+              <span id="visitor-timeframe-label" className={LABEL_CLASS}>
+                Last seen
+              </span>
+              <TimeframeSegments
+                value={timeframe}
+                onChange={onTimeframeChange}
+                labelledBy="visitor-timeframe-label"
+              />
+            </div>
+            <TimeframeSelect value={timeframe} onChange={onTimeframeChange} />
+
+            <div className="flex flex-col gap-1.5 sm:flex-row sm:flex-wrap sm:items-center sm:gap-2">
+              <span className={`${LABEL_CLASS} sm:mr-0.5`}>
+                Filters
+              </span>
+              {/* Own row so the chips stay side by side under the label on a
+                  phone instead of inheriting the group's vertical stack. */}
+              <div className="flex flex-wrap items-center gap-2">
+                <FilterChip
+                  active={hideBots}
+                  disabled={botCount === 0}
+                  onClick={onToggleBots}
+                  icon={hideBots ? EyeOff : Bot}
+                  title={botCount === 0
+                    ? 'No automated traffic detected in this data, so there is nothing to hide.'
+                    : `${hideBots ? 'Hiding' : 'Hides'} ${botCount} automated ${botCount === 1 ? 'visitor' : 'visitors'} — ` +
+                      'crawlers, headless clients, and fetch-without-reading. Bounces and possible spam always stay visible.'}
+                >
+                  {hideBots && botCount > 0 ? `${botCount} bots hidden` : 'Hide bots'}
+                </FilterChip>
+                <FilterChip
+                  active={engagedOnly}
+                  disabled={quietCount === 0}
+                  onClick={onToggleEngaged}
+                  icon={MessageSquare}
+                  title={quietCount === 0
+                    ? 'Every visitor here chatted or submitted the form, so there is nothing to hide.'
+                    : `Show only visitors who chatted or submitted the contact form. Hides ${quietCount} who did neither.`}
+                >
+                  {engagedOnly && quietCount > 0 ? `${quietCount} quiet hidden` : 'Engaged only'}
+                </FilterChip>
+              </div>
+            </div>
           </div>
         )}
 
+        {/* The empty state distinguishes an empty database from an empty
+            window — otherwise narrowing to 24h on quiet data reads as data
+            loss. */}
         <div className="p-6">
           {filteredVisitors === null ? (
             <VisitorTableSkeleton />
           ) : filteredVisitors.length === 0 ? (
             <p className="text-sm text-white/65">
-              {q ? 'No visitors match your search.' : 'No visitors yet.'}
+              {q
+                ? 'No visitors match your search.'
+                : timeframe === 'all'
+                  ? 'No visitors yet.'
+                  : 'No visitors active in this timeframe.'}
             </p>
           ) : (
             <VisitorList visitors={filteredVisitors} onVisitorDeleted={onVisitorDeleted} />
