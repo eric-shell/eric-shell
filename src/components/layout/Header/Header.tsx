@@ -101,10 +101,10 @@ export default function Header() {
                   <CascadeItem key={label} as="li" index={i + 1}>
                     <Button
                       href={isActive ? undefined : href}
-                      variant={isActive ? 'secondary' : 'glass-light'}
+                      variant={isActive ? 'primary' : 'glass-light'}
                       size="sm"
                       leftIcon={<Icon size={14} />}
-                      className={isActive ? 'hover:from-white hover:to-blue-50 hover:text-blue-800 cursor-default' : ''}
+                      // className={isActive ? 'hover:from-white hover:to-blue-50 hover:text-blue-800 cursor-default' : ''}
                     >
                       {label}
                     </Button>

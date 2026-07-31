@@ -176,7 +176,7 @@ export default function Work() {
         <div
           aria-hidden={!hasMore}
           className={`flex justify-center overflow-hidden transition-[max-height,opacity,margin] duration-500 ease-out motion-reduce:transition-none ${
-            hasMore ? 'mt-6 max-h-20 opacity-100' : 'mt-0 max-h-0 opacity-0'
+            hasMore ? 'py-6 max-h-40 opacity-100' : 'pt-0 max-h-0 opacity-0'
           }`}
         >
           <Button

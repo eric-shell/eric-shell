@@ -29,7 +29,7 @@ type Shape = 'pill' | 'square'
  */
 const BASE =
   'group inline-flex items-center justify-center font-sans font-semibold transition cursor-pointer overflow-hidden ' +
-  'motion-safe:hover:scale-[1.015] motion-safe:active:scale-[0.985] ' +
+  'motion-safe:hover:scale-[1.035] motion-safe:active:scale-[0.985] ' +
   'disabled:pointer-events-none disabled:opacity-50 disabled:shadow-none'
 
 const SIZE_PILL: Record<Size, string> = {
