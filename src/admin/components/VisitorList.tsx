@@ -1,7 +1,7 @@
 import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
-  ArrowDownWideNarrow, ArrowUpNarrowWide, Check, ChevronDown, ChevronLeft,
-  ChevronRight, ChevronUp, MailCheck, MessageSquare,
+  ArrowDownWideNarrow, ArrowUpNarrowWide, ChevronDown, ChevronLeft,
+  ChevronRight, ChevronUp, MailCheck, MessageSquare, Pencil,
 } from 'lucide-react'
 import VisitorDetail from './VisitorDetail'
 import { Button } from '../../components/ui'
@@ -36,9 +36,10 @@ function LocationValue({ location }: { location: ReturnType<typeof resolveLocati
     <span title={location.approximate ? 'Approximate — from IP geolocation' : 'Manually corrected'}>
       {location.label}
       {/* Nearly every location is IP-derived, so marking the exception reads far
-          quieter than marking the rule. */}
+          quieter than marking the rule. A pencil, not a check: the mark says
+          "a human typed this", not "this has been verified as correct". */}
       {!location.approximate && (
-        <Check size={11} className="ml-1 inline-block align-[-1px] text-white/80" aria-label="corrected" />
+        <Pencil size={11} className="ml-1 inline-block align-[-1px] text-white/80" aria-label="manually corrected" />
       )}
     </span>
   )
@@ -54,6 +55,62 @@ function EngagementValue({ v, align = 'right' }: { v: VisitorSummary; align?: 'l
       </div>
       {v.total_engaged_ms > 0 && (
         <div className="text-xs text-white/75">{formatDuration(v.total_engaged_ms)}</div>
+      )}
+    </div>
+  )
+}
+
+/**
+ * Engagement, chat count and submission count folded into one right-hand column.
+ *
+ * Between `md` and `xl` there is not enough width for eight columns — the three
+ * count columns are 216px of chrome for two digits of data — but the counts
+ * themselves still matter, so they collapse into the engagement cell rather than
+ * disappearing. Zeroes are dropped instead of rendered as dashes: with the
+ * columns merged there is no vertical alignment left for a dash to preserve, and
+ * a quiet row should read quiet.
+ */
+function ActivityValue({ v }: { v: VisitorSummary }) {
+  return (
+    <div className="text-right">
+      <EngagementValue v={v} />
+      {(v.chat_message_count > 0 || v.contact_count > 0) && (
+        <div className="mt-0.5 flex items-center justify-end gap-2 text-xs">
+          {v.chat_message_count > 0 && (
+            <span className="inline-flex items-center gap-1 text-white/90">
+              <MessageSquare size={11} className="text-white/70" aria-hidden="true" />
+              <span className="sr-only">Chat messages: </span>
+              {v.chat_message_count}
+            </span>
+          )}
+          {v.contact_count > 0 && (
+            <span className="inline-flex items-center gap-1 font-semibold text-green-400">
+              <MailCheck size={11} strokeWidth={2.5} aria-hidden="true" />
+              <span className="sr-only">Contact submissions: </span>
+              {v.contact_count}
+            </span>
+          )}
+        </div>
+      )}
+    </div>
+  )
+}
+
+/**
+ * Contact cell content. Name over email in one column: most visitors are
+ * anonymous readers, and two separate columns of em-dashes wasted the widest
+ * part of the table. Both lines carry a `title` — they truncate hard once the
+ * column narrows below `xl`.
+ */
+function ContactValue({ v }: { v: VisitorSummary }) {
+  if (!v.contact_name && !v.contact_email) return <Dash />
+  return (
+    <div className="min-w-0">
+      {v.contact_name && (
+        <div className="truncate font-semibold text-white/95" title={v.contact_name}>{v.contact_name}</div>
+      )}
+      {v.contact_email && (
+        <div className="truncate text-xs text-white/75" title={v.contact_email}>{v.contact_email}</div>
       )}
     </div>
   )
@@ -113,23 +170,74 @@ function Dash() {
 
 
 /**
+ * Sort control for every width where the column headers can't carry all eight
+ * keys: the phone has no headers at all, and below `xl` the table folds Flags,
+ * Chat and Sent away. Hidden from `xl` up, where every column is clickable.
+ *
+ * A native `<select>`: on Android it opens the OS picker — better than a custom
+ * listbox on a touch screen, and accessible without extra work.
+ */
+function SortBar({ sort, onSort, className }: {
+  sort: SortState
+  onSort: (key: SortKey) => void
+  className?: string
+}) {
+  const dirLabel = sort.dir === 'asc' ? 'ascending' : 'descending'
+  return (
+    <div className={twMerge('mb-3 flex flex-col gap-1.5', className)}>
+      <label htmlFor="visitor-sort" className="text-[10px] font-semibold uppercase tracking-wide text-white/75">
+        Sort by
+      </label>
+      {/* Capped rather than full-bleed: on a tablet a 900px-wide select for
+          eight short labels reads like a mistake. */}
+      <div className="flex max-w-sm items-stretch gap-2">
+        <select
+          id="visitor-sort"
+          value={sort.key}
+          onChange={e => onSort(e.target.value as SortKey)}
+          className="min-w-0 flex-1 rounded-lg border border-white/10 bg-white/[0.05] px-2.5 py-2 text-sm text-white outline-none focus:border-accent/60"
+        >
+          {(Object.keys(SORT_LABEL) as SortKey[]).map(k => (
+            // Native option lists can't be styled on Android, so give them an
+            // explicit dark background rather than inheriting white-on-white.
+            <option key={k} value={k} className="bg-blue-950 text-white">
+              {SORT_LABEL[k]}
+            </option>
+          ))}
+        </select>
+        {/* Directional arrows, not a chevron. The native select draws its own
+            chevron immediately to the left, and two chevrons side by side read
+            as two dropdowns rather than a select plus a direction toggle. The
+            word carries it too, so the control never depends on the glyph. */}
+        <button
+          type="button"
+          onClick={() => onSort(sort.key)}
+          aria-label={`Sorted ${dirLabel}. Activate to reverse.`}
+          title={`Sorted ${dirLabel} — tap to reverse`}
+          className="flex shrink-0 cursor-pointer items-center gap-1.5 rounded-lg border border-white/10 bg-white/[0.05] px-2.5 text-xs font-semibold text-white/90 transition-colors hover:bg-white/[0.09]"
+        >
+          {sort.dir === 'asc'
+            ? <ArrowUpNarrowWide size={15} aria-hidden="true" />
+            : <ArrowDownWideNarrow size={15} aria-hidden="true" />}
+          {sort.dir === 'asc' ? 'Asc' : 'Desc'}
+        </button>
+      </div>
+    </div>
+  )
+}
+
+/**
  * Phone rendering of the visitor list.
  *
  * A horizontally scrolling table on a 412px screen means the reader never sees
  * a whole row, so each visitor becomes a self-contained card instead. Content
  * is shared with the table via LocationValue / EngagementValue so the two can't
- * drift.
- *
- * Sorting moves to a native `<select>`: there are no column headers to click,
- * and on Android a native select opens the OS picker — better than a custom
- * listbox on a small touch screen, and accessible without extra work.
+ * drift. Sorting comes from the shared SortBar above.
  */
 function MobileList({
-  rows, sort, onSort, selectedId, onSelect, locationFor, onVisitorDeleted, onSaved,
+  rows, selectedId, onSelect, locationFor, onVisitorDeleted, onSaved,
 }: {
   rows: VisitorSummary[]
-  sort: SortState
-  onSort: (key: SortKey) => void
   selectedId: string | null
   onSelect: (id: string | null) => void
   /** Same resolver the table uses, so the "corrected" marker stays truthful. */
@@ -137,47 +245,8 @@ function MobileList({
   onVisitorDeleted?: (id: string) => void
   onSaved: (id: string, override: string | null) => void
 }) {
-  const dirLabel = sort.dir === 'asc' ? 'ascending' : 'descending'
   return (
     <div className="md:hidden">
-      <div className="mb-3 flex flex-col gap-1.5">
-        <label htmlFor="visitor-sort" className="text-[10px] font-semibold uppercase tracking-wide text-white/75">
-          Sort by
-        </label>
-        <div className="flex items-stretch gap-2">
-          <select
-            id="visitor-sort"
-            value={sort.key}
-            onChange={e => onSort(e.target.value as SortKey)}
-            className="min-w-0 flex-1 rounded-lg border border-white/10 bg-white/[0.05] px-2.5 py-2 text-sm text-white outline-none focus:border-accent/60"
-          >
-            {(Object.keys(SORT_LABEL) as SortKey[]).map(k => (
-              // Native option lists can't be styled on Android, so give them an
-              // explicit dark background rather than inheriting white-on-white.
-              <option key={k} value={k} className="bg-blue-950 text-white">
-                {SORT_LABEL[k]}
-              </option>
-            ))}
-          </select>
-          {/* Directional arrows, not a chevron. The native select draws its own
-              chevron immediately to the left, and two chevrons side by side read
-              as two dropdowns rather than a select plus a direction toggle. The
-              word carries it too, so the control never depends on the glyph. */}
-          <button
-            type="button"
-            onClick={() => onSort(sort.key)}
-            aria-label={`Sorted ${dirLabel}. Activate to reverse.`}
-            title={`Sorted ${dirLabel} — tap to reverse`}
-            className="flex shrink-0 cursor-pointer items-center gap-1.5 rounded-lg border border-white/10 bg-white/[0.05] px-2.5 text-xs font-semibold text-white/90 transition-colors hover:bg-white/[0.09]"
-          >
-            {sort.dir === 'asc'
-              ? <ArrowUpNarrowWide size={15} aria-hidden="true" />
-              : <ArrowDownWideNarrow size={15} aria-hidden="true" />}
-            {sort.dir === 'asc' ? 'Asc' : 'Desc'}
-          </button>
-        </div>
-      </div>
-
       <ul className="flex flex-col gap-2">
         {rows.map(v => {
           const isOpen = selectedId === v.id
@@ -333,36 +402,50 @@ export default function VisitorList({ visitors, onVisitorDeleted }: VisitorListP
 
   return (
     <div>
-      {/* Telemetry pushed this to nine columns, which blew the page out past the
-          viewport below ~md. The table keeps a comfortable min-width and scrolls
-          inside its own container instead of dragging the body wide. */}
-      {/* The table needs 54rem to breathe. On a phone that is wider than the
-          viewport, which made the browser zoom the whole page out. Below `md`
-          the same rows render as cards instead — see MobileList. */}
+      <SortBar sort={sort} onSort={handleSort} className="xl:hidden" />
+
+      {/* Three column sets, one table.
+          Below `md` the rows render as cards instead (see MobileList) — a
+          horizontally scrolling table on a phone means never seeing a whole row.
+          `md`–`lg`: five columns. The fixed widths of the full set sum to
+          exactly the old 58rem min-width, so `table-fixed` gave Location — the
+          only flexible column — zero width, and its cells drew on top of
+          Contact. Flags fold into the Visitor cell and the three count columns
+          fold into one, which leaves Location real width at every size.
+          `lg`: Flags gets its column back. `xl`: the full eight.
+          Nothing is dropped, only merged, and SortBar keeps the folded columns'
+          sort keys reachable. */}
       <div className="hidden overflow-x-auto md:block">
-      <table className="w-full min-w-[58rem] table-fixed text-sm">
+      <table className="w-full min-w-[42rem] table-fixed text-sm xl:min-w-[66rem]">
         <thead>
           <tr className="border-b border-white/10 text-left text-xs uppercase tracking-wide text-white/85">
-            <SortHeader label="Visitor"  sortKey="visitor"  sort={sort} onSort={handleSort} className="px-4 w-32" />
+            <SortHeader label="Visitor"  sortKey="visitor"  sort={sort} onSort={handleSort} className="px-4 w-36 lg:w-32" />
             <SortHeader
-              label="Flags" sortKey="flags" sort={sort} onSort={handleSort} className="w-44"
+              label="Flags" sortKey="flags" sort={sort} onSort={handleSort} className="hidden w-44 lg:table-cell"
               title="Heuristic traffic-quality flags. Sorts by severity — possible spam first, then automated, then bounces."
             />
-            <SortHeader label="Last seen" sortKey="lastSeen" sort={sort} onSort={handleSort} className="w-36" />
+            <SortHeader label="Last seen" sortKey="lastSeen" sort={sort} onSort={handleSort} className="w-32 xl:w-36" />
             {/* Location takes the spare width, not Contact: most visitors are
                 anonymous, so a flexible Contact column just grew whitespace,
                 while a corrected location can be a long hand-typed string. */}
             <SortHeader label="Location" sortKey="location" sort={sort} onSort={handleSort} />
-            <SortHeader label="Contact"  sortKey="contact"  sort={sort} onSort={handleSort} className="w-56" />
+            <SortHeader label="Contact"  sortKey="contact"  sort={sort} onSort={handleSort} className="w-40 lg:w-48 xl:w-56" />
+            {/* Merged below xl, split above it. Both carry the engagement sort
+                key — it is the column's primary value either way. */}
+            <SortHeader
+              label="Activity" sortKey="engagement" sort={sort} onSort={handleSort}
+              className="text-right w-36 xl:hidden" align="right"
+              title="Page views and engaged time, with chat messages and submissions. Sorts by views, then engaged time."
+            />
             <SortHeader
               label="Engagement" sortKey="engagement" sort={sort} onSort={handleSort}
-              className="text-right w-28" align="right"
+              className="hidden text-right w-28 xl:table-cell" align="right"
               title="Page views and engaged time across all sessions. Sorts by views, then engaged time."
             />
             <SortHeader label="Chat" sortKey="chat" sort={sort} onSort={handleSort}
-              className="text-right w-16" align="right" title="Chat messages" />
+              className="hidden text-right w-16 xl:table-cell" align="right" title="Chat messages" />
             <SortHeader label="Sent" sortKey="sent" sort={sort} onSort={handleSort}
-              className="text-right w-20" align="right" title="Contact form submissions" />
+              className="hidden text-right w-20 xl:table-cell" align="right" title="Contact form submissions" />
           </tr>
         </thead>
         <tbody>
@@ -379,41 +462,35 @@ export default function VisitorList({ visitors, onVisitorDeleted }: VisitorListP
                     isOpen ? 'bg-black/[0.65]' : 'hover:bg-black/[0.15]'
                   )}
                 >
-                  <td className="py-3 px-4 align-top">
+                  <td className="py-3 px-4">
                     <div className="truncate font-mono text-xs font-semibold text-white/95">{shortId(v.id)}</div>
+                    {/* Below `lg` the Flags column is folded away, so the badges
+                        ride under the id — the same stacking the phone card uses. */}
+                    {tags.length > 0 && <VisitorTags tags={tags} className="mt-1 lg:hidden" />}
                   </td>
-                  <td className="py-3 pr-4 align-top">
+                  <td className="hidden py-3 pr-4 lg:table-cell">
                     {tags.length > 0 ? <VisitorTags tags={tags} /> : <Dash />}
                   </td>
                   <td className="py-3 pr-4 text-white/85">{formatShort(v.last_activity_at)}</td>
                   <td className="py-3 pr-4 text-white/90 truncate">
                     <LocationValue location={location} />
                   </td>
-                  {/* Name over email in one column: most visitors are anonymous
-                      readers now, and two separate columns of em-dashes wasted
-                      the widest part of the table. */}
                   <td className="py-3 pr-4 truncate">
-                    {v.contact_name || v.contact_email ? (
-                      <div className="min-w-0">
-                        {v.contact_name && (
-                          <div className="truncate font-semibold text-white/95">{v.contact_name}</div>
-                        )}
-                        {v.contact_email && (
-                          <div className="truncate text-xs text-white/75">{v.contact_email}</div>
-                        )}
-                      </div>
-                    ) : <Dash />}
+                    <ContactValue v={v} />
                   </td>
-                  <td className="py-3 pr-4 text-right tabular-nums">
+                  <td className="py-3 pr-4 text-right tabular-nums xl:hidden">
+                    <ActivityValue v={v} />
+                  </td>
+                  <td className="hidden py-3 pr-4 text-right tabular-nums xl:table-cell">
                     <EngagementValue v={v} />
                   </td>
-                  <td className="py-3 pr-4 text-right text-white">
+                  <td className="hidden py-3 pr-4 text-right text-white xl:table-cell">
                     {v.chat_message_count || <Dash />}
                   </td>
                   {/* Semantic color earns its place here: a submission is the
                       one real conversion signal in the table. Always paired with
                       an icon, never color alone. green-400 is 7.04:1 on the canvas. */}
-                  <td className="py-3 pr-4 text-right">
+                  <td className="hidden py-3 pr-4 text-right xl:table-cell">
                     {v.contact_count ? (
                       <span className="inline-flex items-center gap-1 font-semibold text-green-400">
                         <MailCheck size={12} strokeWidth={2.5} aria-hidden="true" />
@@ -424,7 +501,9 @@ export default function VisitorList({ visitors, onVisitorDeleted }: VisitorListP
                 </tr>
                 {isOpen && (
                   <tr>
-                    <td colSpan={8} className="pb-3 pt-0">
+                    {/* Every cell in the row, folded or not — the browser clamps
+                        the span to the columns actually rendered. */}
+                    <td colSpan={9} className="pb-3 pt-0">
                       <VisitorDetail
                         id={v.id}
                         onClose={() => setSelectedId(null)}
@@ -445,8 +524,6 @@ export default function VisitorList({ visitors, onVisitorDeleted }: VisitorListP
 
       <MobileList
         rows={pageVisitors}
-        sort={sort}
-        onSort={handleSort}
         selectedId={selectedId}
         onSelect={setSelectedId}
         locationFor={locationFor}

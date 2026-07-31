@@ -249,8 +249,7 @@ export default function VisitorsPanel({
             filters don't reach the aggregates; here it is that they do, so the
             two panels can disagree without either being wrong. */}
         <p className="text-[11px] text-white/60">
-          One row per visitor · the filters and search below narrow this table
-          and the metrics above
+          One row per visitor · the filters and search below narrow results
         </p>
       </div>
 

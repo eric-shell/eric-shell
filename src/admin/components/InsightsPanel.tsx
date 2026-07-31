@@ -84,8 +84,7 @@ export default function InsightsPanel({ data }: { data: InsightsPayload | null }
             agent in the browser; this is a SQL aggregate and cannot see them, so
             claiming otherwise would be the dishonest option. */}
         <p className="text-[11px] text-white/60">
-          {data ? `Last ${data.windowDays} days` : 'Last 30 days'} · all recorded traffic —
-          the table filters below do not apply here
+          {data ? `Last ${data.windowDays} days` : 'Last 30 days'} · all recorded traffic
         </p>
       </div>
 
