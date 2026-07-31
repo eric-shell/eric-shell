@@ -72,6 +72,25 @@ export const SemanticVariants: Story = {
   ),
 }
 
+/**
+ * `HOVER_LIFT` family variants (`primary`/`info`/`success`/`warning`/`error`)
+ * drop the inset hairline ring at `shape="square"` — at a tight circular
+ * radius it wraps the full perimeter and reads as a halo rather than an edge.
+ * Hover to compare against `SemanticVariants` above (`pill`, ring intact).
+ */
+export const SquareSemanticVariants: Story = {
+  parameters: { controls: { disable: true } },
+  render: () => (
+    <div className="flex flex-wrap gap-3 rounded-xl p-4 bg-blue-950">
+      {(['primary', ...semanticVariants] as Variant[]).map((variant) => (
+        <Button key={variant} variant={variant} shape="square" aria-label={variant}>
+          <Briefcase size={16} strokeWidth={2.5} />
+        </Button>
+      ))}
+    </div>
+  ),
+}
+
 export const Sizes: Story = {
   parameters: {
     controls: { disable: true },

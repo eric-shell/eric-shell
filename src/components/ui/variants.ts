@@ -38,7 +38,7 @@ export type Variant =
 export type Size = 'sm' | 'md' | 'lg'
 
 export const SURFACE: Record<Variant, string> = {
-  primary:   'text-white bg-gradient-to-br from-blue-600 to-blue-700 border border-transparent shadow-[inset_0_1px_0_0_rgba(255,255,255,0.25)]',
+  primary:   'text-white bg-gradient-to-br from-blue-600 to-blue-700 border border-transparent shadow-[inset_0_1px_0_0_rgba(255,255,255,0.16)]',
   secondary: 'text-blue-800 bg-gradient-to-br from-white to-blue-50 border border-transparent',
   ghost:     'text-blue-950/60 border border-transparent',
   'glass-light': 'text-white glass-blur bg-white/10 border border-white/20 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.20)]',
@@ -47,10 +47,10 @@ export const SURFACE: Record<Variant, string> = {
   'success-glass': 'text-white glass-blur bg-green-950/85 border border-green-400/50',
   white:     'bg-white border border-blue-950/10 text-blue-950',
   'raised-dark': 'text-white bg-white/[0.055] border border-white/10',
-  info:      'text-white bg-blue-600 border border-transparent shadow-[inset_0_1px_0_0_rgba(255,255,255,0.25)]',
-  success:   'text-white bg-success border border-transparent shadow-[inset_0_1px_0_0_rgba(255,255,255,0.25)]',
-  warning:   'text-white bg-warning border border-transparent shadow-[inset_0_1px_0_0_rgba(255,255,255,0.25)]',
-  error:     'text-white bg-error border border-transparent shadow-[inset_0_1px_0_0_rgba(255,255,255,0.25)]',
+  info:      'text-white bg-blue-600 border border-transparent shadow-[inset_0_1px_0_0_rgba(255,255,255,0.16)]',
+  success:   'text-white bg-success border border-transparent shadow-[inset_0_1px_0_0_rgba(255,255,255,0.16)]',
+  warning:   'text-white bg-warning border border-transparent shadow-[inset_0_1px_0_0_rgba(255,255,255,0.16)]',
+  error:     'text-white bg-error border border-transparent shadow-[inset_0_1px_0_0_rgba(255,255,255,0.16)]',
 }
 
 /**
@@ -100,9 +100,41 @@ export const SURFACE_ICON_HOVER: Record<Variant, string> = {
 
 /** Strengthened top highlight + inset hairline ring, shared by every fill that
  *  holds its lightness on hover. Inset, so it reads against the fill rather
- *  than the canvas and behaves the same on light and dark. */
+ *  than the canvas and behaves the same on light and dark. Kept faint on
+ *  purpose — an early pass at 0.40/0.22 read as a glow/halo rather than an
+ *  edge, especially where it stacks with an outer `shadow-*` at the call
+ *  site (e.g. the Chat send button's `shadow-md`). */
 const HOVER_LIFT =
-  'hover:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.40),inset_0_0_0_1px_rgba(255,255,255,0.22)]'
+  'hover:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.30),inset_0_0_0_1px_rgba(255,255,255,0.14)]'
+
+/**
+ * `shape="square"` counterpart to `HOVER_LIFT`: the strengthened top
+ * highlight without the hairline ring. At a tight circular radius (the
+ * icon-only square form, frequently `rounded-full`) a ring wraps the entire
+ * perimeter uniformly and reads as a halo rather than an edge — the Chat
+ * send button (`primary`, `shape="square"`) is the case that surfaced this.
+ * Square buttons in the `HOVER_LIFT` family fall back to this plus the
+ * fill's own hover chroma shift (e.g. `hover:from-blue-600-vivid`) for the
+ * hover cue instead of the ring. Exported so `Button.tsx` can swap it in —
+ * see `hoverLiftSquareOverride` below.
+ */
+const HOVER_LIFT_SQUARE =
+  'hover:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.30)]'
+
+/** Variants whose `SURFACE_HOVER` entry includes `HOVER_LIFT` — the ones for
+ *  which `hoverLiftSquareOverride` has something to swap in. */
+const HOVER_LIFT_FAMILY: readonly Variant[] = ['primary', 'info', 'success', 'warning', 'error']
+
+/**
+ * For `shape="square"` buttons in the `HOVER_LIFT` family, returns the
+ * ring-free hover shadow to override the one baked into `SURFACE_HOVER`.
+ * Returns `''` for every other variant, whose `SURFACE_HOVER` has no shadow
+ * to override in the first place. Consumed by `Button.tsx`; see
+ * `HOVER_LIFT_SQUARE` for why square needs a different treatment than pill.
+ */
+export function hoverLiftSquareOverride(variant: Variant): string {
+  return HOVER_LIFT_FAMILY.includes(variant) ? HOVER_LIFT_SQUARE : ''
+}
 
 export const SURFACE_HOVER: Record<Variant, string> = {
   /**
@@ -138,10 +170,13 @@ export const SURFACE_HOVER: Record<Variant, string> = {
   /**
    * Status hovers gain chroma at a fixed lightness rather than darkening — see
    * the derivation in index.css. The paired shadow does the rest of the work:
-   * it strengthens the existing top highlight and adds an inset hairline ring,
-   * which is what gives a hover cue to buttons the icon slab can't reach
-   * (no `leftIcon`/`rightIcon`, `iconSlab={false}`, or `shape="square"`).
-   * Inset, so it reads against the fill and behaves the same on either canvas.
+   * it strengthens the existing top highlight and (on `pill` shape) adds an
+   * inset hairline ring, which is what gives a hover cue to buttons the icon
+   * slab can't reach (no `leftIcon`/`rightIcon` or `iconSlab={false}`).
+   * `shape="square"` gets the highlight only — `Button.tsx` overrides the
+   * ring out via `hoverLiftSquareOverride`, see `HOVER_LIFT_SQUARE` above for
+   * why. Inset, so it reads against the fill and behaves the same on either
+   * canvas.
    */
   info:      `hover:bg-blue-600-vivid ${HOVER_LIFT}`,
   success:   `hover:bg-success-hover ${HOVER_LIFT}`,

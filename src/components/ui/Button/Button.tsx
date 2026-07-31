@@ -5,6 +5,7 @@ import {
   SURFACE_HOVER,
   SURFACE_ICON,
   SURFACE_ICON_HOVER,
+  hoverLiftSquareOverride,
   type Variant,
   type Size,
 } from '../variants'
@@ -123,6 +124,10 @@ export default function Button({
     sizeClass,
     // Square buttons take their icon through children, so scale it at the root.
     square && `icon-optical ${ICON_SIZE[size]}`,
+    // At a tight square radius the HOVER_LIFT ring wraps the full perimeter
+    // and reads as a halo rather than an edge — swap in the ring-free variant.
+    // No-op for variants outside the HOVER_LIFT family.
+    square && hoverLiftSquareOverride(variant),
     className,
   )
 
