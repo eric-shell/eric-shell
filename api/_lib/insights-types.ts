@@ -26,8 +26,10 @@ export interface ScrollReach {
  * telemetry fix (the client seeded its maximum at 100 while React had not yet
  * committed, so the column could only ever be 100). Those rows are not
  * back-fillable — the column is `not null` and there is no true value to
- * recover — so they are *excluded* rather than charted, and the UI says how
- * many were dropped instead of quietly drawing a flat 100% funnel.
+ * recover — so they are *excluded* rather than charted, which is what keeps the
+ * funnel from quietly drawing a flat 100% at every stage. The chart no longer
+ * annotates the exclusion; `measured` is the denominator the UI reports, and
+ * `excluded` / `since` remain on the payload for diagnostics.
  *
  * The cutoff is derived, not hardcoded: the first session that ever recorded a
  * value strictly between 0 and 100 cannot have come from the broken client

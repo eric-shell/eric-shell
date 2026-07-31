@@ -46,3 +46,6 @@ Thumbs.db
 
 # Claude Code
 .claude/settings.local.json
+
+# Visitor ids from scripts/synth-traffic.mjs runs
+scripts/.synth-visitors.json

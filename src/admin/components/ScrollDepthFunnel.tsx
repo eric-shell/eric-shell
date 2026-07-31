@@ -1,6 +1,5 @@
 import { ChartEmpty } from './ChartFrame'
 import { ordinalStep, share } from '../lib/chartTheme'
-import { formatMonthDay } from '../lib/dateFormat'
 import type { ScrollDepth, ScrollReach } from '@/../api/_lib/insights-types'
 
 /**
@@ -12,11 +11,10 @@ import type { ScrollDepth, ScrollReach } from '@/../api/_lib/insights-types'
  * never render out of order — the funnel is monotonic by construction in SQL.
  *
  * DATA QUALITY. Sessions written before the telemetry fix recorded
- * `max_scroll_pct = 100` unconditionally, so they are excluded server-side and
- * counted instead (see the cutoff derivation in api/admin/insights.ts). This
- * component's job is to make that exclusion visible: a funnel that silently
- * dropped most of its rows, or one that drew a flat 100% at every stage, would
- * both read as a finding rather than a bug.
+ * `max_scroll_pct = 100` unconditionally and are excluded server-side (see the
+ * cutoff derivation in api/admin/insights.ts). The frame's meta counts only the
+ * sessions actually charted, so the denominator stays honest without the chart
+ * carrying a migration note about it.
  */
 const STAGES: { key: keyof ScrollReach; label: string }[] = [
   { key: 'pct25', label: '25%' },
@@ -25,25 +23,12 @@ const STAGES: { key: keyof ScrollReach; label: string }[] = [
   { key: 'pct90', label: '90%' },
 ]
 
-/** One line explaining what was left out, or null when nothing was. */
-function excludedNote(scroll: ScrollDepth): string | null {
-  if (scroll.excluded === 0) return null
-  const s = scroll.excluded === 1 ? 'session' : 'sessions'
-  const since = scroll.since ? ` — measured from ${formatMonthDay(scroll.since)}` : ''
-  return `${scroll.excluded} earlier ${s} excluded: scroll depth was mis-recorded as 100% before the telemetry fix${since}.`
-}
+/** What the bars are a share of — the legend, stated once. */
+const LEGEND = 'Share of measured sessions reaching each depth.'
 
 export default function ScrollDepthFunnel({ scroll }: { scroll: ScrollDepth }) {
-  const note = excludedNote(scroll)
-
   if (scroll.measured === 0) {
-    return (
-      <ChartEmpty>
-        {scroll.excluded > 0
-          ? `No sessions with trustworthy scroll depth yet. ${note}`
-          : 'No sessions recorded scroll depth in this window.'}
-      </ChartEmpty>
-    )
+    return <ChartEmpty>No sessions recorded scroll depth in this window.</ChartEmpty>
   }
 
   const total = scroll.measured
@@ -83,7 +68,7 @@ export default function ScrollDepthFunnel({ scroll }: { scroll: ScrollDepth }) {
         })}
       </ul>
 
-      {note && <p className="text-[10px] leading-snug text-white/55">{note}</p>}
+      <p className="text-[10px] leading-snug text-white/55 text-center">{LEGEND}</p>
 
       {/* The table equivalent. Values are never gated behind a hover title. */}
       <ul className="sr-only">
@@ -93,7 +78,7 @@ export default function ScrollDepthFunnel({ scroll }: { scroll: ScrollDepth }) {
             ({share(scroll.reach[stage.key], total)}%).
           </li>
         ))}
-        {note && <li>{note}</li>}
+        <li>{LEGEND}</li>
       </ul>
     </>
   )

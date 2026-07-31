@@ -112,14 +112,14 @@ export default function InsightsPanel({ data }: { data: InsightsPayload | null }
               value={data.visitors.returning}
               total={data.visitors.total}
               unit="visitors came back on another day"
-              caption="Visitors with sessions on two or more separate days — the strongest interest signal here."
+              caption="Visitors with sessions on two or more separate days."
             />
           </ChartFrame>
 
           {/* The meta counts the sessions actually charted, not every session in
-              the window — pre-fix rows are excluded (see ScrollDepthFunnel), and
-              a header promising more rows than the bars represent would be the
-              dishonest half of that. */}
+              the window — rows without trustworthy scroll depth are dropped
+              server-side (see ScrollDepthFunnel), and a header promising more
+              rows than the bars represent would be the dishonest half of that. */}
           <ChartFrame
             title="Scroll depth"
             meta={`${data.sessions.scroll.measured} ${data.sessions.scroll.measured === 1 ? 'session' : 'sessions'}`}

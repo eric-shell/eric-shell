@@ -92,7 +92,7 @@ export default function RadialGauge({ value, total, unit, caption }: {
         </div>
       </div>
 
-      <p className="text-center text-xs leading-snug text-white/85">{caption}</p>
+      <p className="text-[10px] leading-snug text-white/55 text-center">{caption}</p>
     </div>
   )
 }

@@ -26,8 +26,11 @@ export function ChartFrame({ title, meta, children, className }: {
           <span className="text-[10px] font-semibold uppercase tracking-wider text-white/85">
             {title}
           </span>
+          {/* Same micro-label treatment as the title opposite it, one weight
+              down so the pair still has a hierarchy. Cased here rather than at
+              the call sites so a new chart cannot introduce a lowercase one. */}
           {meta !== undefined && (
-            <span className="shrink-0 text-[10px] text-white/85">{meta}</span>
+            <span className="shrink-0 text-[10px] uppercase tracking-wider text-white/85">{meta}</span>
           )}
         </figcaption>
         {children}

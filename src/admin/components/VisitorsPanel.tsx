@@ -370,7 +370,7 @@ export default function VisitorsPanel({
         {/* The empty state distinguishes an empty database from an empty
             window — otherwise narrowing to 24h on quiet data reads as data
             loss. */}
-        <div className="p-6">
+        <div className="px-4 py-3">
           {filteredVisitors === null ? (
             <VisitorTableSkeleton />
           ) : filteredVisitors.length === 0 ? (
