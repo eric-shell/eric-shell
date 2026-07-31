@@ -62,6 +62,15 @@ create index if not exists contact_submissions_created_idx
 -- `engaged_ms` and `max_scroll_pct` are monotonic: the client sends cumulative
 -- totals and the server takes greatest(existing, incoming), so a late or
 -- out-of-order heartbeat can never walk a session's numbers backwards.
+--
+-- "Cumulative" means FOR THE WHOLE SESSION, across every document load in it —
+-- not for the page that happened to send the beat. Routing is MPA, so a visit
+-- to `/` then `/resume` is two page loads sharing one session id; the client
+-- carries the running engaged total forward in localStorage so greatest()
+-- composes into a sum. Sending per-page totals instead makes this column store
+-- the LONGEST page of a visit rather than the visit, which is what it did until
+-- 2026-07. `engaged_ms` therefore counts only visible time and is not the same
+-- thing as wall-clock session length (last_beat_at - started_at).
 create table if not exists visitor_sessions (
   id             uuid primary key,
   visitor_id     uuid not null references visitors(id) on delete cascade,

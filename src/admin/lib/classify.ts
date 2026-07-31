@@ -72,6 +72,14 @@ const BOUNCE_MS = 5_000
  * answer — we genuinely do not know.
  */
 const READER_MS = 45_000
+/**
+ * Scroll depth only became a real signal in 2026-07. Before that the client
+ * sampled it once at init — before React had committed anything — where an
+ * empty document reads as "fits the viewport", so every session was stored at
+ * 100 and this test was a tautology: any silent 45s visit was a Reader. Rows
+ * predating the fix still carry that 100 and will keep passing it. See the
+ * `scrollPct()` comment in src/lib/telemetry.ts.
+ */
 const READER_SCROLL_PCT = 50
 
 export function classifyVisitor(v: VisitorSummary): VisitorTag[] {

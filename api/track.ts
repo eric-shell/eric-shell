@@ -85,7 +85,28 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             ${int(body.viewportW, 20000)}, ${int(body.viewportH, 20000)},
             ${int(body.screenW, 20000)},   ${int(body.screenH, 20000)}
           )
-          on conflict (id) do update set last_beat_at = now()
+          on conflict (id) do update
+            set last_beat_at = now(),
+                -- Backfill, never overwrite. A session row can be created by a
+                -- HEARTBEAT rather than a pageview — the pageview fetch can be
+                -- dropped by the rate limiter, fail outright, or simply lose the
+                -- race — and that insert carries none of this metadata. The old
+                -- clause only touched last_beat_at, so such a session stayed
+                -- permanently blank in the admin: no entry path, no referrer, no
+                -- viewport, forever.
+                --
+                -- coalesce keeps the FIRST real value, so the second and third
+                -- page of a session still cannot rewrite entry_path — it means
+                -- "where this visit started", not "the most recent page".
+                -- engaged_ms / max_scroll_pct are deliberately absent: they are
+                -- owned by the heartbeat branch and a pageview must never move
+                -- them.
+                entry_path = coalesce(visitor_sessions.entry_path, excluded.entry_path),
+                referrer   = coalesce(visitor_sessions.referrer,   excluded.referrer),
+                viewport_w = coalesce(visitor_sessions.viewport_w, excluded.viewport_w),
+                viewport_h = coalesce(visitor_sessions.viewport_h, excluded.viewport_h),
+                screen_w   = coalesce(visitor_sessions.screen_w,   excluded.screen_w),
+                screen_h   = coalesce(visitor_sessions.screen_h,   excluded.screen_h)
         `,
         db`
           insert into page_views (visitor_id, session_id, path, referrer)
@@ -96,6 +117,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       // Heartbeats deliberately do NOT touch `visitors`. Rewriting last_seen_at
       // every beat dirtied a row for no gain — the session's own last_beat_at
       // already records recency, and the row is refreshed on the next pageview.
+      //
+      // `engagedMs` is cumulative for the WHOLE SESSION, not for the page that
+      // sent it — the client carries a per-session baseline across document
+      // loads (src/lib/telemetry.ts, startSession) precisely so that greatest()
+      // below composes into a sum rather than a max. Anything that starts
+      // sending per-page totals here silently reverts a two-page visit to
+      // reporting only its longer page.
       //
       // greatest() keeps these monotonic under out-of-order delivery. If the
       // session doesn't exist yet the insert branch runs, and the visitor FK
