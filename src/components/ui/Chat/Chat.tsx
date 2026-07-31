@@ -275,7 +275,7 @@ export default function Chat({
                   key={s}
                   type="button"
                   size="sm"
-                  variant={isWhite ? 'white' : 'glass-light'}
+                  variant={'primary'}
                   className="rounded-full"
                   disabled={isLoading || !welcomeDone}
                   onClick={() => onPrompt(s)}
