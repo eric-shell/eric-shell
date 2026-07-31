@@ -42,7 +42,10 @@ export default function HourlyActivity({ hourly }: { hourly: HourRow[] }) {
             24-column strip cannot give each mark a 24px-wide target, so the
             column's full height does the work instead — and every value is in
             the screen-reader list below regardless. */}
-        <div className="flex h-18 items-end gap-px" aria-hidden="true">
+        {/* Taller and more gapped as the card widens: this sits full width in
+            the insight grid, where 24 columns get wide enough that a 1px gutter
+            reads as one solid block and 72px of height reads as a flat strip. */}
+        <div className="flex h-18 items-end gap-px sm:gap-0.5 xl:h-24 xl:gap-1" aria-hidden="true">
           {columns.map(col => (
             <div
               key={col.displayHour}

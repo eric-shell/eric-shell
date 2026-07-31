@@ -10,7 +10,7 @@ import { formatHour, labelSource, localHourOffset } from '../lib/chartTheme'
 import type { InsightsPayload } from '@/../api/_lib/insights-types'
 
 /**
- * The insight grid: six single-series charts over one server-side aggregate.
+ * The insight grid: seven single-series charts over one server-side aggregate.
  *
  * It is fed by props from the dashboard's existing poll — it deliberately owns
  * no fetch and no interval of its own. Neon bills compute-hours, so a second
@@ -18,11 +18,37 @@ import type { InsightsPayload } from '@/../api/_lib/insights-types'
  * corrected once.
  */
 
+/**
+ * The column spans, in DOM order, shared by the skeleton and the real grid so
+ * the loaded panel lands exactly where the placeholder was. See GRID below.
+ */
+const SPANS = [
+  'xl:col-span-2',
+  'xl:col-span-2',
+  'xl:col-span-2',
+  'xl:col-span-2',
+  'xl:col-span-2',
+  'xl:col-span-2',
+  'sm:col-span-2 xl:col-span-6',
+]
+
+/**
+ * Three ratio cards, then three rank lists, then the hour-of-day band full
+ * width. Six columns rather than three so the band can span cleanly; the six
+ * cards above it are thirds either way, and six of them divides evenly into the
+ * two-column layout with no hole to fill.
+ */
+const GRID = 'grid gap-3 sm:grid-cols-2 xl:grid-cols-6'
+
 function InsightsSkeleton() {
   return (
-    <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-      {Array.from({ length: 6 }).map((_, i) => (
-        <Panel key={i} variant="raised-dark" className="flex animate-pulse flex-col gap-3 rounded-2xl p-4">
+    <div className={GRID}>
+      {SPANS.map((span, i) => (
+        <Panel
+          key={i}
+          variant="raised-dark"
+          className={`flex animate-pulse flex-col gap-3 rounded-2xl p-4 ${span}`}
+        >
           <Skeleton className="h-2 w-24" />
           <Skeleton className="h-24 w-full" />
         </Panel>
@@ -74,11 +100,14 @@ export default function InsightsPanel({ data }: { data: InsightsPayload | null }
           </p>
         </Panel>
       ) : (
-        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+        <div className={GRID}>
+          {/* Row one — the three session-quality ratios, all the same form
+              family, so a third of the row each is the right size for them. */}
+
           {/* A single ratio against its own track — the one form the owner
               specifically wanted, and the one the palette can carry without a
               categorical hue in sight. */}
-          <ChartFrame title="Return rate" meta={`${data.windowDays}d`}>
+          <ChartFrame title="Return rate" meta={`${data.windowDays}d`} className={SPANS[0]}>
             <RadialGauge
               value={data.visitors.returning}
               total={data.visitors.total}
@@ -94,28 +123,41 @@ export default function InsightsPanel({ data }: { data: InsightsPayload | null }
           <ChartFrame
             title="Scroll depth"
             meta={`${data.sessions.scroll.measured} ${data.sessions.scroll.measured === 1 ? 'session' : 'sessions'}`}
+            className={SPANS[1]}
           >
             <ScrollDepthFunnel scroll={data.sessions.scroll} />
           </ChartFrame>
 
           <ChartFrame
-            title="Views by hour"
-            meta={peakHour && peakHour.views > 0
-              ? `peak ${formatHour(peakHour.displayHour)}`
-              : undefined}
+            title="Viewport width"
+            meta={`${data.sessions.viewport.known} ${data.sessions.viewport.known === 1 ? 'session' : 'sessions'}`}
+            className={SPANS[2]}
           >
-            <HourlyActivity hourly={data.hourly} />
+            <ViewportMix viewport={data.sessions.viewport} />
           </ChartFrame>
 
-          <ChartFrame title="Top sources" meta="sessions">
+          {/* Row two — the three rank lists. */}
+
+          {/* Rows here are a mix: a campaign name the owner chose where the
+              entry link carried one, a browser-reported referrer host
+              otherwise. That is the right answer to "where did visits come
+              from", but the two are not the same kind of evidence, so `tagged`
+              marks which is which in the row tooltip and the screen-reader
+              list. (BarList shows `detail` in neither place visually — it keeps
+              the row to label/bar/value on purpose.) */}
+          <ChartFrame title="Top sources" meta="sessions" className={SPANS[3]}>
             <BarList
               unit="sessions"
               empty="No sessions recorded a referrer in this window."
-              items={data.sources.map(s => ({ label: labelSource(s.host), value: s.sessions }))}
+              items={data.sources.map(s => ({
+                label: labelSource(s.host),
+                value: s.sessions,
+                detail: s.tagged ? 'tagged' : undefined,
+              }))}
             />
           </ChartFrame>
 
-          <ChartFrame title="Top pages" meta="views">
+          <ChartFrame title="Top pages" meta="views" className={SPANS[4]}>
             <BarList
               unit="views"
               empty="No page views in this window."
@@ -127,11 +169,32 @@ export default function InsightsPanel({ data }: { data: InsightsPayload | null }
             />
           </ChartFrame>
 
+          {/* The one chart that measures intent rather than traffic: a click
+              that leaves for a project, a repo, or the mail client is a visitor
+              acting on the work, which no page view can tell you. */}
+          <ChartFrame title="Clicks out" meta="clicks" className={SPANS[5]}>
+            <BarList
+              unit="clicks"
+              empty="No outbound clicks recorded in this window."
+              items={data.clicks.map(c => ({
+                label: c.label ?? c.host,
+                value: c.clicks,
+                detail: `${c.visitors} ${c.visitors === 1 ? 'visitor' : 'visitors'}`,
+              }))}
+            />
+          </ChartFrame>
+
+          {/* Row three, full width. The only chart here with a continuous axis:
+              24 buckets in a third of a row gave each column ~10px, which is
+              below the width where an hour-of-day shape is readable at all. */}
           <ChartFrame
-            title="Viewport width"
-            meta={`${data.sessions.viewport.known} ${data.sessions.viewport.known === 1 ? 'session' : 'sessions'}`}
+            title="Views by hour"
+            meta={peakHour && peakHour.views > 0
+              ? `peak ${formatHour(peakHour.displayHour)}`
+              : undefined}
+            className={SPANS[6]}
           >
-            <ViewportMix viewport={data.sessions.viewport} />
+            <HourlyActivity hourly={data.hourly} />
           </ChartFrame>
         </div>
       )}

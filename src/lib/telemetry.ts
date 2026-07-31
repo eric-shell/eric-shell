@@ -55,7 +55,7 @@ function optedOut(): boolean {
 }
 
 /** Interaction events `/api/events` accepts. Mirrors its `VALID_TYPES`. */
-export type VisitorEventType = 'ada_toggle' | 'chat_cleared' | 'speech_input'
+export type VisitorEventType = 'ada_toggle' | 'chat_cleared' | 'speech_input' | 'outbound_click'
 
 /**
  * Fire-and-forget interaction event.
@@ -78,6 +78,11 @@ export function sendEvent(type: VisitorEventType, metadata?: Record<string, unkn
       'X-Referrer': document.referrer,
     },
     body: JSON.stringify({ visitorId, type, metadata }),
+    // `outbound_click` fires on a click that is about to unload this document.
+    // Without keepalive the browser cancels the request the moment navigation
+    // starts, so the one event most worth recording would be the one most
+    // likely to be lost. Harmless for the in-page event types.
+    keepalive: true,
   }).catch(err => {
     if (import.meta.env.DEV) console.warn(`${type} event failed:`, err)
   })
@@ -206,6 +211,110 @@ function scrollPct(): number | null {
   return Math.max(0, Math.min(100, Math.round((window.scrollY / scrollable) * 100)))
 }
 
+/**
+ * Campaign tags off the current URL's query string, or nulls.
+ *
+ * Sent on every page view, not just the first. The server backfills with
+ * coalesce (first non-null wins), so an untagged second page reports nulls and
+ * leaves the session's acquisition intact — which means this needs no notion of
+ * "is this the entry page", a question MPA routing makes awkward to answer.
+ *
+ * Values are clamped hard: they are attacker-controllable via a crafted link,
+ * and they end up rendered in the admin.
+ */
+function campaign(): Record<string, string | null> {
+  try {
+    const q = new URLSearchParams(window.location.search)
+    const tag = (k: string) => {
+      const v = q.get(k)?.trim()
+      return v ? v.slice(0, 80) : null
+    }
+    return {
+      utmSource: tag('utm_source'),
+      utmMedium: tag('utm_medium'),
+      utmCampaign: tag('utm_campaign'),
+    }
+  } catch {
+    return { utmSource: null, utmMedium: null, utmCampaign: null }
+  }
+}
+
+/**
+ * Record clicks on links that leave the site.
+ *
+ * One delegated listener on the document rather than a handler wired into Card,
+ * Footer, and every CTA. Call-site instrumentation would have to be remembered
+ * every time someone adds a link — this cannot be forgotten, and it covers
+ * markup that doesn't exist yet.
+ *
+ * Only OUTBOUND links are recorded. Same-origin navigation is already a page
+ * view, and logging it here would double-count every route change. Everything
+ * captured describes the site's own markup — destination, link text, section —
+ * never anything the visitor typed.
+ *
+ * Listens in the capture phase so a handler that calls stopPropagation (Pill
+ * does, inside card links) can't swallow the event first.
+ */
+function initOutboundClicks() {
+  document.addEventListener('click', e => {
+    // Modifier-clicks and middle-clicks open a background tab. They're real
+    // intent and worth recording, so the only button excluded is right-click,
+    // which doesn't navigate at all.
+    if (e instanceof MouseEvent && e.button === 2) return
+
+    const el = e.target instanceof Element ? e.target : null
+    const link = el?.closest('a')
+    const href = link?.getAttribute('href')
+    if (!link || !href) return
+
+    let url: URL
+    try {
+      url = new URL(href, window.location.href)
+    } catch {
+      return
+    }
+
+    const scheme = url.protocol
+    const isMessage = scheme === 'mailto:' || scheme === 'tel:'
+    // A same-host http(s) link is internal — page_views owns it.
+    if (!isMessage && (scheme !== 'http:' && scheme !== 'https:')) return
+    if (!isMessage && url.host === window.location.host) return
+
+    // An icon-only link (footer socials) has no text node; its accessible name
+    // is the only label there is.
+    const label = (
+      link.textContent?.trim().replace(/\s+/g, ' ') ||
+      link.getAttribute('aria-label') ||
+      link.getAttribute('title') ||
+      ''
+    ).slice(0, 80)
+
+    // Which part of the page the link lived in — the difference between "they
+    // opened a project from the work grid" and "they clicked the footer".
+    const context =
+      link.closest('section[id]')?.id ??
+      link.closest('header, footer')?.tagName.toLowerCase() ??
+      null
+
+    sendEvent('outbound_click', {
+      // Strip the query and hash: they carry nothing here and are the one part
+      // of a URL that could pick up a token from a hand-written link.
+      //
+      // `origin` is the literal string "null" for a non-special scheme, so a
+      // mailto: has to be rebuilt from the scheme instead — otherwise every
+      // email link recorded itself as "nullsomeone@example.com". The address
+      // here is the site's own, not the visitor's.
+      href: (isMessage
+        ? `${scheme}${url.pathname}`
+        : `${url.origin}${url.pathname}`
+      ).slice(0, 300),
+      host: isMessage ? scheme.replace(':', '') : url.host.replace(/^www\./, ''),
+      label,
+      context,
+    })
+  }, { capture: true })
+}
+
 export function initTelemetry() {
   if (optedOut()) return
 
@@ -225,7 +334,10 @@ export function initTelemetry() {
     viewportH: window.innerHeight,
     screenW: window.screen?.width,
     screenH: window.screen?.height,
+    ...campaign(),
   }, false)
+
+  initOutboundClicks()
 
   // Engaged time counts only while the tab is actually visible, so a page left
   // open in a background tab doesn't inflate to hours. This counter covers THIS

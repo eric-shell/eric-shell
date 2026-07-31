@@ -83,10 +83,27 @@ create table if not exists visitor_sessions (
   viewport_w     integer,
   viewport_h     integer,
   screen_w       integer,
-  screen_h       integer
+  screen_h       integer,
+  -- Campaign tags read off the entry URL's query string. Backfilled with the
+  -- same coalesce-never-overwrite rule as entry_path: they describe how the
+  -- VISIT was acquired, so the first page of the session owns them and a later
+  -- untagged page view must not blank them out.
+  --
+  -- Unlike `referrer`, these are self-reported by whoever built the link — i.e.
+  -- by the site owner tagging their own outbound links. That makes them the
+  -- only signal that can tell apart the channels which all arrive referrer-less
+  -- (a DM, a PDF resume, an email), which is exactly why they exist here.
+  utm_source     text,
+  utm_medium     text,
+  utm_campaign   text
 );
 create index if not exists visitor_sessions_visitor_started_idx
   on visitor_sessions (visitor_id, started_at desc);
+
+-- Run these if the table already exists:
+-- alter table visitor_sessions add column if not exists utm_source   text;
+-- alter table visitor_sessions add column if not exists utm_medium   text;
+-- alter table visitor_sessions add column if not exists utm_campaign text;
 
 -- One row per document load. Routing is MPA (real <a href> + cross-document
 -- view transitions), so every route change is a fresh load and lands here
@@ -121,19 +138,28 @@ create index if not exists page_views_visitor_idx
 -- Both are safe to run any time: sessions and page views are derived telemetry,
 -- and deleting them never touches a visitor, chat transcript, or submission.
 
+-- `outbound_click` records a click on a link that LEAVES this site (different
+-- host, or a mailto:/tel: scheme). Internal navigation is deliberately absent —
+-- it already lands in page_views, and duplicating it here would double-count
+-- every route change. The metadata carries `{ href, host, label, context }`,
+-- all of it describing the site's own markup rather than the visitor.
 create table if not exists visitor_events (
   id          bigserial primary key,
   visitor_id  uuid not null references visitors(id) on delete cascade,
-  type        text not null check (type in ('ada_toggle', 'chat_cleared', 'speech_input')),
+  type        text not null check (type in ('ada_toggle', 'chat_cleared', 'speech_input', 'outbound_click')),
   metadata    jsonb,
   created_at  timestamptz not null default now()
 );
 create index if not exists visitor_events_visitor_created_idx
   on visitor_events (visitor_id, created_at desc);
+-- The insights aggregate scans one type across a 30-day window with no visitor
+-- in the predicate, which the visitor-keyed index above cannot serve.
+create index if not exists visitor_events_type_created_idx
+  on visitor_events (type, created_at desc);
 
 -- Run this if the table already exists — `create table if not exists` will not
 -- widen a check constraint on a table that is already there, and `/api/events`
 -- silently drops any type the constraint rejects:
 -- alter table visitor_events drop constraint if exists visitor_events_type_check;
 -- alter table visitor_events add constraint visitor_events_type_check
---   check (type in ('ada_toggle', 'chat_cleared', 'speech_input'));
+--   check (type in ('ada_toggle', 'chat_cleared', 'speech_input', 'outbound_click'));

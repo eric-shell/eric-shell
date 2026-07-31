@@ -61,9 +61,32 @@ export interface ViewportMix {
 }
 
 export interface SourceRow {
-  /** Referrer host, lowercased, `www.` stripped. Empty string = no referrer. */
+  /**
+   * Where the visit came from: the session's `utm_source` when it carries one,
+   * otherwise the referrer host (lowercased, `www.` stripped). Empty string
+   * means neither — a genuinely direct arrival.
+   */
   host: string
+  /** True when this bar came from a campaign tag rather than a referrer header. */
+  tagged: boolean
   sessions: number
+}
+
+/**
+ * A destination visitors clicked through to, off-site.
+ *
+ * Grouped by host, not by link, so one row answers "how many people opened the
+ * GitHub repo" regardless of which page the link sat on. Internal navigation is
+ * never counted here — that is what `paths` is for.
+ */
+export interface ClickRow {
+  /** Destination host, `www.` stripped, or `mailto` / `tel`. `?` if unknown. */
+  host: string
+  /** Friendliest link text seen for this destination, or null for icon links. */
+  label: string | null
+  clicks: number
+  /** Distinct visitors behind those clicks — three clicks from one person is not three people. */
+  visitors: number
 }
 
 export interface PathRow {
@@ -93,6 +116,7 @@ export interface InsightsPayload {
     returning: number
   }
   sources: SourceRow[]
+  clicks: ClickRow[]
   paths: PathRow[]
   /** Always 24 rows, 0–23, zero-filled. */
   hourly: HourRow[]

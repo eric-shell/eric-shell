@@ -34,10 +34,14 @@ export default function BarList({ items, empty, unit }: {
 
   return (
     <>
+      {/* Keyed by rank, not by label. Labels are not unique across callers —
+          "Clicks out" groups by destination host and shows the link text, and
+          two hosts can perfectly well share the words "View project". Nothing
+          in a row carries state, so position is the honest identity here. */}
       <ul className="flex flex-1 flex-col justify-center gap-2" aria-hidden="true">
-        {items.map(item => (
+        {items.map((item, i) => (
           <li
-            key={item.label}
+            key={i}
             className="flex items-center gap-2"
             title={`${item.label} — ${item.value} ${unit}${item.detail ? `, ${item.detail}` : ''}`}
           >
@@ -58,8 +62,8 @@ export default function BarList({ items, empty, unit }: {
       </ul>
 
       <ul className="sr-only">
-        {items.map(item => (
-          <li key={item.label}>
+        {items.map((item, i) => (
+          <li key={i}>
             {item.label}: {item.value} {unit}{item.detail ? `, ${item.detail}` : ''}.
           </li>
         ))}

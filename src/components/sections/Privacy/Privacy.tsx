@@ -53,7 +53,15 @@ export default function Privacy() {
                   </div>
                   <div>
                     <dt className="font-semibold">Pages viewed and time spent</dt>
-                    <dd className="text-blue-950/80">Which pages you open, when, and the page that referred you, grouped into a visit. Each visit also records how long this tab was actually in the foreground and how far down the page you scrolled. Nothing about what you type, hover, or click is captured, and this stops at the boundary of this site — there is no tracking of where you go next.</dd>
+                    <dd className="text-blue-950/80">Which pages you open, when, and the page that referred you, grouped into a visit. Each visit also records how long this tab was actually in the foreground and how far down the page you scrolled. Nothing about what you type or hover is captured.</dd>
+                  </div>
+                  <div>
+                    <dt className="font-semibold">Links you follow off this site</dt>
+                    <dd className="text-blue-950/80">When you click a link that leaves eric.sh — a project, a code repository, a social profile, or an email address — the destination address, the link's own wording, and the section of the page it sat in are recorded. This tells me which work people actually open. It stops at the click: nothing follows you to the destination, and there is no record of what you do once you get there.</dd>
+                  </div>
+                  <div>
+                    <dt className="font-semibold">Campaign tags on the link you arrived by</dt>
+                    <dd className="text-blue-950/80">If the link you followed here carried <code className="font-mono text-[0.9em]">utm_source</code>, <code className="font-mono text-[0.9em]">utm_medium</code>, or <code className="font-mono text-[0.9em]">utm_campaign</code> in its address, those labels are stored with your visit. They're words I wrote when I shared the link, so I can tell which place I posted it actually reaches people. They describe the link, not you.</dd>
                   </div>
                   <div>
                     <dt className="font-semibold">Chat transcripts</dt>
@@ -88,7 +96,7 @@ export default function Privacy() {
               <div className="flex flex-col gap-4">
                 <H2>Opting out</H2>
                 <p className="font-sans text-base md:text-lg leading-relaxed">
-                  If your browser sends Global Privacy Control or Do Not Track, no page views, visit durations, scroll depths, or chat interface actions are recorded — the tracking code exits before it sends anything. Neither signal is legally binding in the US; this site honors them anyway. Clearing your browser's localStorage for this site discards your visitor ID, after which you're indistinguishable from a new visitor.
+                  If your browser sends Global Privacy Control or Do Not Track, no page views, visit durations, scroll depths, outbound link clicks, campaign tags, or chat interface actions are recorded — the tracking code exits before it sends anything. Neither signal is legally binding in the US; this site honors them anyway. Clearing your browser's localStorage for this site discards your visitor ID, after which you're indistinguishable from a new visitor.
                 </p>
               </div>
             </CascadeItem>

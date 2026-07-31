@@ -53,6 +53,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       const language = text(body.language, 20)
       const path = text(body.path, 300) ?? '/'
       const referrer = text(body.referrer, 500)
+      // Attacker-controllable via a crafted link and rendered in the admin, so
+      // they get the same length clamp as everything else off the wire.
+      const utmSource = text(body.utmSource, 80)
+      const utmMedium = text(body.utmMedium, 80)
+      const utmCampaign = text(body.utmCampaign, 80)
 
       // One HTTP round trip instead of four. The Neon driver bills and delays
       // per request, so a pageview that fanned out into four sequential
@@ -79,11 +84,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         `,
         db`
           insert into visitor_sessions
-            (id, visitor_id, entry_path, referrer, viewport_w, viewport_h, screen_w, screen_h)
+            (id, visitor_id, entry_path, referrer, viewport_w, viewport_h, screen_w, screen_h,
+             utm_source, utm_medium, utm_campaign)
           values (
             ${sessionId}, ${visitorId}, ${path}, ${referrer},
             ${int(body.viewportW, 20000)}, ${int(body.viewportH, 20000)},
-            ${int(body.screenW, 20000)},   ${int(body.screenH, 20000)}
+            ${int(body.screenW, 20000)},   ${int(body.screenH, 20000)},
+            ${utmSource}, ${utmMedium}, ${utmCampaign}
           )
           on conflict (id) do update
             set last_beat_at = now(),
@@ -106,7 +113,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                 viewport_w = coalesce(visitor_sessions.viewport_w, excluded.viewport_w),
                 viewport_h = coalesce(visitor_sessions.viewport_h, excluded.viewport_h),
                 screen_w   = coalesce(visitor_sessions.screen_w,   excluded.screen_w),
-                screen_h   = coalesce(visitor_sessions.screen_h,   excluded.screen_h)
+                screen_h   = coalesce(visitor_sessions.screen_h,   excluded.screen_h),
+                -- Same first-value-wins rule as entry_path, and for the same
+                -- reason: these describe how the VISIT was acquired. A visitor
+                -- who lands on a tagged link and then clicks through to an
+                -- untagged page must not have their attribution blanked by the
+                -- second page view.
+                utm_source   = coalesce(visitor_sessions.utm_source,   excluded.utm_source),
+                utm_medium   = coalesce(visitor_sessions.utm_medium,   excluded.utm_medium),
+                utm_campaign = coalesce(visitor_sessions.utm_campaign, excluded.utm_campaign)
         `,
         db`
           insert into page_views (visitor_id, session_id, path, referrer)

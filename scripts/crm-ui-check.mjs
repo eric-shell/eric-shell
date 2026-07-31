@@ -117,8 +117,17 @@ function buildInsights() {
       total: activeDays.size,
       returning: [...activeDays.values()].filter(set => set.size >= 2).length,
     },
-    sources: [...sourceCounts].map(([h, n]) => ({ host: h, sessions: n }))
+    sources: [...sourceCounts].map(([h, n], i) => ({ host: h, sessions: n, tagged: i % 3 === 0 }))
       .sort((a, b) => b.sessions - a.sessions).slice(0, 8),
+    // Deliberately includes a long label and a null one (an icon-only footer
+    // link), which are the two cases that break the row layout.
+    clicks: [
+      { host: 'github.com', label: 'View the source on GitHub', clicks: 31, visitors: 19 },
+      { host: 'read.cv', label: 'Read the full case study', clicks: 22, visitors: 14 },
+      { host: 'mailto', label: null, clicks: 12, visitors: 11 },
+      { host: 'linkedin.com', label: 'LinkedIn', clicks: 9, visitors: 8 },
+      { host: 'instagram.com', label: 'Instagram', clicks: 4, visitors: 4 },
+    ],
     paths: [...pathCounts].map(([path, views]) => ({
       path,
       views,

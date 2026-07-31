@@ -1,5 +1,5 @@
 import { twMerge } from 'tailwind-merge'
-import { type LucideIcon, CalendarDays, Clock, Compass, Eye, Fingerprint, Globe, Languages, Link, Mail, Mic, Monitor, MousePointer2, RotateCcw, User } from 'lucide-react'
+import { type LucideIcon, CalendarDays, Clock, Compass, ExternalLink, Eye, Fingerprint, Globe, Languages, Link, Mail, Mic, Monitor, MousePointer2, RotateCcw, User } from 'lucide-react'
 import { formatDuration, formatLong } from '../lib/dateFormat'
 import { resolveLocation } from '../lib/location'
 import { formatUserAgent } from '../lib/userAgent'
@@ -113,6 +113,14 @@ export default function VisitorMetaGrid({ id, data }: Props) {
               label="Voice input"
               value={`${events!.speech_input}×`}
               title="Dictation sessions started in the chat composer. No audio is received or stored — only the count."
+            />
+          )}
+          {(events?.outbound_click ?? 0) > 0 && (
+            <MetaField
+              icon={ExternalLink}
+              label="Clicks out"
+              value={`${events!.outbound_click}×`}
+              title="Clicks on links leaving this site — projects, repos, socials, mailto. Which destinations are in the Clicks out chart above."
             />
           )}
         </>

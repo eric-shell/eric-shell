@@ -20,6 +20,7 @@ const WINDOW_DAYS = 30
 /** Top-N caps. Long tails belong in a table, not a bar list. */
 const SOURCE_LIMIT = 8
 const PATH_LIMIT = 8
+const CLICK_LIMIT = 8
 
 const num = (v: unknown): number => (typeof v === 'number' && Number.isFinite(v) ? v : 0)
 
@@ -44,7 +45,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
   try {
     const db = sql()
 
-    const [sessionRows, returnRows, sourceRows, pathRows, hourRows] = (await db.transaction([
+    const [sessionRows, returnRows, sourceRows, clickRows, pathRows, hourRows] = (await db.transaction([
       // Sessions: totals, viewport mix, and scroll reach in one pass.
       //
       // SCROLL DEPTH IS GATED ON A DERIVED CUTOFF. Every session written before
@@ -122,20 +123,50 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
       // \1 inside a tagged template literal is an invalid escape, which leaves
       // the *cooked* string undefined for that chunk — the Neon driver reads
       // the cooked strings, so the query would silently arrive mangled.
+      //
+      // utm_source WINS over the referrer host when present. The channels worth
+      // telling apart on a portfolio — a DM, an emailed link, a PDF resume —
+      // all arrive with no referrer at all, so grouping on the referrer alone
+      // collapsed every one of them into a single "Direct / none" bar. A tag is
+      // the only thing that can separate them, and when the owner has gone to
+      // the trouble of setting one it is strictly better evidence than the
+      // header. `tagged` lets the UI mark which bars came from which.
       db`
         select
-          case
-            when referrer is null or referrer = '' then ''
-            when lower(split_part(split_part(split_part(referrer, '://', 2), '/', 1), '?', 1)) like 'www.%'
-              then substr(lower(split_part(split_part(split_part(referrer, '://', 2), '/', 1), '?', 1)), 5)
-            else lower(split_part(split_part(split_part(referrer, '://', 2), '/', 1), '?', 1))
-          end                as host,
-          count(*)::int      as sessions
+          coalesce(
+            nullif(utm_source, ''),
+            case
+              when referrer is null or referrer = '' then ''
+              when lower(split_part(split_part(split_part(referrer, '://', 2), '/', 1), '?', 1)) like 'www.%'
+                then substr(lower(split_part(split_part(split_part(referrer, '://', 2), '/', 1), '?', 1)), 5)
+              else lower(split_part(split_part(split_part(referrer, '://', 2), '/', 1), '?', 1))
+            end
+          )                                          as host,
+          bool_or(utm_source is not null and utm_source <> '') as tagged,
+          count(*)::int                              as sessions
         from visitor_sessions
         where started_at >= now() - make_interval(days => ${WINDOW_DAYS})
         group by 1
         order by sessions desc, host
         limit ${SOURCE_LIMIT}
+      `,
+      // Outbound clicks, grouped by where they went rather than by the link
+      // text. Several links can point at one destination (a project appears in
+      // the work grid and again in the resume), and "how many people opened the
+      // GitHub repo" is the question worth answering; the label is carried
+      // along as the friendliest name seen for that destination.
+      db`
+        select
+          coalesce(nullif(metadata->>'host', ''), '?')  as host,
+          min(nullif(metadata->>'label', ''))           as label,
+          count(*)::int                                 as clicks,
+          count(distinct visitor_id)::int               as visitors
+        from visitor_events
+        where type = 'outbound_click'
+          and created_at >= now() - make_interval(days => ${WINDOW_DAYS})
+        group by 1
+        order by clicks desc, host
+        limit ${CLICK_LIMIT}
       `,
       db`
         select
@@ -160,6 +191,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
         order by 1
       `,
     ])) as [
+      Record<string, unknown>[],
       Record<string, unknown>[],
       Record<string, unknown>[],
       Record<string, unknown>[],
@@ -203,7 +235,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
       },
       sources: sourceRows.map(row => ({
         host: typeof row.host === 'string' ? row.host : '',
+        tagged: row.tagged === true,
         sessions: num(row.sessions),
+      })),
+      clicks: clickRows.map(row => ({
+        host: typeof row.host === 'string' ? row.host : '?',
+        label: typeof row.label === 'string' && row.label !== '' ? row.label : null,
+        clicks: num(row.clicks),
+        visitors: num(row.visitors),
       })),
       paths: pathRows.map(row => ({
         path: typeof row.path === 'string' ? row.path : '/',
