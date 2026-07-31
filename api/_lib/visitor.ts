@@ -13,6 +13,45 @@ export function readVisitorId(req: VercelRequest): string | null {
   return UUID_RE.test(value) ? value.toLowerCase() : null
 }
 
+/**
+ * The visit this request belongs to, per the client.
+ *
+ * Same trust level as the visitor id — client-supplied, pseudonymous, never a
+ * credential. It exists because it is the more durable of the two: a visitor id
+ * that changes mid-visit (storage evicted, two documents minting at once) used
+ * to fork one person into two CRM rows, and the session id is what stayed
+ * constant through it. See `SESSION_OWNER`.
+ */
+export function readSessionId(req: VercelRequest): string | null {
+  const raw = req.headers['x-session-id']
+  const value = Array.isArray(raw) ? raw[0] : raw
+  if (typeof value !== 'string') return null
+  return UUID_RE.test(value) ? value.toLowerCase() : null
+}
+
+/**
+ * Identity resolution, shared by every endpoint that writes a visitor row.
+ *
+ * `select coalesce((select visitor_id from visitor_sessions where id = $sess),
+ * $vid)` — the visitor the session already belongs to, falling back to the id
+ * the client sent.
+ *
+ * The first page view of a visit establishes the owner, and `visitor_sessions`
+ * never reassigns `visitor_id` on conflict, so that owner is stable for the life
+ * of the session: every later request in the visit resolves to it no matter what
+ * the browser now thinks its id is. A session id we've never seen, or none at
+ * all, falls straight through to the client's id.
+ *
+ * It is written as a CTE inlined into each caller's existing statement rather
+ * than as its own lookup — /api/track is the highest-volume endpoint on the site
+ * and was deliberately built to cost one round trip per page view.
+ *
+ * Worth stating plainly: a caller who guesses another visitor's session UUID can
+ * attach rows to them. That is the exposure X-Visitor-Id already carries — both
+ * are pseudonymous analytics keys, nothing is authorized off either, and a v4
+ * UUID is not guessable in practice.
+ */
+
 // Vercel percent-encodes non-ASCII city names (e.g. `Z%C3%BCrich`). A malformed
 // sequence makes decodeURIComponent throw, which used to reject the whole upsert
 // and take the caller's entire persistence path down with it — in chat.ts that
@@ -59,9 +98,17 @@ export function readVisitorGeo(req: VercelRequest): VisitorGeo {
   }
 }
 
+/**
+ * Upsert the visitor this request belongs to and return the id it resolved to.
+ *
+ * Callers must persist their own rows against the RETURNED id, not the one they
+ * read off the header: when the session already has an owner they differ, and
+ * that is the whole point.
+ */
 export async function upsertVisitor(req: VercelRequest): Promise<string | null> {
   const id = readVisitorId(req)
   if (!id) return null
+  const sessionId = readSessionId(req)
 
   const { userAgent, country, city, region, timezone, referrer } = readVisitorGeo(req)
 
@@ -69,9 +116,16 @@ export async function upsertVisitor(req: VercelRequest): Promise<string | null> 
   // columns that are still null — so a row created without geo (an events-only
   // visitor, or a local dev write) gets filled in by any later edge request.
   const db = sql()
-  await db`
+  const rows = (await db`
+    with resolved as (
+      select coalesce(
+        (select visitor_id from visitor_sessions where id = ${sessionId}::uuid),
+        ${id}::uuid
+      ) as id
+    )
     insert into visitors (id, user_agent, country, city, region, timezone, referrer)
-    values (${id}, ${userAgent}, ${country}, ${city}, ${region}, ${timezone}, ${referrer})
+    select resolved.id, ${userAgent}, ${country}, ${city}, ${region}, ${timezone}, ${referrer}
+    from resolved
     on conflict (id) do update
       set last_seen_at = now(),
           user_agent = coalesce(visitors.user_agent, excluded.user_agent),
@@ -80,6 +134,9 @@ export async function upsertVisitor(req: VercelRequest): Promise<string | null> 
           region     = coalesce(visitors.region,     excluded.region),
           timezone   = coalesce(visitors.timezone,   excluded.timezone),
           referrer   = coalesce(visitors.referrer,   excluded.referrer)
-  `
-  return id
+    returning id
+  `) as { id: string }[]
+  // `returning` fires for both the insert and the update path, so a row always
+  // comes back; the fallback is only for a driver returning nothing at all.
+  return rows[0]?.id ?? id
 }

@@ -54,6 +54,23 @@ function optedOut(): boolean {
   return nav.globalPrivacyControl === true || dnt === '1' || dnt === 'yes'
 }
 
+/**
+ * Identity headers for any request the server persists against a visitor.
+ *
+ * Both ids, always together: `X-Visitor-Id` says who the browser thinks it is,
+ * `X-Session-Id` says which visit this belongs to, and the server prefers the
+ * session's established owner when the two disagree. Neither is a credential —
+ * both are client-supplied and pseudonymous (see api/_lib/visitor.ts).
+ */
+export function identityHeaders(): Record<string, string> {
+  const visitorId = getVisitorId()
+  const sessionId = getSessionId()
+  return {
+    ...(visitorId ? { 'X-Visitor-Id': visitorId } : {}),
+    ...(sessionId ? { 'X-Session-Id': sessionId } : {}),
+  }
+}
+
 /** Interaction events `/api/events` accepts. Mirrors its `VALID_TYPES`. */
 export type VisitorEventType = 'ada_toggle' | 'chat_cleared' | 'speech_input' | 'outbound_click'
 
@@ -74,7 +91,7 @@ export function sendEvent(type: VisitorEventType, metadata?: Record<string, unkn
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'X-Visitor-Id': visitorId,
+      ...identityHeaders(),
       'X-Referrer': document.referrer,
     },
     body: JSON.stringify({ visitorId, type, metadata }),
@@ -86,6 +103,31 @@ export function sendEvent(type: VisitorEventType, metadata?: Record<string, unkn
   }).catch(err => {
     if (import.meta.env.DEV) console.warn(`${type} event failed:`, err)
   })
+}
+
+/**
+ * The current session id, or null — read-only, and deliberately never mints one.
+ *
+ * Sent alongside the visitor id by chat / contact / event requests so the server
+ * can resolve them all to whoever the session already belongs to. A visitor id
+ * that changes mid-visit (storage evicted, two documents minting at once) would
+ * otherwise fork one person into two CRM rows; the session id is the thread that
+ * survives, so it is what the server ties identity to.
+ *
+ * Minting here would be wrong: a chat message is not the start of a visit, and a
+ * session created outside `initTelemetry()` would carry no entry path, referrer,
+ * or viewport — and would be created even for a visitor who opted out below.
+ */
+export function getSessionId(): string | null {
+  try {
+    const raw = window.localStorage.getItem(SESSION_KEY)
+    if (!raw) return null
+    const parsed = JSON.parse(raw) as StoredSession
+    if (!parsed?.id || typeof parsed.last !== 'number') return null
+    return Date.now() - parsed.last < SESSION_TIMEOUT_MS ? parsed.id : null
+  } catch {
+    return null
+  }
 }
 
 /**

@@ -62,9 +62,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         on conflict (id) do update set last_seen_at = now()
       `
     }
+    // The upsert's return value, not `id`: it resolves through the session's
+    // owner, so the two differ exactly when this browser's visitor id has
+    // drifted mid-visit. Writing `id` here would recreate the split the
+    // resolution exists to close (and FK-fail against a row never written).
     await db`
       insert into visitor_events (visitor_id, type, metadata)
-      values (${id}, ${type}, ${safeMetadata(metadata)})
+      values (${upserted ?? id}, ${type}, ${safeMetadata(metadata)})
     `
   } catch {
     // best-effort

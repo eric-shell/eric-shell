@@ -82,13 +82,24 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       // One HTTP round trip instead of four. The Neon driver bills and delays
       // per request, so a pageview that fanned out into four sequential
       // round trips cost 4x the compute time and stacked 4x the latency.
+      // Identity resolves through the session's established owner — see
+      // api/_lib/visitor.ts. A visitor id that changed mid-visit used to open a
+      // second row and split one person's page views across two; here the second
+      // id simply never gets written.
       await db.transaction([
         db`
+          with resolved as (
+            select coalesce(
+              (select visitor_id from visitor_sessions where id = ${sessionId}::uuid),
+              ${visitorId}::uuid
+            ) as id
+          )
           insert into visitors (id, user_agent, country, city, region, timezone,
                                 referrer, client_timezone, language)
-          values (${visitorId}, ${geo?.userAgent ?? null}, ${geo?.country ?? null},
-                  ${geo?.city ?? null}, ${geo?.region ?? null}, ${geo?.timezone ?? null},
-                  ${geo?.referrer ?? null}, ${clientTimezone}, ${language})
+          select resolved.id, ${geo?.userAgent ?? null}, ${geo?.country ?? null},
+                 ${geo?.city ?? null}, ${geo?.region ?? null}, ${geo?.timezone ?? null},
+                 ${geo?.referrer ?? null}, ${clientTimezone}, ${language}
+          from resolved
           on conflict (id) do update
             set last_seen_at = now(),
                 user_agent = coalesce(visitors.user_agent, excluded.user_agent),
@@ -145,7 +156,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         `,
         db`
           insert into page_views (visitor_id, session_id, path, referrer)
-          values (${visitorId}, ${sessionId}, ${path}, ${referrer})
+          select coalesce(
+                   (select visitor_id from visitor_sessions where id = ${sessionId}::uuid),
+                   ${visitorId}::uuid
+                 ),
+                 ${sessionId}, ${path}, ${referrer}
         `,
       ])
     } else {

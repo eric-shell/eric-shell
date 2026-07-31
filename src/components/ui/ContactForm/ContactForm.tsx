@@ -6,7 +6,7 @@ import Input from '../Input'
 import Panel from '../Panel'
 import Textarea from '../Textarea'
 import { toast } from '../Toast'
-import { getVisitorId } from '@/lib/visitorId'
+import { identityHeaders } from '@/lib/telemetry'
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
@@ -71,7 +71,7 @@ export default function ContactForm({
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'X-Visitor-Id': getVisitorId(),
+          ...identityHeaders(),
           'X-Referrer': document.referrer,
         },
         body: JSON.stringify({

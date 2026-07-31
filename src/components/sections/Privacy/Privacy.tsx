@@ -45,7 +45,7 @@ export default function Privacy() {
                 <dl className="flex flex-col gap-4 font-sans text-base leading-relaxed">
                   <div>
                     <dt className="font-semibold">Anonymous visitor ID</dt>
-                    <dd className="text-blue-950/80">A random UUID generated in your browser and stored in localStorage. It's not tied to your identity unless you submit the contact form.</dd>
+                    <dd className="text-blue-950/80">A random UUID generated in your browser and stored in localStorage. It's not tied to your identity unless you submit the contact form. A second random UUID identifies the current visit, and is sent with page views, chat messages, and contact submissions so the records of one visit stay together even if the first ID changes.</dd>
                   </div>
                   <div>
                     <dt className="font-semibold">Approximate location and device</dt>

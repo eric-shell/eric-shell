@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { toast } from '../components/ui'
 import { trackEvent } from '../utils/analytics'
-import { getVisitorId } from '../lib/visitorId'
+import { identityHeaders } from '../lib/telemetry'
 
 export type ChatMessage = {
   role: 'user' | 'assistant'
@@ -66,7 +66,7 @@ export function useChat() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'X-Visitor-Id': getVisitorId(),
+          ...identityHeaders(),
           'X-Referrer': document.referrer,
         },
         body: JSON.stringify({ messages: history, website: '' }),
