@@ -246,8 +246,8 @@ export default function Dashboard({ onLogout }: DashboardProps) {
     <Container className="flex flex-col gap-4 px-4 py-6 sm:gap-6 sm:px-6 sm:py-10">
       <header className="flex flex-wrap items-end justify-between gap-4">
         <div className="flex flex-col gap-1">
-          <Eyebrow className="text-white/85">eric.sh</Eyebrow>
-          <H2 className="text-white">CRM</H2>
+          <Eyebrow className="text-white/85">eric.sh CRM</Eyebrow>
+          <H2 className="text-white">Admin</H2>
         </div>
         <div className="flex items-center gap-2">
           {lastLoaded && (
