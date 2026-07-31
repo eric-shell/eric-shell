@@ -4,6 +4,7 @@ import {
   ChevronRight, ChevronUp, MailCheck, MessageSquare, Pencil,
 } from 'lucide-react'
 import VisitorDetail from './VisitorDetail'
+import { detailStamp } from '../lib/detailCache'
 import { Button } from '../../components/ui'
 import { twMerge } from 'tailwind-merge'
 import type { VisitorSummary } from '@/../api/_lib/types'
@@ -335,6 +336,7 @@ function MobileList({
                 <DetailCollapse open={isOpen}>
                   <VisitorDetail
                     id={v.id}
+                    stamp={detailStamp(v)}
                     onClose={() => onSelect(null)}
                     onDeleted={onVisitorDeleted}
                     onSaved={onSaved}
@@ -609,6 +611,7 @@ export default function VisitorList({ visitors, onVisitorDeleted }: VisitorListP
                         <div className="pb-3">
                           <VisitorDetail
                             id={v.id}
+                            stamp={detailStamp(v)}
                             onClose={() => handleSelect(null)}
                             onDeleted={onVisitorDeleted}
                             onSaved={(id, override) =>

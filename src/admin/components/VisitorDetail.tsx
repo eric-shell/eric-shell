@@ -11,6 +11,11 @@ import TabBar from './TabBar'
 
 interface VisitorDetailProps {
   id: string
+  /**
+   * Freshness key from this visitor's list row (`detailStamp()`). Decides
+   * whether the page-view cache can answer instead of the network.
+   */
+  stamp: string
   onClose: () => void
   onDeleted?: (id: string) => void
   onSaved?: (id: string, locationOverride: string | null) => void
@@ -18,14 +23,14 @@ interface VisitorDetailProps {
 
 type Tab = 'chat' | 'contact' | 'activity'
 
-export default function VisitorDetail({ id, onClose, onDeleted, onSaved }: VisitorDetailProps) {
+export default function VisitorDetail({ id, stamp, onClose, onDeleted, onSaved }: VisitorDetailProps) {
   const {
     data,
     notes, setNotes,
     locationOverride, setLocationOverride,
     saving, saveDetails,
     deleting, deleteVisitor,
-  } = useVisitorDetail(id, { onClose, onDeleted, onSaved })
+  } = useVisitorDetail(id, stamp, { onClose, onDeleted, onSaved })
   const [tab, setTab] = useState<Tab>('chat')
 
   // Shown as placeholder context so it's obvious what the override replaces.
