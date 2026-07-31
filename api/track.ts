@@ -17,6 +17,26 @@ function text(v: unknown, max: number): string | null {
   return typeof v === 'string' && v !== '' ? v.slice(0, max) : null
 }
 
+/**
+ * A campaign tag, folded to a single canonical spelling.
+ *
+ * These are GROUP BY keys — the insights aggregate ranks sources by the stored
+ * string — so `LinkedIn`, `linkedin`, and `linkedin ` are three bars for one
+ * channel, splitting a channel's own traffic against itself and pushing real
+ * ones off an 8-row chart. Whitespace is also collapsed to a hyphen, because a
+ * tag typed with a space arrives percent-encoded and would otherwise read as
+ * `job%20search` in the admin.
+ *
+ * Normalizing on the server rather than in the browser is deliberate: the
+ * client is untrusted and hand-built links skip it entirely, and this is the
+ * only point every value passes through on its way to the column.
+ */
+function tag(v: unknown): string | null {
+  if (typeof v !== 'string') return null
+  const cleaned = v.trim().toLowerCase().replace(/\s+/g, '-').slice(0, 80)
+  return cleaned === '' ? null : cleaned
+}
+
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') return res.status(405).end()
 
@@ -54,10 +74,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       const path = text(body.path, 300) ?? '/'
       const referrer = text(body.referrer, 500)
       // Attacker-controllable via a crafted link and rendered in the admin, so
-      // they get the same length clamp as everything else off the wire.
-      const utmSource = text(body.utmSource, 80)
-      const utmMedium = text(body.utmMedium, 80)
-      const utmCampaign = text(body.utmCampaign, 80)
+      // they get clamped and canonicalized before they reach a column.
+      const utmSource = tag(body.utmSource)
+      const utmMedium = tag(body.utmMedium)
+      const utmCampaign = tag(body.utmCampaign)
 
       // One HTTP round trip instead of four. The Neon driver bills and delays
       // per request, so a pageview that fanned out into four sequential

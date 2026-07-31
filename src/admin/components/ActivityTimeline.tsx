@@ -1,4 +1,4 @@
-import { Clock, MonitorSmartphone, MousePointer2, Scroll } from 'lucide-react'
+import { Clock, MonitorSmartphone, MousePointer2, Scroll, Tag } from 'lucide-react'
 import { formatDuration, formatLong } from '../lib/dateFormat'
 import type { PageView, VisitorSession } from '@/../api/_lib/types'
 
@@ -76,6 +76,34 @@ export default function ActivityTimeline({ sessions, pageViews }: Props) {
             {s.referrer && (
               <p className="mb-1.5 truncate text-[10px] text-white/65">
                 Referred by <span className="text-white/85">{s.referrer}</span>
+              </p>
+            )}
+
+            {/* The campaign tags on the link this visit arrived by. Shown per
+                session rather than as another chart because the question they
+                answer is about one visit — "did the person I sent the resume to
+                actually open it" — which an aggregate cannot answer.
+
+                Source is charted in Insights; medium and campaign appear only
+                here, so this is the one place the full triple is visible. A
+                visit with no tags renders nothing at all rather than three
+                em-dashes. */}
+            {(s.utm_source || s.utm_medium || s.utm_campaign) && (
+              <p className="mb-1.5 flex flex-wrap items-center gap-1 text-[10px] text-white/65">
+                <Tag size={10} className="shrink-0 text-white/50" aria-hidden="true" />
+                <span className="sr-only">Campaign tags:</span>
+                {([
+                  ['source', s.utm_source],
+                  ['medium', s.utm_medium],
+                  ['campaign', s.utm_campaign],
+                ] as const)
+                  .filter(([, v]) => v)
+                  .map(([k, v]) => (
+                    <span key={k} className="rounded bg-white/8 px-1.5 py-0.5">
+                      <span className="text-white/50">{k} </span>
+                      <span className="text-white/85">{v}</span>
+                    </span>
+                  ))}
               </p>
             )}
 

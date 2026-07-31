@@ -117,6 +117,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
     const sessions = (await db`
       select s.id, s.started_at, s.last_beat_at, s.engaged_ms, s.max_scroll_pct,
              s.entry_path, s.referrer, s.viewport_w, s.viewport_h, s.screen_w, s.screen_h,
+             s.utm_source, s.utm_medium, s.utm_campaign,
              (select count(*) from page_views p where p.session_id = s.id)::int as page_view_count
       from visitor_sessions s
       where s.visitor_id = ${id}

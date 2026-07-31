@@ -29,6 +29,14 @@ export interface VisitorSession {
   viewport_h: number | null
   screen_w: number | null
   screen_h: number | null
+  /**
+   * Campaign tags off the link this visit arrived by, or null when it carried
+   * none. Self-reported by whoever built the link — i.e. by the site owner —
+   * so unlike `referrer` they describe the share, not the visitor.
+   */
+  utm_source: string | null
+  utm_medium: string | null
+  utm_campaign: string | null
   page_view_count: number
 }
 

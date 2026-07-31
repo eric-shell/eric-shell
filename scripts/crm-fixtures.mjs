@@ -190,6 +190,15 @@ export function buildFixtures({ count = 28, seed = 20260729, now = Date.now() } 
           engaged_ms: engagedMs, max_scroll_pct: scroll,
           entry_path: '/', referrer,
           viewport_w: vw, viewport_h: vh, screen_w: sw, screen_h: sh,
+          // Only some visits carry campaign tags, and a partially-tagged one
+          // (source but no campaign) is the case that breaks a naive render.
+          ...(sessions.length % 2 === 0
+            ? {
+                utm_source: 'resume-pdf',
+                utm_medium: 'pdf',
+                utm_campaign: sessions.length % 4 === 0 ? 'job-search-2026' : null,
+              }
+            : { utm_source: null, utm_medium: null, utm_campaign: null }),
           page_view_count: viewCount,
         })
         for (let p = 0; p < viewCount; p++) {
