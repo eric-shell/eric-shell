@@ -1,7 +1,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 import { sql } from './_lib/db.js'
 import { checkRateLimit } from './_lib/ratelimit.js'
-import { readVisitorGeo, readVisitorId } from './_lib/visitor.js'
+import { externalReferrer, readVisitorGeo, readVisitorId } from './_lib/visitor.js'
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
@@ -73,6 +73,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       const language = text(body.language, 20)
       const path = text(body.path, 300) ?? '/'
       const referrer = text(body.referrer, 500)
+      // The session records where the VISIT came from, so an internal page
+      // isn't an answer — see externalReferrer. `page_views` keeps the raw
+      // value: there, "which page linked here" is the whole point.
+      const entryReferrer = externalReferrer(referrer, req)
       // Attacker-controllable via a crafted link and rendered in the admin, so
       // they get clamped and canonicalized before they reach a column.
       const utmSource = tag(body.utmSource)
@@ -118,7 +122,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             (id, visitor_id, entry_path, referrer, viewport_w, viewport_h, screen_w, screen_h,
              utm_source, utm_medium, utm_campaign)
           values (
-            ${sessionId}, ${visitorId}, ${path}, ${referrer},
+            ${sessionId}, ${visitorId}, ${path}, ${entryReferrer},
             ${int(body.viewportW, 20000)}, ${int(body.viewportH, 20000)},
             ${int(body.screenW, 20000)},   ${int(body.screenH, 20000)},
             ${utmSource}, ${utmMedium}, ${utmCampaign}

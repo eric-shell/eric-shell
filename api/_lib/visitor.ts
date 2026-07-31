@@ -52,6 +52,39 @@ export function readSessionId(req: VercelRequest): string | null {
  * UUID is not guessable in practice.
  */
 
+/**
+ * A referrer worth storing as acquisition, or null.
+ *
+ * `document.referrer` is whatever document linked here — which on any internal
+ * navigation is one of our own pages. `visitors.referrer` and
+ * `visitor_sessions.referrer` are both written with `coalesce(existing, new)`,
+ * i.e. "first non-null wins", so a visit that arrived untagged (direct, or from
+ * an app that sends no referrer) and *then* clicked from `/` to `/resume` had
+ * its acquisition backfilled as `https://eric.sh/resume` — the site recorded
+ * itself as the source of its own traffic.
+ *
+ * Those two columns mean "where this visit came from", so a same-site value is
+ * not a weaker answer than null, it is a wrong one. `page_views.referrer` is
+ * deliberately NOT filtered: there it means "which page linked to this one",
+ * and internal is the interesting case.
+ */
+export function externalReferrer(value: string | null, req: VercelRequest): string | null {
+  if (!value) return null
+  const rawHost = req.headers.host
+  const host = (Array.isArray(rawHost) ? rawHost[0] : rawHost) ?? ''
+  // Strip port and a leading `www.` on both sides: eric.sh and www.eric.sh are
+  // the same site, and localhost:3000 must still match localhost under
+  // `vercel dev` or every local page view records itself as a referrer.
+  const bare = (h: string) => h.split(':')[0].replace(/^www\./, '').toLowerCase()
+  try {
+    return bare(new URL(value).hostname) === bare(host) ? null : value
+  } catch {
+    // Not a parseable URL. A referrer we can't attribute is not acquisition
+    // data, and it is attacker-supplied text bound for the admin UI.
+    return null
+  }
+}
+
 // Vercel percent-encodes non-ASCII city names (e.g. `Z%C3%BCrich`). A malformed
 // sequence makes decodeURIComponent throw, which used to reject the whole upsert
 // and take the caller's entire persistence path down with it — in chat.ts that
@@ -94,7 +127,10 @@ export function readVisitorGeo(req: VercelRequest): VisitorGeo {
     city:     readGeoHeader(req, 'x-vercel-ip-city'),
     region:   readGeoHeader(req, 'x-vercel-ip-country-region'),
     timezone: readGeoHeader(req, 'x-vercel-ip-timezone'),
-    referrer: typeof rawReferrer === 'string' ? rawReferrer.slice(0, 500) || null : null,
+    referrer: externalReferrer(
+      typeof rawReferrer === 'string' ? rawReferrer.slice(0, 500) || null : null,
+      req,
+    ),
   }
 }
 
