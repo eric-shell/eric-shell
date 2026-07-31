@@ -54,6 +54,35 @@ function optedOut(): boolean {
   return nav.globalPrivacyControl === true || dnt === '1' || dnt === 'yes'
 }
 
+/** Interaction events `/api/events` accepts. Mirrors its `VALID_TYPES`. */
+export type VisitorEventType = 'ada_toggle' | 'chat_cleared' | 'speech_input'
+
+/**
+ * Fire-and-forget interaction event.
+ *
+ * Honors GPC/DNT for the same reason `initTelemetry` does — an opt-out that
+ * covered page views but not "this visitor toggled high-contrast twice and
+ * dictated a message" would be an opt-out in name only. Never throws and never
+ * surfaces a failure: no interaction event is worth interrupting the UI it
+ * describes.
+ */
+export function sendEvent(type: VisitorEventType, metadata?: Record<string, unknown>) {
+  if (optedOut()) return
+  const visitorId = getVisitorId()
+  if (!visitorId) return
+  void fetch('/api/events', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-Visitor-Id': visitorId,
+      'X-Referrer': document.referrer,
+    },
+    body: JSON.stringify({ visitorId, type, metadata }),
+  }).catch(err => {
+    if (import.meta.env.DEV) console.warn(`${type} event failed:`, err)
+  })
+}
+
 /**
  * Read the current session, minting a fresh one if the last activity is older
  * than SESSION_TIMEOUT_MS. Stored in localStorage rather than sessionStorage so

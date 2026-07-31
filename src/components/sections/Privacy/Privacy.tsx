@@ -59,6 +59,10 @@ export default function Privacy() {
                     <dd className="text-blue-950/80">If you chat with the assistant on the home page, both your messages and the assistant's replies are saved so I can review the conversations.</dd>
                   </div>
                   <div>
+                    <dt className="font-semibold">Chat interface actions</dt>
+                    <dd className="text-blue-950/80">A count of a few deliberate actions in the chat panel: turning high-contrast mode on or off, clearing a conversation, and starting voice input. Voice input is worth spelling out — dictation runs through your own browser's speech recognition, which on Chrome sends the audio to Google and on Safari to Apple, under their privacy policies rather than mine. No audio, and no transcript beyond the message you choose to send, ever reaches this site. All that's recorded here is that the microphone button was pressed.</dd>
+                  </div>
+                  <div>
                     <dt className="font-semibold">Contact form submissions</dt>
                     <dd className="text-blue-950/80">Your name, email, and message are emailed to me and saved in the database.</dd>
                   </div>
@@ -83,7 +87,7 @@ export default function Privacy() {
               <div className="flex flex-col gap-4">
                 <H2>Opting out</H2>
                 <p className="font-sans text-base md:text-lg leading-relaxed">
-                  If your browser sends Global Privacy Control or Do Not Track, no page views, visit durations, or scroll depths are recorded — the tracking script exits before it sends anything. Neither signal is legally binding in the US; this site honors them anyway. Clearing your browser's localStorage for this site discards your visitor ID, after which you're indistinguishable from a new visitor.
+                  If your browser sends Global Privacy Control or Do Not Track, no page views, visit durations, scroll depths, or chat interface actions are recorded — the tracking code exits before it sends anything. Neither signal is legally binding in the US; this site honors them anyway. Clearing your browser's localStorage for this site discards your visitor ID, after which you're indistinguishable from a new visitor.
                 </p>
               </div>
             </CascadeItem>

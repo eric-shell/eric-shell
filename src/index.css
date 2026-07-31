@@ -754,7 +754,9 @@
       margin-top: 0 !important;
       border-top: none !important;
     }
-    .work-section article > div:first-child {
+    /* Keyed to the class rather than `> div:first-child`: contract rows are
+       the same block one level deeper, and share this reflow verbatim. */
+    .work-section .entry-identity {
       display: grid !important;
       grid-template-columns: minmax(0, 1fr) auto !important;
       align-items: baseline !important;
@@ -775,7 +777,7 @@
       color: var(--print-ink) !important;
     }
     /* Role */
-    .work-section article > div:first-child > p:first-of-type {
+    .work-section .entry-identity > p:first-of-type {
       grid-column: 1;
       grid-row: 2;
       font-weight: 600 !important;
@@ -785,7 +787,7 @@
       padding: 0 !important;
     }
     /* Dates — right-aligned on the company baseline */
-    .work-section article > div:first-child > p:last-of-type {
+    .work-section .entry-identity > p:last-of-type {
       grid-column: 2;
       grid-row: 1;
       justify-self: end;
@@ -799,6 +801,19 @@
     /* Description */
     .work-section article > p {
       color: var(--print-ink) !important;
+    }
+    /* Contracts. On screen these sit in a three-across row; the print column
+       is barely wider than one of those cells, so they stack here and lean on
+       the indent rule to show they belong to the entry above. */
+    .work-section .entry-contracts {
+      display: flex !important;
+      flex-direction: column !important;
+      gap: 0.3rem !important;
+      padding-left: 0.6rem !important;
+      border-left: 0.5pt solid var(--print-rule-soft) !important;
+    }
+    .work-section .entry-contracts .entry-identity:last-child {
+      margin-bottom: 0;
     }
 
     /* ─────────────────────────────────────────────

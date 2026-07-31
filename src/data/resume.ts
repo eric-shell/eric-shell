@@ -1,9 +1,20 @@
-export type ResumeJob = {
+/** Company / role / dates — the identity block every work entry leads with. */
+export type ResumeIdentity = {
   company: string
   role: string
   dates: string
-  description: string
 }
+
+/**
+ * A job entry carries either a `description` or a list of `contracts`, never
+ * both. Contracts render as identity blocks in the description's place, which
+ * is what lets concurrent, overlapping engagements sit under one heading
+ * instead of fighting each other for a slot in the timeline.
+ */
+export type ResumeJob = ResumeIdentity & (
+  | { description: string; contracts?: never }
+  | { description?: never; contracts: ResumeIdentity[] }
+)
 
 export type ResumeValue = {
   label: string
@@ -58,6 +69,16 @@ export const jobs: ResumeJob[] = [
     role: 'AI Design Systems Engineer',
     dates: 'Nov. 2025 - Present',
     description: 'I build AI-augmented tooling across the team and establish the coding standards and documentation practices around it, integrating LLMs directly into the development and delivery workflow. I own front-end architecture across a portfolio of enterprise marketing platforms, building and maintaining design systems that bridge the gap between design intent and production output at scale. As the resident front-end SME, I drive experience-guided feature development and white-label solution architecture: a productized front-end foundation we spin off into every client engagement. It delivers deep, complex feature parity across everything we build, scaling in lockstep as our team, solutions, and projects evolve.',
+  },
+  {
+    company: 'Independent',
+    role: 'Contract Engagements',
+    dates: 'Dec. 2024 - Feb. 2026',
+    contracts: [
+      { company: 'Promet Source', role: 'Solutions Architect',          dates: 'Dec. 2024 - Jan. 2025' },
+      { company: 'Isaiah',        role: 'Principal Software Developer', dates: 'Mar. 2025 - Feb. 2026' },
+      { company: 'Saksoft',       role: 'Senior Consultant',            dates: 'Aug. 2025 - Jan. 2026' },
+    ],
   },
   {
     company: 'Bounteous',

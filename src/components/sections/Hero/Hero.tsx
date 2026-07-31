@@ -112,6 +112,13 @@ export default function Hero() {
                 'Have you led teams?',
                 'What stack do you work in?',
               ]}
+              placeholders={[
+                'Ask me anything…',
+                'What are you working on now?',
+                'How do you use AI day to day?',
+                'Tell me about your design system work.',
+                'Are you available for contract work?',
+              ]}
               messages={messages}
               isLoading={isLoading}
               onClear={reset}

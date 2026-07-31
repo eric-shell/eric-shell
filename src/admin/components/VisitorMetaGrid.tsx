@@ -1,5 +1,5 @@
 import { twMerge } from 'tailwind-merge'
-import { type LucideIcon, CalendarDays, Clock, Compass, Eye, Fingerprint, Globe, Languages, Link, Mail, Monitor, MousePointer2, RotateCcw, User } from 'lucide-react'
+import { type LucideIcon, CalendarDays, Clock, Compass, Eye, Fingerprint, Globe, Languages, Link, Mail, Mic, Monitor, MousePointer2, RotateCcw, User } from 'lucide-react'
 import { formatDuration, formatLong } from '../lib/dateFormat'
 import { resolveLocation } from '../lib/location'
 import { formatUserAgent } from '../lib/userAgent'
@@ -106,6 +106,14 @@ export default function VisitorMetaGrid({ id, data }: Props) {
           )}
           {(events?.chat_cleared ?? 0) > 0 && (
             <MetaField icon={RotateCcw} label="Chats cleared" value={`${events!.chat_cleared}×`} />
+          )}
+          {(events?.speech_input ?? 0) > 0 && (
+            <MetaField
+              icon={Mic}
+              label="Voice input"
+              value={`${events!.speech_input}×`}
+              title="Dictation sessions started in the chat composer. No audio is received or stored — only the count."
+            />
           )}
         </>
       )}

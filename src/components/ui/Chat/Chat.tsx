@@ -1,12 +1,14 @@
 import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { ArrowRight, MessagesSquare, Trash2, X } from 'lucide-react'
+import { ArrowRight, MessagesSquare, Mic, Square, Trash2, X } from 'lucide-react'
 import { twMerge } from 'tailwind-merge'
 import ReactMarkdown from 'react-markdown'
 import Button from '../Button'
 import Panel from '../Panel'
+import { toast } from '../Toast'
 import type { ChatMessage } from '@/hooks/useChat'
-import { getVisitorId } from '@/lib/visitorId'
+import { useSpeechInput, useTypedPlaceholder } from '@/hooks'
+import { sendEvent } from '@/lib/telemetry'
 import { chatMdComponents, linkifyEmail } from '@/lib/markdown'
 import { GENIE_OUT_MS } from './timings'
 
@@ -22,12 +24,34 @@ interface ChatProps {
   onClose?: () => void
   onClear?: () => void
   placeholder?: string
+  /**
+   * Prompts typed and erased in the composer, one after another, in place of a
+   * static placeholder. Falls back to `placeholder` when empty, under
+   * `prefers-reduced-motion`, and once the conversation is under way.
+   */
+  placeholders?: string[]
   welcomeMessage?: string
   className?: string
 }
 
 const TEXTAREA_MAX_HEIGHT = 160
 const TYPE_SPEED_MS = 28
+
+/**
+ * Composer control geometry, in px. The textarea is `py-4` around a 24px line
+ * box, so it rests at 56px; each control is `size="md"` (`p-2.5`) around an
+ * 18px icon plus the 1px border every variant carries, so it is 40px.
+ * Insetting the cluster by half the difference is what leaves the send button
+ * sitting in an even 8px of air on the top, bottom, and right — derived here
+ * rather than written as a `right-*` class so the inputs to it stay visible.
+ *
+ * The border is load-bearing in that sum: dropping it from one control (the
+ * mic's `glass-dark` fill would happily go borderless) makes that control 2px
+ * shorter than its neighbour and the row stops lining up.
+ */
+// border + p-2.5 + icon + p-2.5 + border, under Tailwind's border-box sizing.
+const COMPOSER_CONTROL = 1 + 10 + 18 + 10 + 1
+const COMPOSER_INSET = (56 - COMPOSER_CONTROL) / 2
 
 function useTypewriter(text: string, enabled: boolean): string {
   const [count, setCount] = useState(() => (enabled ? 0 : text.length))
@@ -65,6 +89,7 @@ export default function Chat({
   onClose,
   onClear,
   placeholder = 'Ask me anything…',
+  placeholders = [],
   welcomeMessage,
   className,
 }: ChatProps) {
@@ -117,18 +142,39 @@ export default function Chat({
 
   useEffect(() => {
     if (adaFirstMount.current) { adaFirstMount.current = false; return }
-    const vid = getVisitorId()
-    if (!vid) return
-    fetch('/api/events', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'X-Visitor-Id': vid, 'X-Referrer': document.referrer },
-      body: JSON.stringify({ visitorId: vid, type: 'ada_toggle', metadata: { enabled: isWhite } }),
-    }).catch(err => {
-      if (import.meta.env.DEV) console.warn('ada_toggle event failed:', err)
-    })
+    sendEvent('ada_toggle', { enabled: isWhite })
   }, [isWhite])
 
+  // Dictation composes onto whatever is already in the field — see the hook,
+  // which keeps these callbacks in a ref so a session started mid-sentence
+  // still reads the current text.
+  const speech = useSpeechInput({
+    onTranscript: onChange,
+    getValue: () => value,
+    onStart: () => sendEvent('speech_input'),
+    onError: code => {
+      // `no-speech` (heard nothing) and `aborted` (the visitor stopped it) are
+      // normal exits, not failures worth a toast.
+      if (code === 'no-speech' || code === 'aborted') return
+      toast.error(
+        code === 'not-allowed' || code === 'service-not-allowed'
+          ? 'Microphone access was blocked. Enable it in your browser settings to dictate.'
+          : "Couldn't hear that — try again, or type your message."
+      )
+    },
+  })
+
+  // Only animates while the composer is genuinely empty and idle: a visible
+  // placeholder behind no text. Every other state falls back to the static one.
+  const typedPlaceholder = useTypedPlaceholder(
+    placeholders,
+    !value && !hasMessages && !isLoading && !speech.listening
+  )
+
   const handleClose = () => {
+    // The panel collapses to a floating button but this component stays
+    // mounted, so an open mic would otherwise keep listening with no UI.
+    speech.stop()
     setIsClosing(true)
     setTimeout(() => {
       setIsOpen(false)
@@ -138,16 +184,7 @@ export default function Chat({
   }
 
   const handleClear = () => {
-    const vid = getVisitorId()
-    if (vid) {
-      fetch('/api/events', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'X-Visitor-Id': vid, 'X-Referrer': document.referrer },
-        body: JSON.stringify({ visitorId: vid, type: 'chat_cleared' }),
-      }).catch(err => {
-        if (import.meta.env.DEV) console.warn('chat_cleared event failed:', err)
-      })
-    }
+    sendEvent('chat_cleared')
     onClear?.()
   }
 
@@ -216,9 +253,12 @@ export default function Chat({
               isWhite ? 'text-blue-950' : 'text-white'
             )}
           >
+            {/* On = the semantic `success` fill, not primary blue: the switch
+                reports a state that is now satisfied, and green separates it
+                from the blue CTAs sharing the panel. */}
             <span className={twMerge(
               'relative inline-flex h-4 w-7 items-center rounded-full transition-all',
-              isWhite ? 'bg-blue-700 hover:bg-blue-800' : 'bg-black/20 hover:bg-black/50'
+              isWhite ? 'bg-success hover:bg-success-hover' : 'bg-black/20 hover:bg-black/50'
             )}>
               <span className={twMerge(
                 'inline-block h-2.5 w-2.5 rounded-full bg-white shadow transition-transform',
@@ -328,41 +368,90 @@ export default function Chat({
                   onSubmit()
                 }
               }}
-              placeholder={placeholder}
+              placeholder={typedPlaceholder ?? placeholder}
               rows={1}
               disabled={isLoading}
               style={{ maxHeight: TEXTAREA_MAX_HEIGHT }}
               className={twMerge(
-                'block w-full rounded-[28px] border pl-5 pr-16 py-4 font-sans text-base leading-6 resize-none overflow-y-auto [&::-webkit-scrollbar]:hidden [scrollbar-width:none] transition-[height] duration-150 ease-out focus:outline-none disabled:opacity-60',
+                'block w-full rounded-[28px] border pl-5 py-4 font-sans text-base leading-6 resize-none overflow-y-auto [&::-webkit-scrollbar]:hidden [scrollbar-width:none] transition-[height] duration-150 ease-out focus:outline-none disabled:opacity-60',
+                // Right inset clears the control cluster: COMPOSER_INSET +
+                // buttons + the gap between them, plus room for the text to
+                // stop short of the first one.
+                speech.supported ? 'pr-26' : 'pr-16',
                 isWhite
-                  ? 'bg-white border-blue-950/20 text-blue-950 placeholder:text-blue-950/30 focus:border-blue-700'
-                  : 'bg-white/10 border-white/20 text-white placeholder:text-white/40 focus:border-white/60 focus:bg-white/15'
+                  ? 'bg-white border-blue-950/20 text-blue-950 placeholder:text-blue-950/70 focus:border-blue-700'
+                  : 'bg-white/10 border-white/20 text-white placeholder:text-white/70 focus:border-white/60 focus:bg-white/15'
               )}
             />
-            <Button
-              onClick={onSubmit}
-              disabled={submitDisabled}
-              variant="primary"
-              shape="square"
-              size="md"
-              className="absolute top-1/2 -translate-y-1/2 right-2 rounded-full shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
-              aria-label={isLoading ? 'Sending' : 'Send message'}
+            {/* The cluster is inset by COMPOSER_INSET on the right, and the
+                buttons are COMPOSER_CONTROL px tall inside a 56px composer —
+                so the same 9px of air surrounds them on all three sides.
+                Changing the icon size or the textarea's py breaks that; the
+                two constants at the top of the file are where to redo the
+                arithmetic. */}
+            <div
+              className="absolute top-1/2 -translate-y-1/2 flex items-center gap-1.5"
+              style={{ right: COMPOSER_INSET }}
             >
-              <ArrowRight size={20} strokeWidth={2.5} aria-hidden="true" />
-            </Button>
+              {speech.supported && (
+                <Button
+                  onClick={speech.toggle}
+                  disabled={isLoading}
+                  variant={speech.listening ? 'error' : isWhite ? 'white' : 'glass-dark'}
+                  shape="square"
+                  size="md"
+                  className={twMerge(
+                    'rounded-full [--icon-size:1.125rem]',
+                    speech.listening && 'motion-safe:animate-pulse'
+                  )}
+                  aria-label={speech.listening ? 'Stop dictation' : 'Dictate your message'}
+                  aria-pressed={speech.listening}
+                >
+                  {speech.listening
+                    ? <Square size={18} strokeWidth={2.5} fill="currentColor" aria-hidden="true" />
+                    : <Mic size={18} strokeWidth={2.5} aria-hidden="true" />}
+                </Button>
+              )}
+              <Button
+                onClick={onSubmit}
+                disabled={submitDisabled}
+                variant="primary"
+                shape="square"
+                size="md"
+                className="rounded-full shadow-md [--icon-size:1.125rem] disabled:opacity-50 disabled:cursor-not-allowed"
+                aria-label={isLoading ? 'Sending' : 'Send message'}
+              >
+                <ArrowRight size={20} strokeWidth={2.5} aria-hidden="true" />
+              </Button>
+            </div>
           </div>
-          <p className={twMerge(
-            'mt-2 px-1 font-sans text-[11px] leading-none text-center',
+          {/* Two disclosures, one row: pushed apart on a wide composer, reduced
+              to the bare links either side of a divider where the prose would
+              wrap. */}
+          <div className={twMerge(
+            'mt-2 px-1 font-sans text-[11px] leading-none flex items-center justify-center gap-2',
             isWhite ? 'text-blue-950/50' : 'text-white/60'
           )}>
-            Chats are saved so I can follow up.{' '}
-            <a
-              href="/privacy"
-              className="underline underline-offset-2 hover:opacity-80 transition-opacity"
-            >
-              Privacy
-            </a>
-          </p>
+            <p>
+              <span className="hidden sm:inline">Contact me directly. </span>
+              <a
+                href="mailto:ericjshell@gmail.com"
+                className="underline underline-offset-2 hover:opacity-80 transition-opacity"
+              >
+                Email
+              </a>
+            </p>
+            <span aria-hidden="true" className="h-3 w-px bg-current opacity-40" />
+            <p>
+              <span className="hidden sm:inline">Chats are saved so I can follow up. </span>
+              <a
+                href="/privacy"
+                className="underline underline-offset-2 hover:opacity-80 transition-opacity"
+              >
+                Privacy
+              </a>
+            </p>
+          </div>
         </div>
       </div>
     </div>

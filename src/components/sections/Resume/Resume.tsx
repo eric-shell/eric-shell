@@ -1,6 +1,42 @@
 import { FileDown, Mail } from 'lucide-react'
+import { twMerge } from 'tailwind-merge'
 import { Backdrop, Button, CascadeGroup, CascadeItem, Container, Eyebrow, H1, H2, H3 } from '../../ui'
 import { certifications, contact, education, headline, intros, jobs, summary, summaryPrint, values } from '@/data/resume'
+import type { ResumeIdentity } from '@/data/resume'
+
+/**
+ * Company / role / dates. Shared by a job entry and by the contract rows that
+ * stand in for a description, so the two always read identically — including in
+ * print, where `.entry-identity` is what reflows the three lines into
+ * company-left / dates-right (see index.css).
+ *
+ * `band` opts into that same company-left / dates-right reflow on screen,
+ * between `sm` and `lg`. It exists for a block that is spanning the full page
+ * width there: three stacked lines occupy about 255px of it and leave the rest
+ * empty, where the two-column form uses the measure it has been given. Above
+ * `lg` the block is one of several sharing a row and goes back to stacking.
+ */
+function EntryIdentity({ company, role, dates, band = false }: ResumeIdentity & { band?: boolean }) {
+  const cell = (classes: string) => (band ? classes : undefined)
+  return (
+    <div
+      className={twMerge(
+        'entry-identity flex flex-col gap-1',
+        band && 'sm:max-lg:grid sm:max-lg:grid-cols-[minmax(0,1fr)_auto] sm:max-lg:items-baseline sm:max-lg:gap-x-8',
+      )}
+    >
+      <H3 className={twMerge('text-blue-800', cell('sm:max-lg:col-start-1 sm:max-lg:row-start-1'))}>
+        {company}
+      </H3>
+      <p className={twMerge('font-sans text-base font-semibold pt-1', cell('sm:max-lg:col-start-1 sm:max-lg:row-start-2 sm:max-lg:pt-0'))}>
+        {role}
+      </p>
+      <p className={twMerge('font-sans text-sm text-blue-950/60', cell('sm:max-lg:col-start-2 sm:max-lg:row-start-1 sm:max-lg:justify-self-end'))}>
+        {dates}
+      </p>
+    </div>
+  )
+}
 
 export default function Resume() {
   return (
@@ -95,12 +131,33 @@ export default function Resume() {
                   {/* `first-entry` lets print drop the leading rule without
                       counting siblings — the intro above shifts positions. */}
                   <article className={`${i === 0 ? 'first-entry ' : ''}grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-6 lg:gap-12 pt-8 border-t border-blue-950/10`}>
-                    <div className="flex flex-col gap-1">
-                      <H3 className="text-blue-800">{job.company}</H3>
-                      <p className="font-sans text-base font-semibold pt-1">{job.role}</p>
-                      <p className="font-sans text-sm text-blue-950/60">{job.dates}</p>
-                    </div>
-                    <p className="font-sans text-base leading-relaxed">{job.description}</p>
+                    <EntryIdentity company={job.company} role={job.role} dates={job.dates} />
+                    {/* Contracts take the description's column. They are
+                        concurrent by nature — overlapping each other and the
+                        role above — so they are listed rather than slotted into
+                        the timeline as entries of their own. */}
+                    {job.contracts
+                      ? (
+                        // Side by side from `lg` — they ran concurrently, and a
+                        // row says that where a stack would imply sequence.
+                        // A wrapping flex row rather than three equal grid
+                        // columns: equal columns are set by the widest cell,
+                        // so at the narrow end of `lg` every company name
+                        // broke onto a second line and pushed that column's
+                        // role and dates out of line with its neighbours.
+                        // Sized to their content they fit, and wrap only if
+                        // they genuinely cannot. Below `lg` — where this block
+                        // spans the full page width — they stack, and the rule
+                        // indents them back under the role they belong to.
+                        // From `sm` to `lg` each one also takes the `band`
+                        // form, which is what puts that full width to use.
+                        <div className="entry-contracts flex flex-col gap-8 sm:max-lg:gap-6 pl-5 border-l border-blue-950/10 lg:flex-row lg:flex-wrap lg:gap-x-22 lg:pl-0 lg:border-l-0">
+                          {job.contracts.map(contract => (
+                            <EntryIdentity key={contract.company} {...contract} band />
+                          ))}
+                        </div>
+                      )
+                      : <p className="font-sans text-base leading-relaxed">{job.description}</p>}
                   </article>
                 </CascadeItem>
               ))}

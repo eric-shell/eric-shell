@@ -4,7 +4,7 @@ import { checkRateLimit } from './_lib/ratelimit.js'
 import { readVisitorId, upsertVisitor } from './_lib/visitor.js'
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
-const VALID_TYPES = ['ada_toggle', 'chat_cleared']
+const VALID_TYPES = ['ada_toggle', 'chat_cleared', 'speech_input']
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') return res.status(405).end()

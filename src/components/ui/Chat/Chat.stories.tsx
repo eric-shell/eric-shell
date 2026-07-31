@@ -41,6 +41,27 @@ export const Open: Story = {
   decorators,
 }
 
+/**
+ * The composer types its prompts out and erases them rather than sitting on a
+ * static string. `placeholder` is still the fallback — under
+ * `prefers-reduced-motion`, and once a conversation is under way.
+ */
+export const TypedPlaceholder: Story = {
+  args: {
+    value: '',
+    onChange: fn(),
+    onSubmit: fn(),
+    placeholder: 'Ask me anything…',
+    placeholders: [
+      'Ask me anything…',
+      'What are you working on now?',
+      'How do you use AI day to day?',
+      'Tell me about your design system work.',
+    ],
+  },
+  decorators,
+}
+
 export const WithContent: Story = {
   args: {
     value: 'What technologies do you use?',
