@@ -125,15 +125,25 @@ export function classifyVisitor(v: VisitorSummary): VisitorTag[] {
   if (converted) {
     const email = v.contact_email ?? ''
     const name = v.contact_name ?? ''
-    const spamReasons: string[] = []
+    // Strong signals stand on their own. Weak ones are ambiguous in isolation
+    // and only count alongside something else — a disposable address is a
+    // preference rather than a tell, and "no page view" is exactly what an
+    // honored Do Not Track / GPC opt-out looks like, since telemetry is
+    // suppressed client-side before a single beacon goes out. Firing on either
+    // alone tagged the most privacy-conscious visitors as junk for a submission
+    // that was otherwise perfectly ordinary.
+    const strong: string[] = []
+    const weak: string[] = []
 
-    if (URL_IN_TEXT.test(name)) spamReasons.push('the submitted name contains a URL')
-    if (email && !/^[^@\s]+@[^@\s]+\.[^@\s]{2,}$/.test(email)) spamReasons.push('the email is malformed')
-    if (THROWAWAY_EMAIL.test(email)) spamReasons.push('a disposable email domain')
-    // Submitting without ever loading a page is the classic direct-POST bot.
-    if (views === 0 && !chatted) spamReasons.push('the form was submitted with no page view recorded')
+    if (URL_IN_TEXT.test(name)) strong.push('the submitted name contains a URL')
+    if (email && !/^[^@\s]+@[^@\s]+\.[^@\s]{2,}$/.test(email)) strong.push('the email is malformed')
+    if (THROWAWAY_EMAIL.test(email)) weak.push('a disposable email domain')
+    // The classic direct-POST bot never loads a page — but neither does anyone
+    // sending DNT/GPC, so this cannot convict on its own.
+    if (views === 0 && !chatted) weak.push('no page view was recorded (which is also what a Do Not Track opt-out looks like)')
 
-    if (spamReasons.length > 0) {
+    const spamReasons = [...strong, ...weak]
+    if (strong.length > 0 || spamReasons.length >= 2) {
       tags.push({
         label: 'Spam?',
         tone: 'danger',

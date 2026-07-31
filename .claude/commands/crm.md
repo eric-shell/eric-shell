@@ -128,7 +128,7 @@ The direction toggle deliberately uses `ArrowUpNarrowWide` / `ArrowDownWideNarro
 | `Bot` | User agent matches a curated crawler/automation list |
 | `Automated` | Page views recorded but no browser timezone *or* language — a real browser always sends both |
 | `No dwell` | 3+ page views with under 2s engaged — fetched, not read |
-| `Spam?` | A submission with a URL in the name, a malformed or disposable email, or no page view at all |
+| `Spam?` | A submission with a URL in the name or a malformed email — or two weaker signals together (disposable email domain, no page view recorded) |
 | `Bounce` | A single view under 5s, and only when nothing else already explains the row |
 | `Returning` | Sessions on 2+ **separate days** — deliberate return, the strongest interest signal here |
 | `Reader` | 45s+ engaged with deep scroll or 3+ pages, and never chatted or submitted |
@@ -170,7 +170,9 @@ Rules that keep it honest, and that you should preserve when tuning:
 
 - **Never match `bot` mid-word.** `CUBOT` is a real Android phone brand, and `Abbott` appears in corporate user agents; a loose `[a-z]bot` pattern flags both. Use `\b` boundaries and the explicit `Bot/` version form.
 - **Engagement outranks heuristics.** A visitor who chatted or submitted the form is never tagged `Bounce`, however brief the visit.
+- **`Spam?` separates strong signals from weak ones.** A URL in the name or a malformed email fires alone; a disposable domain or a missing page view needs a second signal before the tag appears. Keep new heuristics on the right side of that line.
 - **A disposable email alone is never spam** — plenty of real people use them. It only contributes alongside another signal.
+- **A missing page view is not evidence of a bot.** Telemetry is suppressed client-side for anyone sending Do Not Track or GPC, so an honored opt-out and a direct-POST bot look identical on that test. It was the sole reason `Spam?` fired on ordinary submissions from privacy-conscious visitors.
 - `Spam?` keeps its question mark on purpose. It is a prompt to read the message, not a verdict.
 
 Signals are limited to what a list row carries (`VisitorSummary`). Anything needing message bodies or scroll depth belongs in the detail view.
