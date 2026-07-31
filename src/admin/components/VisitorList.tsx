@@ -1,4 +1,4 @@
-import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { Fragment, type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   ArrowDownWideNarrow, ArrowUpNarrowWide, ChevronDown, ChevronLeft,
   ChevronRight, ChevronUp, MailCheck, MessageSquare, Pencil,
@@ -19,6 +19,35 @@ import {
 export type { VisitorSummary }
 
 const PAGE_SIZE = 25
+
+/**
+ * Expand/collapse duration. Kept in sync with the `duration-*` class in
+ * `DetailCollapse` — it also times how long a closing row stays mounted.
+ */
+const COLLAPSE_MS = 260
+
+/**
+ * Height animation for the expanded visitor detail.
+ *
+ * `grid-template-rows: 0fr → 1fr`, not `max-height`. The panel's height isn't
+ * known when it opens: the detail is fetched after mount, and a chat transcript
+ * can be any length. A max-height big enough for the longest one would make
+ * every short row coast through empty space at the end of its animation, and
+ * one sized for the common case would clip the long ones.
+ *
+ * It mounts closed and opens on the next frame — an element already at its
+ * final value has nothing to transition from. Same reason the closing row stays
+ * mounted for COLLAPSE_MS in the parent: unmounting on click would delete the
+ * thing that's supposed to be animating.
+ */
+function DetailCollapse({ open, children }: { open: boolean; children: ReactNode }) {
+  return (
+    <div className={twMerge('grid', open ? 'animate-detail-expand' : 'animate-detail-collapse')}>
+      {/* What the 0fr row clips against. */}
+      <div className="overflow-hidden">{children}</div>
+    </div>
+  )
+}
 
 interface VisitorListProps {
   visitors: VisitorSummary[]
@@ -235,10 +264,12 @@ function SortBar({ sort, onSort, className }: {
  * drift. Sorting comes from the shared SortBar above.
  */
 function MobileList({
-  rows, selectedId, onSelect, locationFor, onVisitorDeleted, onSaved,
+  rows, selectedId, closingId, onSelect, locationFor, onVisitorDeleted, onSaved,
 }: {
   rows: VisitorSummary[]
   selectedId: string | null
+  /** Row on its way out — still mounted so it can animate closed. */
+  closingId: string | null
   onSelect: (id: string | null) => void
   /** Same resolver the table uses, so the "corrected" marker stays truthful. */
   locationFor: (v: VisitorSummary) => ReturnType<typeof resolveLocation>
@@ -300,13 +331,15 @@ function MobileList({
                 </div>
               </button>
 
-              {isOpen && (
-                <VisitorDetail
-                  id={v.id}
-                  onClose={() => onSelect(null)}
-                  onDeleted={onVisitorDeleted}
-                  onSaved={onSaved}
-                />
+              {(isOpen || closingId === v.id) && (
+                <DetailCollapse open={isOpen}>
+                  <VisitorDetail
+                    id={v.id}
+                    onClose={() => onSelect(null)}
+                    onDeleted={onVisitorDeleted}
+                    onSaved={onSaved}
+                  />
+                </DetailCollapse>
               )}
             </li>
           )
@@ -358,6 +391,10 @@ export default function VisitorList({ visitors, onVisitorDeleted }: VisitorListP
   )
   const [page, setPage] = useState(1)
   const columnCount = useColumnCount()
+  // The row that was just closed. It stays rendered for COLLAPSE_MS so the
+  // collapse can play; without it, clicking to close would unmount the panel
+  // instantly and there would be nothing left to animate.
+  const [closingId, setClosingId] = useState<string | null>(null)
   const didRestore = useRef(false)
   // Locally applied location corrections, so the cell updates on save without
   // refetching the whole list.
@@ -381,6 +418,29 @@ export default function VisitorList({ visitors, onVisitorDeleted }: VisitorListP
     () => sortVisitors(visitors, sort, labelFor),
     [visitors, sort, labelFor],
   )
+
+  /**
+   * Open a row, close one, or swap between two.
+   *
+   * The outgoing row is handed to `closingId` rather than dropped, and a
+   * re-open of a row still animating out reclaims it immediately — otherwise it
+   * would be mounted twice, once opening and once fading away.
+   */
+  const handleSelect = useCallback((id: string | null) => {
+    // Read `selectedId` directly rather than from a setState updater: updaters
+    // must be pure, and React would run this one twice in StrictMode.
+    setClosingId(selectedId && selectedId !== id ? selectedId : null)
+    setSelectedId(id)
+  }, [selectedId])
+
+  // Drop the closing row once its animation is over. A timer rather than
+  // `transitionend`: under `prefers-reduced-motion` there is no transition, so
+  // no event ever fires and the row would sit invisible in the DOM forever.
+  useEffect(() => {
+    if (!closingId) return
+    const timer = setTimeout(() => setClosingId(null), COLLAPSE_MS)
+    return () => clearTimeout(timer)
+  }, [closingId])
 
   // Mirror of `sorted` for the restore-from-URL effect below. That effect must
   // stay keyed on the `visitors` prop alone — depending on `sorted` would make
@@ -496,7 +556,7 @@ export default function VisitorList({ visitors, onVisitorDeleted }: VisitorListP
             return (
               <Fragment key={v.id}>
                 <tr
-                  onClick={() => setSelectedId(isOpen ? null : v.id)}
+                  onClick={() => handleSelect(isOpen ? null : v.id)}
                   className={twMerge(
                     'cursor-pointer border-b border-white/5 transition-colors',
                     isOpen ? 'bg-black/[0.65]' : 'hover:bg-black/[0.15]'
@@ -539,18 +599,24 @@ export default function VisitorList({ visitors, onVisitorDeleted }: VisitorListP
                     ) : <Dash />}
                   </td>
                 </tr>
-                {isOpen && (
+                {(isOpen || closingId === v.id) && (
                   <tr>
-                    {/* Exactly the columns on screen — see useColumnCount. */}
-                    <td colSpan={columnCount} className="pb-3 pt-0">
-                      <VisitorDetail
-                        id={v.id}
-                        onClose={() => setSelectedId(null)}
-                        onDeleted={onVisitorDeleted}
-                        onSaved={(id, override) =>
-                          setSavedOverrides(prev => ({ ...prev, [id]: override }))
-                        }
-                      />
+                    {/* Exactly the columns on screen — see useColumnCount. The
+                        cell carries no padding: it would survive the collapse
+                        and leave a gap where the row used to be. */}
+                    <td colSpan={columnCount} className="p-0">
+                      <DetailCollapse open={isOpen}>
+                        <div className="pb-3">
+                          <VisitorDetail
+                            id={v.id}
+                            onClose={() => handleSelect(null)}
+                            onDeleted={onVisitorDeleted}
+                            onSaved={(id, override) =>
+                              setSavedOverrides(prev => ({ ...prev, [id]: override }))
+                            }
+                          />
+                        </div>
+                      </DetailCollapse>
                     </td>
                   </tr>
                 )}
@@ -564,7 +630,8 @@ export default function VisitorList({ visitors, onVisitorDeleted }: VisitorListP
       <MobileList
         rows={pageVisitors}
         selectedId={selectedId}
-        onSelect={setSelectedId}
+        closingId={closingId}
+        onSelect={handleSelect}
         locationFor={locationFor}
         onVisitorDeleted={onVisitorDeleted}
         onSaved={(id, override) => setSavedOverrides(prev => ({ ...prev, [id]: override }))}

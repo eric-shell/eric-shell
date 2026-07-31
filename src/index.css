@@ -224,6 +224,38 @@
   to   { opacity: 0; transform: translateX(-20px); }
 }
 
+/*
+ * Admin CRM: the visitor row's detail panel opening and closing.
+ *
+ * `grid-template-rows: 0fr → 1fr` rather than max-height, because the panel's
+ * height is not knowable in advance — the detail is fetched after it mounts and
+ * a chat transcript can be any length. A max-height large enough for the longest
+ * one leaves every short row coasting through empty space; one sized for the
+ * common case clips the long ones.
+ *
+ * Keyframes rather than a transition so the opening animation runs on mount
+ * with no state to flip on the next frame. The collapse holds its end state
+ * (`forwards`) for the moment the row stays mounted after being closed.
+ */
+@keyframes detail-expand {
+  from { grid-template-rows: 0fr; opacity: 0; }
+  to   { grid-template-rows: 1fr; opacity: 1; }
+}
+
+@keyframes detail-collapse {
+  from { grid-template-rows: 1fr; opacity: 1; }
+  to   { grid-template-rows: 0fr; opacity: 0; }
+}
+
+@utility animate-detail-expand {
+  animation: detail-expand 260ms cubic-bezier(0.22, 1, 0.36, 1);
+  grid-template-rows: 1fr;
+}
+
+@utility animate-detail-collapse {
+  animation: detail-collapse 260ms cubic-bezier(0.4, 0, 1, 1) forwards;
+}
+
 @utility glass-blur {
   @apply backdrop-blur-md;
 }
@@ -995,6 +1027,18 @@
       animation: none !important;
       opacity: 1 !important;
       transform: none !important;
+    }
+
+    .animate-detail-expand {
+      animation: none !important;
+    }
+
+    /* Not just `animation: none` — the row stays mounted for the length of the
+       collapse, so without this a closed panel would sit at full height until
+       React removed it. */
+    .animate-detail-collapse {
+      animation: none !important;
+      display: none !important;
     }
   }
 }
