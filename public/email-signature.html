@@ -25,7 +25,11 @@
           <a href="tel:+14845050475" style="color:#374151;text-decoration:none;">484-505-0475</a>
         </p>
         <p style="margin:10px 0 0;">
-          <a href="https://eric.sh" style="display:inline-block;background:rgb(60,129,253);color:#fff;font-size:12px;font-weight:600;text-decoration:none;padding:7px 16px;border-radius:6px;letter-spacing:0.01em;">Visit my website</a>
+          <!-- Tagged so signature clicks are separable from someone typing the
+               URL — untagged, both land in the CRM as "Direct / none". The
+               server lowercases and hyphenates these (api/track.ts), so they are
+               written in the shape they will be stored in. -->
+          <a href="https://eric.sh/?utm_source=email-signature&amp;utm_medium=email" style="display:inline-block;background:rgb(60,129,253);color:#fff;font-size:12px;font-weight:600;text-decoration:none;padding:7px 16px;border-radius:6px;letter-spacing:0.01em;">Visit my website</a>
         </p>
       </td>
     </tr>
