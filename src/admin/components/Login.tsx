@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Button, Eyebrow, H1, Input, Panel } from '../../components/ui'
+import { Button, H1, Input, Panel } from '../../components/ui'
 
 interface LoginProps {
   onSuccess: () => void
