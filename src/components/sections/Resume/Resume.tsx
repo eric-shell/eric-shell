@@ -48,7 +48,7 @@ export default function Resume() {
             hero's own `background: none` print rule can't suppress them, and
             they'd render if "Background graphics" is enabled. */}
         <Backdrop tone="dark" className="print:hidden" />
-        <Container className="resume-masthead unskew-inner">
+        <Container className="resume-masthead unskew-hero">
           <CascadeGroup mountOnly className="resume-identity flex flex-col gap-4 print:gap-1">
             <CascadeItem index={0} className="print:hidden">
               <Eyebrow size="lg" className="text-white">Resume</Eyebrow>

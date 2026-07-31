@@ -400,6 +400,14 @@
   transform: skewY(0.5deg);
 }
 
+/* Counterpart to skew-hero. A page masthead only angles its bottom edge into
+   the content below, so its text has no second shear to split the difference
+   with — it reads as a mistake at the -0.5deg residual sections settle at.
+   +1deg cancels skew-hero exactly (the composed matrix is the identity). */
+@utility unskew-hero {
+  transform: skewY(1deg);
+}
+
 /* Sections settle their content at -0.5deg (a -1deg shear plus unskew-inner's
    +0.5deg). skew-footer clips instead of shearing, so its content applies that
    same residual tilt directly. */
@@ -595,7 +603,7 @@
       overflow: visible !important;
     }
     .resume-masthead {
-      /* Counters unskew-inner. */
+      /* Counters unskew-hero. */
       transform: none !important;
       display: grid !important;
       grid-template-columns: minmax(0, 1fr) auto;
