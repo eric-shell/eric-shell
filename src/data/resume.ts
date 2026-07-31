@@ -10,10 +10,15 @@ export type ResumeIdentity = {
  * both. Contracts render as identity blocks in the description's place, which
  * is what lets concurrent, overlapping engagements sit under one heading
  * instead of fighting each other for a slot in the timeline.
+ *
+ * `descriptionPrint` is the condensed form the one-page PDF uses in place of
+ * `description` — same facts, fewer lines. Same pattern as `summaryPrint`.
+ * Older roles condense hardest, which is what keeps the page weighted toward
+ * recent work. Omit it and print falls back to the full `description`.
  */
 export type ResumeJob = ResumeIdentity & (
-  | { description: string; contracts?: never }
-  | { description?: never; contracts: ResumeIdentity[] }
+  | { description: string; descriptionPrint?: string; contracts?: never }
+  | { description?: never; descriptionPrint?: never; contracts: ResumeIdentity[] }
 )
 
 export type ResumeValue = {
@@ -69,6 +74,7 @@ export const jobs: ResumeJob[] = [
     role: 'AI Design Systems Engineer',
     dates: 'Nov. 2025 - Present',
     description: 'I build AI-augmented tooling across the team and establish the coding standards and documentation practices around it, integrating LLMs directly into the development and delivery workflow. I own front-end architecture across a portfolio of enterprise marketing platforms, building and maintaining design systems that bridge the gap between design intent and production output at scale. As the resident front-end SME, I drive experience-guided feature development and white-label solution architecture: a productized front-end foundation we spin off into every client engagement. It delivers deep, complex feature parity across everything we build, scaling in lockstep as our team, solutions, and projects evolve.',
+    descriptionPrint: 'I own front-end architecture across a portfolio of enterprise marketing platforms, building design systems that carry design intent through to production at scale. As the resident front-end SME, I drive experience-guided feature development and a white-label front-end foundation we spin off into every client engagement. I also build the AI-augmented tooling and coding standards the team works from.',
   },
   {
     company: 'Independent',
@@ -85,24 +91,28 @@ export const jobs: ResumeJob[] = [
     role: 'Lead Software Developer',
     dates: 'Oct. 2021 - Oct. 2024',
     description: "I served as Tech Lead and Front End Specialist on enterprise marketing platforms for national QSR brands including Red Robin, Denny's, Bubba's 33, Noodles & Company, and Panda Express. I architected reusable component libraries and design system foundations used across multiple client engagements, led sprint planning, estimation, and release coordination, and provided technical mentorship to developers at all levels.",
+    descriptionPrint: "Tech Lead and Front End Specialist on enterprise marketing platforms for national QSR brands including Red Robin, Denny's, Bubba's 33, Noodles & Company, and Panda Express. I architected reusable component libraries used across multiple client engagements, led sprint planning and release coordination, and mentored developers at all levels.",
   },
   {
     company: 'TransUnion',
     role: 'Senior Software Engineer',
     dates: 'Sept. 2018 - Oct. 2021',
     description: 'I built and maintained direct-to-consumer and client-facing web applications for one of the three major U.S. credit bureaus. I led custom feature development from scoping and estimation through to production release, delivering accessible and performant UI solutions for complex financial data products used by millions of consumers. I also collaborated closely with web and mobile teams across the organization to solve shared front-end challenges.',
+    descriptionPrint: 'I built direct-to-consumer and client-facing web applications for one of the three major U.S. credit bureaus, leading custom feature development from scoping through production release and delivering accessible, performant UI for complex financial data products used by millions of consumers.',
   },
   {
     company: 'Hathway',
     role: 'Software Engineer',
     dates: 'May 2015 - Sept. 2018',
     description: 'I delivered front-end development and tech lead responsibilities across a diverse portfolio of agency clients, specializing in Drupal-powered platforms with contributions to site architecture, theming, and custom module work. I collaborated directly with designers to refine assets and provide actionable UI/UX feedback, and managed client relationships with clear communication and hands-on support at every stage of a project.',
+    descriptionPrint: 'Front-end development and tech lead responsibilities across a diverse portfolio of agency clients, specializing in Drupal-powered platforms — site architecture, theming, and custom module work — in close collaboration with designers and clients.',
   },
   {
     company: 'Accuair',
     role: 'Digital Media Director',
     dates: 'March 2013 - May 2015',
     description: 'I led web development and front-end innovation for an automotive brand specializing in Drupal Commerce, while also training and supporting internal staff responsible for content management and online storefront operations. The role spanned multiple disciplines including video, photography, and graphic design, giving me an early foundation in bridging development with creative production.',
+    descriptionPrint: 'I led web development and front-end innovation for an automotive brand on Drupal Commerce, and trained the internal staff running content management and online storefront operations.',
   },
 ]
 

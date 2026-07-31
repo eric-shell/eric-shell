@@ -515,9 +515,11 @@
 
      Colourway is greyscale — hierarchy is carried by weight, size and rule
      strength alone. Every colour routes through the five --print-* tokens
-     below, so restoring the site blues is a one-block edit (ink → blue-950,
-     ink-muted → blue-700, ink-subtle → blue-600, rule → blue-300,
-     rule-soft → blue-200).
+     below, so restoring the site blues is a one-block edit. Note if you do:
+     blue-600 lands near 3.8:1 on white, which is under AA and reads thin at
+     8.4pt on paper, so the ink ramp wants to stop at blue-700
+     (ink → blue-950, ink-muted → blue-800, ink-subtle → blue-700,
+     rule → blue-400, rule-soft → blue-200).
      ═══════════════════════════════════════════════════════════════ */
   @media print {
     @page {
@@ -545,6 +547,15 @@
       --print-size-body:  0.7rem;   /* running text, list items, dt   */
       --print-size-meta:  0.65rem;  /* dates, contact lines           */
       --print-size-label: 0.58rem;  /* every uppercase label          */
+
+      /* One leading for every run of body copy — work descriptions, value
+         descriptions and credential lines all set on the same rhythm, so a
+         column of text reads level against its neighbour. Tighter than the
+         site's 1.625 because 8.4pt copy at web leading wastes the sheet.
+         The single sheet is bought by `descriptionPrint` (resume.ts), not by
+         compressing this — if the page overflows again, condense copy before
+         reaching for a smaller number here. */
+      --print-leading: 1.42;
     }
 
     /* Weight roles, applied consistently across all three "title + detail"
@@ -593,13 +604,13 @@
     .resume-hero {
       background: none !important;
       color: var(--print-ink) !important;
-      padding: 0 0 0.45rem 0 !important;
+      padding: 0 0 0.4rem 0 !important;
       /* Borders print even with background graphics disabled. */
       border-bottom: 2.25pt solid var(--print-ink) !important;
       /* Drop the on-screen skew-hero shear and its offset — the masthead
          rule has to sit square on the page. */
       transform: none !important;
-      margin: 0 0 0.7rem 0 !important;
+      margin: 0 0 0.62rem 0 !important;
       overflow: visible !important;
     }
     .resume-masthead {
@@ -692,7 +703,7 @@
     .resume-root dt,
     .resume-root .font-sans {
       font-size: var(--print-size-body) !important;
-      line-height: 1.42 !important;
+      line-height: var(--print-leading) !important;
     }
 
     /* ─────────────────────────────────────────────
@@ -702,15 +713,29 @@
          col 1: About · Values · Credentials
          col 2: Work Experience (full height)
        ───────────────────────────────────────────── */
+    /* 1 : 1.6 rather than an even split. The left rail runs short lines of
+       supporting detail, the work column runs the paragraphs that carry the
+       document — giving it the extra measure costs the rail nothing it needs
+       and takes a line off most job descriptions, which is most of what buys
+       the single sheet. */
     .print-grid {
       display: grid !important;
-      grid-template-columns: minmax(0, 1fr) minmax(0, 1.42fr);
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr);
       column-gap: 1.6rem;
       align-items: start;
     }
     .print-grid > section {
-      padding: 0 0 0.75rem 0 !important;
+      padding: 0 0 0.5rem 0 !important;
       border-top: none !important;
+    }
+    /* Air above the second and third rail sections. The grid rows are sized by
+       whichever column is taller; now that the two are balanced, nothing
+       stretches the rows, so without this the VALUES and CREDENTIALS heads sit
+       hard against the last line of the block above. Specificity has to clear
+       the `padding` shorthand on `.print-grid > section` above. */
+    .print-grid > .values-section,
+    .print-grid > .credentials-section {
+      padding-top: 0.9rem !important;
     }
     .print-grid > section > div {
       padding: 0 !important;
@@ -833,7 +858,7 @@
     .values-grid {
       display: grid !important;
       grid-template-columns: 1fr !important;
-      gap: 0.34rem !important;
+      gap: 0.38rem !important;
       max-width: 100% !important;
     }
     /* Entry title — identical treatment to a job's role line and to the
@@ -854,7 +879,7 @@
     .credentials-grid > div > div > p:last-child {
       font-size: var(--print-size-body) !important;
       font-weight: 400 !important;
-      line-height: 1.42 !important;
+      line-height: var(--print-leading) !important;
       color: var(--print-ink-subtle) !important;
       padding-top: 0 !important;
       margin: 0 !important;
@@ -887,7 +912,7 @@
     }
     .credentials-grid li {
       list-style: none;
-      line-height: 1.42 !important;
+      line-height: var(--print-leading) !important;
       color: var(--print-ink) !important;
     }
 

@@ -157,7 +157,22 @@ export default function Resume() {
                           ))}
                         </div>
                       )
-                      : <p className="font-sans text-base leading-relaxed">{job.description}</p>}
+                      : (
+                        <>
+                          {/* Print swaps in the condensed `descriptionPrint`
+                              where a job defines one — see resume.ts. Both are
+                              direct children of the article so the print rules
+                              keyed to `article > p` catch either. */}
+                          <p className={`font-sans text-base leading-relaxed${job.descriptionPrint ? ' print:hidden' : ''}`}>
+                            {job.description}
+                          </p>
+                          {job.descriptionPrint && (
+                            <p className="hidden print:block font-sans text-base leading-relaxed">
+                              {job.descriptionPrint}
+                            </p>
+                          )}
+                        </>
+                      )}
                   </article>
                 </CascadeItem>
               ))}
