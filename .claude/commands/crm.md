@@ -1,6 +1,6 @@
 # Admin CRM — Reference
 
-A password-gated admin page at `/crm.html` for viewing every chat thread and contact form submission, keyed by an anonymous client-generated visitor UUID. Persistence runs alongside the existing chat stream and contact email — they are best-effort and never block the public response.
+A password-gated admin page at `/dashboard` (sign-in at `/login`) for viewing every chat thread and contact form submission, keyed by an anonymous client-generated visitor UUID. Persistence runs alongside the existing chat stream and contact email — they are best-effort and never block the public response.
 
 ## File map
 
@@ -9,8 +9,8 @@ A password-gated admin page at `/crm.html` for viewing every chat thread and con
 | Schema (apply once via Neon SQL editor) | [db/schema.sql](db/schema.sql) |
 | Neon HTTP client (cached `sql()` helper) | [api/_lib/db.ts](api/_lib/db.ts) |
 | Visitor upsert (validates `X-Visitor-Id` header) | [api/_lib/visitor.ts](api/_lib/visitor.ts) |
-| Admin auth (HMAC cookie, password check, `requireAdmin`) | [api/_lib/auth.ts](api/_lib/auth.ts) |
-| Admin endpoints | [api/admin/login.ts](api/admin/login.ts), [api/admin/logout.ts](api/admin/logout.ts), [api/admin/visitors.ts](api/admin/visitors.ts), [api/admin/visitors/[id].ts](api/admin/visitors/%5Bid%5D.ts) |
+| Admin auth (HMAC cookie, password check, 2FA challenge, `requireAdmin`) | [api/_lib/auth.ts](api/_lib/auth.ts) |
+| Admin endpoints | [api/admin/login.ts](api/admin/login.ts), [api/admin/verify.ts](api/admin/verify.ts), [api/admin/logout.ts](api/admin/logout.ts), [api/admin/session.ts](api/admin/session.ts), [api/admin/visitors.ts](api/admin/visitors.ts), [api/admin/visitors/[id].ts](api/admin/visitors/%5Bid%5D.ts) |
 | Chat persistence wiring | [api/chat.ts](api/chat.ts) (after `res.end()`) |
 | Contact persistence wiring | [api/contact.ts](api/contact.ts) (after Resend send) |
 | Page-view / session telemetry endpoint | [api/track.ts](api/track.ts) — `pageview` + `heartbeat` ops |
@@ -19,10 +19,12 @@ A password-gated admin page at `/crm.html` for viewing every chat thread and con
 | Client visitor ID generator | [src/lib/visitorId.ts](src/lib/visitorId.ts) — `localStorage['eric.sh:vid']` |
 | Client session ID | [src/lib/telemetry.ts](src/lib/telemetry.ts) — `localStorage['eric.sh:sess']`, 30-min inactivity rollover |
 | Visitor ID is sent on | [src/hooks/useChat.ts](src/hooks/useChat.ts), [src/components/ui/ContactForm/ContactForm.tsx](src/components/ui/ContactForm/ContactForm.tsx) — `X-Visitor-Id` header |
-| Admin SPA entry | [crm.html](crm.html) → [src/admin/main.tsx](src/admin/main.tsx) → [src/admin/App.tsx](src/admin/App.tsx) |
+| Admin SPA entry | [dashboard.html](dashboard.html) → [src/admin/main.tsx](src/admin/main.tsx) → [src/admin/App.tsx](src/admin/App.tsx) |
 | Admin SPA components | [src/admin/components/](src/admin/components/) — Login, Dashboard, VisitorList, VisitorDetail, VisitorMetaGrid, ConversationTimeline, ActivityTimeline, ContactSubmissionList |
-| Multi-page Vite config | [vite.config.ts](vite.config.ts) — `rollupOptions.input` includes both `main` and `admin` |
-| Indexer hint | [public/robots.txt](public/robots.txt) — disallows `/crm` and `/api/admin/` |
+| Route map (`/login`, `/dashboard`, `/403`) | [vercel.json](vercel.json) — `rewrites` |
+| Multi-page Vite config | [vite.config.ts](vite.config.ts) — `rollupOptions.input` includes both `main` and `dashboard` |
+| Sign-out / error pages sharing the login layout | [public/404.html](public/404.html), [public/403.html](public/403.html) |
+| Indexer hint | [public/robots.txt](public/robots.txt) — disallows `/dashboard` and `/api/admin/` |
 
 ## Architecture facts
 
@@ -30,13 +32,34 @@ A password-gated admin page at `/crm.html` for viewing every chat thread and con
 - **DB client**: `@neondatabase/serverless` over HTTP (not the WebSocket pool). The `sql()` helper in [api/_lib/db.ts](api/_lib/db.ts) caches one client per process.
 - **Visitor identity**: client generates `crypto.randomUUID()` on first interaction, stores at `localStorage['eric.sh:vid']`, sends as `X-Visitor-Id` on every `/api/chat` and `/api/contact` POST. Server validates the format with a UUID regex before any DB write. **Trust model: anonymous, best-effort attribution.** Anyone with someone else's UUID could write to that visitor's thread; UUIDs are random so this is impractical to exploit but worth knowing.
 - **Persistence is best-effort and order matters.** Both handlers wrap DB writes in try/catch so a Postgres outage can't break the public surface. **`contact.ts` persists BEFORE `res.json()`** — Vercel can freeze the function container as soon as a discrete response is flushed, silently dropping any trailing async work (we hit this on first deploy: chat persisted, contact didn't). **`chat.ts` persists AFTER `res.end()`** because the assistant reply isn't known until the stream completes; this works in practice (the streaming socket keeps the function alive long enough for the trailing DB write to land), but if it ever stops working, switch to `waitUntil()` from `@vercel/functions`.
-- **Admin auth**: shared password (`ADMIN_PASSWORD` env) → HMAC-SHA256-signed timestamp cookie (`ADMIN_SESSION_SECRET` env, 30-day max-age, `HttpOnly` + `Secure` + `SameSite=Lax`). Verified with `timingSafeEqual`. Login endpoint sleeps a constant `LOGIN_DELAY_MS` (1500ms) on every attempt regardless of outcome — invisible to a human, lethal to brute-force. Single user only; no multi-account support.
-- **Admin SPA is a separate Vite entry point** (`crm.html` at project root) so the admin bundle never ships with the public site (~7KB vs the main 60KB+). Login state is detected by probing `/api/admin/visitors` on mount; 401 → show login, 200 → show dashboard.
+- **Admin SPA is a separate Vite entry point** (`dashboard.html` at project root) so the admin bundle never ships with the public site. Session state is detected by probing `/api/admin/session` on mount — a cookie-only check that touches no database, unlike the old probe against `/api/admin/visitors`, which ran the whole aggregate query just to read its status code.
 - **No analytics on the admin path** — admin is internal-only and shouldn't fire gtag events.
 - **Location is IP-derived and genuinely unreliable.** `country` / `city` / `region` / `timezone` come from Vercel edge headers (`x-vercel-ip-country`, `-city`, `-country-region`, `-timezone`). Mobile carriers, CGNAT, and VPNs routinely report a city hundreds of miles off — we saw a San Luis Obispo visitor land as "Redding". `location_override` is the human-entered correction; it always wins on display, and the raw IP values are kept so the original claim stays auditable. Resolve for display with `resolveLocation()` in [src/admin/lib/location.ts](src/admin/lib/location.ts) — never concatenate `city`/`country` at a call site, and always mark IP-derived values as approximate in the UI.
 - **All geo headers are absent outside the edge**, so local `vercel dev` legitimately writes nulls. A blank location with a non-null `user_agent` is almost always a dev-session row.
 - **Every visitor-row writer must go through `upsertVisitor`** ([api/_lib/visitor.ts](api/_lib/visitor.ts)). `events.ts` originally did a bare `insert into visitors (id)`, which stranded events-only visitors (opened the chat, toggled high-contrast, never sent a message) with no UA, geo, or referrer — permanently, since nothing later backfills them. The `on conflict` clause uses `coalesce(existing, new)`, which keeps the first non-null sighting *and* backfills columns still null, so a later edge request repairs an incomplete row.
 - **`x-vercel-ip-city` is percent-encoded.** Decode via `readGeoHeader`, which try/catches `decodeURIComponent` — a malformed sequence used to reject the whole `upsertVisitor` promise, and in `chat.ts` that discarded the entire transcript, not just the city.
+
+## Auth: `/login`, `/dashboard`, and the second factor
+
+**One bundle, two routes.** `vercel.json` rewrites both `/login` and `/dashboard` to the same `dashboard.html`; [src/admin/App.tsx](src/admin/App.tsx) reads `window.location.pathname` and decides which of `Login` / `Dashboard` to render. There is deliberately no separate `login.html` entry — a second Vite entry would mean a second React runtime and a second copy of the auth probe for a page that is two form fields.
+
+- **Neither UI can flash before its redirect lands.** App.tsx renders the loading state until the probe has resolved *and* the route agrees with the answer (`authed !== isLogin`). An authenticated visitor on `/login` is `replace`d to `/dashboard`; a logged-out one on `/dashboard` is `replace`d to `/login`. `replace`, not `assign`, so the back button can't bounce off a redirect.
+- **Sign-in is two steps.** `POST /api/admin/login` with the right password establishes **no session**. It mints a random opaque `challengeId`, stores an HMAC of a 6-digit code in Upstash under a 5-minute TTL, emails the code to `ADMIN_2FA_EMAIL` via Resend, and returns `{ ok: true, mfa: true, challengeId }`. `POST /api/admin/verify` takes `{ challengeId, code }`, compares in constant time, allows **5 attempts**, deletes the challenge once spent or exhausted (single use, no replay), and only then sets the session cookie. Both endpoints sleep the same constant 1500ms and both are rate-limited (`admin-login` 10/10min + 50/day, `admin-verify` 15/10min + 60/day).
+- **THE SECOND FACTOR FAILS OPEN, ON PURPOSE.** If `ADMIN_2FA_EMAIL` is unset, or `RESEND_API_KEY` is unset, or the Upstash vars are unset or unreachable, or the Resend send throws, `login.ts` logs the reason and issues the session on the password alone (`{ ok: true, mfa: false }`, cookie already set). The owner must never be locked out of their own dashboard by a third-party outage, and what this gate protects is read-only analytics about their own visitors. The `signIn()` fallback branches in [api/admin/login.ts](api/admin/login.ts) are the only lines to change if that stops being acceptable. **Verification does *not* fail open** — once a challenge exists, an Upstash error is a failed verification, never a pass.
+- **The code is never logged, and neither is the address or the challenge id.** Every verify failure — unknown id, expired, wrong code, attempts exhausted, store down — returns the same 401 and the same message, so a caller can't learn whether a challenge id is live.
+- **The stored code is an HMAC keyed on `ADMIN_SESSION_SECRET`**, not a bare digest. Six digits is trivially enumerable offline, so a plain SHA-256 sitting in Redis would be equivalent to storing the code in clear.
+- **Session cookie**: HMAC-SHA256-signed timestamp, `HttpOnly` + `Secure` + `SameSite=Strict` + `Path=/`, **24-hour** max-age (was 7 days), verified with `timingSafeEqual`. Still no server-side revocation list — rotating `ADMIN_SESSION_SECRET` is how you kill every session.
+- **The cookie has two names and that is not a bug.** Deployed environments get `__Host-admin_session`; the prefix makes a browser refuse the cookie unless it is `Secure`, `Path=/` and `Domain`-less, so no sibling subdomain can plant or overwrite an admin session. The prefix is not dependably settable on `http://localhost`, so `vercel dev` keeps the unprefixed `admin_session` (plain `Secure` has always worked there — localhost is a trustworthy origin). `requireAdmin` reads either, preferring the prefixed one; `clearSessionCookie` expires both. Don't "simplify" this to one name without testing local sign-in.
+- Single user only; no multi-account support.
+
+### The sign-in / error page family
+
+`/login`, `public/404.html` and `public/403.html` share **one layout**: logo pair, `Eyebrow`, Display headline on a single `clamp(2.25rem, 9vw, 4.5rem)`, lede, CTA — same vertical rhythm in all three, so they read as one system.
+
+- **The two static pages hand-port the design system.** Vercel serves them straight out of `/public`, so there is no React, no Tailwind build and no shared stylesheet: the dark `Backdrop` (three drifting blobs + 48s hue sweep), the film grain data-URI, the Display headline and the `primary` button gradient (including the chroma-not-lightness hover) are all rewritten as plain CSS. **Their CSS is duplicated between the two files on purpose** — extracting it would make an error page depend on a second network request that may itself be what is failing, and two hand-written files don't justify a template pipeline. Change one, change the other.
+- `prefers-reduced-motion` freezes the drift but keeps the blobs visible, matching what [src/index.css](src/index.css) does.
+- **404 needs no rewrite** — Vercel serves `public/404.html` by convention for any unmatched path. **403 has no such convention**, so `vercel.json` gives it the clean `/403` URL. Nothing currently redirects there; it exists as the destination for any future edge deny, and as something to point at rather than leaking a raw 401 body.
+- **403's copy is deliberately non-specific.** It is what an unauthorized visitor sees, so it must never confirm what lives at the path they tried — no mention of an admin area, a dashboard, or a sign-in page.
 
 ## Page-view / session telemetry
 
@@ -208,10 +231,13 @@ There is **no local Postgres** in this project — `POSTGRES_URL` points at the 
 | Name | Where set | Purpose |
 |---|---|---|
 | `POSTGRES_URL` | Auto-populated by the Neon ↔ Vercel integration. **Verify it's not empty** in each environment via `npx vercel env pull` — the integration sometimes creates the names without values. | Connection string for the Neon HTTP driver. |
-| `ADMIN_PASSWORD` | Set per-environment with `npx vercel env add ADMIN_PASSWORD <env>`. | The password typed into `/crm.html`. |
-| `ADMIN_SESSION_SECRET` | Set per-environment; 32+ random chars, e.g. `openssl rand -base64 48`. Rotating this invalidates all admin sessions immediately. | HMAC key for the admin session cookie. |
+| `ADMIN_PASSWORD` | Set per-environment with `npx vercel env add ADMIN_PASSWORD <env>`. | The password typed into `/login`. **Absent → every sign-in is rejected.** |
+| `ADMIN_SESSION_SECRET` | Set per-environment; 32+ random chars, e.g. `openssl rand -base64 48`. Rotating this invalidates all admin sessions immediately. | HMAC key for the admin session cookie *and* for the 2FA code hash. **Absent → sign-in 500s.** |
+| `ADMIN_2FA_EMAIL` | **Optional.** `npx vercel env add ADMIN_2FA_EMAIL <env>`. | Where the 6-digit sign-in code is emailed. **Absent → no second factor: the correct password alone signs you in.** Same fallback if `RESEND_API_KEY` or the Upstash vars are absent, or if the Resend send fails at request time. |
+| `RESEND_API_KEY` | Already required by `/api/contact`. | Also sends the 2FA code. **Absent → password-only sign-in** (and no contact email). |
+| `UPSTASH_REDIS_REST_URL` / `UPSTASH_REDIS_REST_TOKEN` | Injected as `KV_REST_API_*` by the Vercel ↔ Upstash Marketplace integration; either prefix is accepted. | Rate limiting on every public endpoint, plus the 2FA challenge store. **Absent → limiter soft-fails open and sign-in is password-only.** |
 
-All three must exist in `development` for `vercel dev` to work, and in `production` for the live site. Add to `preview` if you want preview deploys to function.
+`POSTGRES_URL`, `ADMIN_PASSWORD` and `ADMIN_SESSION_SECRET` must exist in `development` for `vercel dev` to work, and in `production` for the live site. Add to `preview` if you want preview deploys to function. The rest degrade gracefully — see the fail-open note in the auth section.
 
 ## Verifying it works
 
@@ -220,11 +246,15 @@ Locally (with `npm run dev` running):
 # Send a chat message via the UI, then:
 curl -s http://localhost:3000/api/admin/visitors -i | head -1
 # Expect: HTTP/1.1 401 (no cookie set)
+
+# Route guard: signed out, /dashboard must bounce to /login (and vice versa).
+curl -s http://localhost:3000/api/admin/session -i | head -1
+# Expect: HTTP/1.1 401
 ```
 
-Then visit http://localhost:3000/crm.html, sign in, and confirm the visitor row shows up with the right chat-message count.
+Then visit http://localhost:3000/login, sign in (password, then the emailed code if `ADMIN_2FA_EMAIL` is set), and confirm you land on `/dashboard` with the visitor row showing the right chat-message count. Hitting `/login` again while signed in should redirect straight back to `/dashboard`.
 
-In production: same flow at `https://<your-vercel-url>/crm.html`.
+In production: same flow at `https://<your-vercel-url>/login`.
 
 If `/api/admin/visitors` returns 500, check `vercel dev` terminal output for the actual error. The most common one is `POSTGRES_URL is not set` — the integration didn't populate the value despite the name appearing in `npx vercel env ls`.
 
@@ -236,10 +266,14 @@ If `/api/admin/visitors` returns 500, check `vercel dev` terminal output for the
 | Capture extra metadata about a chat message | Add a column to `chat_messages` in [db/schema.sql](db/schema.sql), apply the alter to Neon, then write the value in [api/chat.ts](api/chat.ts) |
 | Capture another IP-derived field | Add a `readGeoHeader` call in [api/_lib/visitor.ts](api/_lib/visitor.ts) + the column, the `insert`, and the `on conflict` coalesce; then `Visitor`/`VisitorSummary` in [api/_lib/types.ts](api/_lib/types.ts) and both admin `select`s |
 | Add another admin-editable visitor field | Extend the `PATCH` branch in [api/admin/visitors/[id].ts](api/admin/visitors/%5Bid%5D.ts) — it only updates keys actually present in the body, so a partial PATCH can't wipe a sibling field; then thread it through [useVisitorDetail.ts](src/admin/hooks/useVisitorDetail.ts) |
-| Change the login throttle | `LOGIN_DELAY_MS` constant in [api/admin/login.ts](api/admin/login.ts) |
+| Change the login throttle | `LOGIN_DELAY_MS` in [api/admin/login.ts](api/admin/login.ts) and `VERIFY_DELAY_MS` in [api/admin/verify.ts](api/admin/verify.ts) — keep them equal, or one step becomes the cheap one to hammer |
+| Change the 2FA code lifetime or attempt cap | `CHALLENGE_TTL_SECONDS` / `MAX_CHALLENGE_ATTEMPTS` in [api/_lib/auth.ts](api/_lib/auth.ts) |
+| Turn the second factor off | Unset `ADMIN_2FA_EMAIL`. Nothing else changes — `twoFactorConfigured()` reads it every request |
+| Make the second factor mandatory (stop failing open) | Replace the `signIn()` fallback branches in [api/admin/login.ts](api/admin/login.ts) with a 503. Read the tradeoff note in [api/_lib/auth.ts](api/_lib/auth.ts) first |
+| Restyle the sign-in page | [src/admin/components/Login.tsx](src/admin/components/Login.tsx) — then port the same change to `public/404.html` **and** `public/403.html`, which share its layout |
 | Bump cookie lifetime | `MAX_AGE_SECONDS` in [api/_lib/auth.ts](api/_lib/auth.ts) |
-| Force everyone to re-login | Rotate `ADMIN_SESSION_SECRET` in Vercel env (any environment) |
-| Change the URL of the admin page | Rename `crm.html` and update `rollupOptions.input.admin` in [vite.config.ts](vite.config.ts); update `robots.txt` `Disallow` line |
+| Force everyone to re-login | Rotate `ADMIN_SESSION_SECRET` in Vercel env (any environment). Note this also invalidates any in-flight 2FA challenge, since the code hash is keyed on it |
+| Change the URL of the admin page | Rename `dashboard.html`, update `rollupOptions.input.dashboard` in [vite.config.ts](vite.config.ts) and both rewrites in [vercel.json](vercel.json); update `robots.txt` `Disallow` line |
 
 ## Things deliberately NOT built
 
@@ -256,4 +290,5 @@ If `/api/admin/visitors` returns 500, check `vercel dev` terminal output for the
 - **Neon integration may set `POSTGRES_URL=""`** in one or more environments. Always verify with `npx vercel env pull --environment=<env> .env.tmp && grep '^POSTGRES_URL=' .env.tmp` before assuming it's wired. If empty, grab the connection string directly from the Neon dashboard and `npx vercel env add POSTGRES_URL <env>` interactively (don't pipe — piping has eaten the value before).
 - **Don't pipe values into `vercel env add`.** It's flaky and silently stores empty strings. Always paste interactively when prompted.
 - **`vercel dev` caches env vars at startup.** After changing any env var, fully kill and restart `npm run dev` (Ctrl-C the whole `concurrently` process; `lsof -i :3000` to confirm nothing is left).
-- **Admin cookie requires `Secure`**, which works on `localhost` in modern browsers but will silently drop in older ones. If login appears to succeed but `/api/admin/visitors` still 401s, check the cookie was set in DevTools.
+- **Admin cookie requires `Secure`**, which works on `localhost` in modern browsers but will silently drop in older ones. If login appears to succeed but `/api/admin/session` still 401s, check the cookie was set in DevTools — and check *which name*: localhost gets `admin_session`, everywhere else gets `__Host-admin_session`.
+- **`ADMIN_2FA_EMAIL` in `development` means you have to check your inbox on every local sign-in.** Leaving it unset locally (and set in production) is the sane default — the fail-open path signs you straight in.

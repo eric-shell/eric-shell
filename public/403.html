@@ -3,23 +3,28 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="robots" content="noindex" />
+    <meta name="robots" content="noindex, nofollow" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <title>404 | Eric Shell</title>
+    <title>403 | Eric Shell</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Google+Sans:GRAD,wght@-25..150,400..700&display=swap" rel="stylesheet" />
     <!--
-      STANDALONE PAGE. Vercel serves this straight out of /public for any
-      unmatched path, so there is no React, no Tailwind build and no shared
-      stylesheet available here — the dark section vocabulary (Backdrop blobs,
-      film grain, Display headline, `primary` button) is hand-ported below.
+      STANDALONE PAGE. Served straight out of /public (reachable at /403), so
+      there is no React, no Tailwind build and no shared stylesheet available
+      here — the dark section vocabulary (Backdrop blobs, film grain, Display
+      headline, `primary` button) is hand-ported below.
 
-      403.html and src/admin/components/Login.tsx are the same layout. The CSS
+      404.html and src/admin/components/Login.tsx are the same layout. The CSS
       is duplicated between the two static files ON PURPOSE: extracting it to a
       shared asset would make an error page depend on a second network request
       that may itself be what is failing, and two hand-written files do not
       justify a template pipeline. Change one, change the other.
+
+      COPY IS DELIBERATELY NON-SPECIFIC. This is what an unauthorized visitor
+      sees, so it must not confirm what lives at the path they tried — no
+      mention of an admin area, a dashboard, or a sign-in page. "You can't see
+      this" is the whole message.
     -->
     <style>
       @font-face {
@@ -82,19 +87,20 @@
         aspect-ratio: 1 / 1;
         border-radius: 9999px;
       }
-      /* Durations are co-prime-ish (26/34/42s) so the layers never sync. */
+      /* Durations are co-prime-ish (26/34/42s) so the layers never sync.
+         `flip`ped relative to 404.html so the two pages don't read as copies. */
       .blob-a {
-        top: 12%; right: -18%; width: 70%;
+        top: 12%; left: -18%; width: 70%;
         background: radial-gradient(circle at center, oklch(0.55 0.17 280 / 0.3) 0%, transparent 62%);
         animation: ambient-a 26s ease-in-out infinite alternate;
       }
       .blob-b {
-        top: -22%; left: -16%; width: 55%;
+        top: -22%; right: -16%; width: 55%;
         background: radial-gradient(circle at center, oklch(0.6 0.15 300 / 0.2) 0%, transparent 62%);
         animation: ambient-b 34s ease-in-out infinite alternate;
       }
       .blob-c {
-        bottom: -25%; left: 18%; width: 48%;
+        bottom: -25%; right: 18%; width: 48%;
         background: radial-gradient(circle at center, oklch(0.72 0.12 205 / 0.14) 0%, transparent 62%);
         animation: ambient-c 42s ease-in-out infinite alternate;
       }
@@ -125,7 +131,7 @@
       }
 
       /* ── Shared layout ────────────────────────────────────────────────────
-         Same vertical rhythm as 403.html and the admin Login. */
+         Same vertical rhythm as 404.html and the admin Login. */
       main {
         position: relative;
         z-index: 1;
@@ -223,11 +229,11 @@
         <img src="/icon.svg" alt="" />
         <img src="/logo.svg" alt="Eric Shell" />
       </div>
-      <span class="eyebrow">Error 404</span>
-      <h1>Page not found</h1>
+      <span class="eyebrow">Error 403</span>
+      <h1>Access denied</h1>
       <p class="lede">
-        There's nothing at this address. The work, testimonials, visuals and contact
-        form all live on the homepage.
+        You don't have permission to view this page. If you think that's a mistake,
+        the contact form on the homepage will reach me.
       </p>
       <a class="cta" href="/">Back to eric.sh</a>
     </main>
