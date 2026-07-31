@@ -5,6 +5,12 @@ export interface NavLink {
   label: string
   href: string
   Icon: LucideIcon
+  /**
+   * Easter-egg copy shown in a small tooltip when a visitor clicks a nav item
+   * that's already the active section — see Header.tsx. Keep it genuinely
+   * short (a handful of words) and distinct per item.
+   */
+  tooltip?: string
 }
 
 export interface ConnectLink {
@@ -35,26 +41,31 @@ export const navLinks: NavLink[] = [
     label: 'Chat',
     href: '/#hero',
     Icon: MessagesSquare,
+    tooltip: "You're already talking to me.",
   },
   {
     label: 'Work',
     href: '/#work',
     Icon: Briefcase,
+    tooltip: 'Yep, this is the work.',
   },
   {
     label: 'Testimonials',
     href: '/#testimonials',
     Icon: Quote,
+    tooltip: 'They really did say that.',
   },
   {
     label: 'Visuals',
     href: '/#visuals',
     Icon: Palette,
+    tooltip: 'Still worth the scroll.',
   },
   {
     label: 'Contact',
     href: '/#contact',
     Icon: Form,
+    tooltip: "I'm right here — say hi.",
   },
 ]
 
