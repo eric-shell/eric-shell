@@ -62,11 +62,12 @@ const ENGAGED_ONLY_KEY = 'eric.sh:crm:engaged-only'
  * Toolbar filter toggle. `aria-pressed` rather than a checkbox: it is a control
  * that changes the view, not a value being submitted.
  */
-function FilterChip({ active, onClick, icon: Icon, title, children }: {
+function FilterChip({ active, onClick, icon: Icon, title, disabled, children }: {
   active: boolean
   onClick: () => void
   icon: LucideIcon
   title: string
+  disabled?: boolean
   children: React.ReactNode
 }) {
   return (
@@ -74,12 +75,15 @@ function FilterChip({ active, onClick, icon: Icon, title, children }: {
       type="button"
       onClick={onClick}
       aria-pressed={active}
+      disabled={disabled}
       title={title}
       className={twMerge(
-        'flex h-7 shrink-0 cursor-pointer items-center gap-1.5 rounded-md px-2 text-xs font-semibold ring-1 ring-inset transition-colors',
-        active
-          ? 'bg-accent/15 text-white ring-accent/40'
-          : 'text-white/85 ring-white/15 hover:bg-white/[0.06] hover:text-white',
+        'flex h-7 shrink-0 items-center gap-1.5 rounded-md px-2 text-xs font-semibold ring-1 ring-inset transition-colors',
+        disabled
+          ? 'cursor-default text-white/40 ring-white/10'
+          : active
+            ? 'cursor-pointer bg-accent/15 text-white ring-accent/40'
+            : 'cursor-pointer text-white/85 ring-white/15 hover:bg-white/[0.06] hover:text-white',
       )}
     >
       <Icon size={13} aria-hidden="true" />
@@ -365,35 +369,40 @@ export default function Dashboard({ onLogout }: DashboardProps) {
 
         {/* Filters sit on their own row rather than inside the search field.
             Search is a lookup; these change which rows count at all, including
-            in the metric tiles above — different jobs, different row. */}
-        {(botCount > 0 || quietCount > 0) && (
+            in the metric tiles above — different jobs, different row.
+            The row renders whenever there are visitors, even when a filter
+            currently matches nothing. Hiding it made the feature invisible on
+            clean data — you could not tell whether it existed or had silently
+            failed. A disabled chip with a count of zero says the same thing
+            honestly. */}
+        {visitors !== null && visitors.length > 0 && (
           <div className="flex flex-wrap items-center gap-2 border-b border-white/10 px-4 py-2.5">
             <span className="mr-0.5 text-[10px] font-semibold uppercase tracking-wide text-white/70">
               Filter
             </span>
-            {botCount > 0 && (
-              <FilterChip
+            <FilterChip
                 active={hideBots}
+                disabled={botCount === 0}
                 onClick={() => setHideBots(h => !h)}
                 icon={hideBots ? EyeOff : Bot}
-                title={
-                  `${hideBots ? 'Hiding' : 'Hides'} ${botCount} automated ${botCount === 1 ? 'visitor' : 'visitors'} — ` +
-                  'crawlers, headless clients, and fetch-without-reading. Bounces and possible spam always stay visible.'
-                }
+                title={botCount === 0
+                  ? 'No automated traffic detected in this data, so there is nothing to hide.'
+                  : `${hideBots ? 'Hiding' : 'Hides'} ${botCount} automated ${botCount === 1 ? 'visitor' : 'visitors'} — ` +
+                    'crawlers, headless clients, and fetch-without-reading. Bounces and possible spam always stay visible.'}
               >
-                {hideBots ? `${botCount} bots hidden` : 'Hide bots'}
+                {hideBots && botCount > 0 ? `${botCount} bots hidden` : 'Hide bots'}
               </FilterChip>
-            )}
-            {quietCount > 0 && (
-              <FilterChip
+            <FilterChip
                 active={engagedOnly}
+                disabled={quietCount === 0}
                 onClick={() => setEngagedOnly(e => !e)}
                 icon={MessageSquare}
-                title={`Show only visitors who chatted or submitted the contact form. Hides ${quietCount} who did neither.`}
+                title={quietCount === 0
+                  ? 'Every visitor here chatted or submitted the form, so there is nothing to hide.'
+                  : `Show only visitors who chatted or submitted the contact form. Hides ${quietCount} who did neither.`}
               >
-                {engagedOnly ? `${quietCount} quiet hidden` : 'Engaged only'}
+                {engagedOnly && quietCount > 0 ? `${quietCount} quiet hidden` : 'Engaged only'}
               </FilterChip>
-            )}
           </div>
         )}
 
