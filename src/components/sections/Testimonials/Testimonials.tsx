@@ -88,7 +88,7 @@ export default function Testimonials() {
             >
               <Button
                 shape="square"
-                variant="secondary"
+                variant="glass-light"
                 onClick={prev}
                 aria-label="Previous testimonial"
               >
@@ -96,7 +96,7 @@ export default function Testimonials() {
               </Button>
               <Button
                 shape="square"
-                variant="secondary"
+                variant="glass-light"
                 onClick={togglePlaying}
                 aria-label={isPlaying ? 'Pause testimonial slider' : 'Play testimonial slider'}
               >
@@ -104,7 +104,7 @@ export default function Testimonials() {
               </Button>
               <Button
                 shape="square"
-                variant="secondary"
+                variant="glass-light"
                 onClick={next}
                 aria-label="Next testimonial"
               >
