@@ -49,6 +49,87 @@ const days = Array.from({ length: 14 }, (_, i) => {
   return { date: d.toISOString().slice(0, 10), visitors: 2 + ((i * 5) % 13) }
 })
 
+/**
+ * The insights aggregate, computed from the same fixtures so the panel renders
+ * numbers that agree with the table. Mirrors the SQL in api/admin/insights.ts,
+ * including the derived scroll-depth cutoff — the first session recording a
+ * value strictly between 0 and 100 is the earliest the column can be trusted
+ * from, because the pre-fix client pinned every session at 100 and 0 is just the
+ * column default.
+ */
+function buildInsights() {
+  const since = f.sessions
+    .filter(s => s.max_scroll_pct > 0 && s.max_scroll_pct < 100)
+    .map(s => s.started_at)
+    .sort()[0] ?? null
+  const measured = since ? f.sessions.filter(s => s.started_at >= since) : []
+  const reach = pct => measured.filter(s => s.max_scroll_pct >= pct).length
+
+  const tally = (rows, key) => {
+    const counts = new Map()
+    for (const row of rows) counts.set(row[key], (counts.get(row[key]) ?? 0) + 1)
+    return counts
+  }
+
+  const host = ref => {
+    if (!ref) return ''
+    return ref.split('://')[1]?.split('/')[0].replace(/^www\./, '').toLowerCase() ?? ''
+  }
+
+  const sourceCounts = new Map()
+  for (const s of f.sessions) {
+    const h = host(s.referrer)
+    sourceCounts.set(h, (sourceCounts.get(h) ?? 0) + 1)
+  }
+
+  const pathCounts = tally(f.pageViews, 'path')
+  const hourCounts = new Map()
+  for (const p of f.pageViews) {
+    const h = new Date(p.created_at).getUTCHours()
+    hourCounts.set(h, (hourCounts.get(h) ?? 0) + 1)
+  }
+
+  const activeDays = new Map()
+  for (const s of f.sessions) {
+    const set = activeDays.get(s.visitor_id) ?? new Set()
+    set.add(s.started_at.slice(0, 10))
+    activeDays.set(s.visitor_id, set)
+  }
+
+  return {
+    windowDays: 30,
+    sessions: {
+      total: f.sessions.length,
+      scroll: {
+        reach: { pct25: reach(25), pct50: reach(50), pct75: reach(75), pct90: reach(90) },
+        measured: measured.length,
+        excluded: f.sessions.length - measured.length,
+        since,
+      },
+      viewport: {
+        known: f.sessions.filter(s => s.viewport_w != null).length,
+        phone: f.sessions.filter(s => s.viewport_w < 640).length,
+        tablet: f.sessions.filter(s => s.viewport_w >= 640 && s.viewport_w < 1024).length,
+        desktop: f.sessions.filter(s => s.viewport_w >= 1024).length,
+      },
+    },
+    visitors: {
+      total: activeDays.size,
+      returning: [...activeDays.values()].filter(set => set.size >= 2).length,
+    },
+    sources: [...sourceCounts].map(([h, n]) => ({ host: h, sessions: n }))
+      .sort((a, b) => b.sessions - a.sessions).slice(0, 8),
+    paths: [...pathCounts].map(([path, views]) => ({
+      path,
+      views,
+      visitors: new Set(f.pageViews.filter(p => p.path === path).map(p => p.visitor_id)).size,
+    })).sort((a, b) => b.views - a.views).slice(0, 8),
+    hourly: Array.from({ length: 24 }, (_, hour) => ({ hour, views: hourCounts.get(hour) ?? 0 })),
+  }
+}
+
+const insights = buildInsights()
+
 const browser = await chromium.launch()
 let failures = 0
 
@@ -70,6 +151,9 @@ for (const width of WIDTHS) {
   })
   await page.route('**/api/admin/stats', r => r.fulfill({
     status: 200, contentType: 'application/json', body: JSON.stringify({ days }),
+  }))
+  await page.route('**/api/admin/insights', r => r.fulfill({
+    status: 200, contentType: 'application/json', body: JSON.stringify(insights),
   }))
 
   await page.goto(`${BASE}/dashboard.html`, { waitUntil: 'load' })

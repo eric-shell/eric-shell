@@ -1,18 +1,18 @@
 import { useCallback, useEffect, useState } from 'react'
 import {
   type LucideIcon, LogOut, MailCheck, MessageSquare, MousePointer2,
-  Bot, EyeOff, RefreshCw, Search, Users, X,
+  RefreshCw, Users,
 } from 'lucide-react'
-import { twMerge } from 'tailwind-merge'
 import { Button, Container, Eyebrow, H2, Panel } from '../../components/ui'
-import VisitorList from './VisitorList'
 import VisitorsChart from './VisitorsChart'
-import { MetricsRowSkeleton, Skeleton, VisitorTableSkeleton } from './Skeleton'
+import InsightsPanel from './InsightsPanel'
+import VisitorsPanel from './VisitorsPanel'
+import { MetricsRowSkeleton, Skeleton } from './Skeleton'
 import { apiCall } from '../lib/api'
 import { formatDuration } from '../lib/dateFormat'
-import { resolveLocation } from '../lib/location'
 import { isAutomated } from '../lib/classify'
 import type { StatDay, StatsPayload, VisitorListPayload, VisitorSummary } from '@/../api/_lib/types'
+import type { InsightsPayload } from '@/../api/_lib/insights-types'
 
 /**
  * Stat tile. Label stays uppercase micro-type to match the site's `Eyebrow`
@@ -58,59 +58,12 @@ function StatCard({ label, value, sub, icon: Icon, tone = 'neutral' }: {
 const HIDE_BOTS_KEY = 'eric.sh:crm:hide-bots'
 const ENGAGED_ONLY_KEY = 'eric.sh:crm:engaged-only'
 
-/**
- * Toolbar filter toggle. `aria-pressed` rather than a checkbox: it is a control
- * that changes the view, not a value being submitted.
- */
-function FilterChip({ active, onClick, icon: Icon, title, disabled, children }: {
-  active: boolean
-  onClick: () => void
-  icon: LucideIcon
-  title: string
-  disabled?: boolean
-  children: React.ReactNode
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      aria-pressed={active}
-      disabled={disabled}
-      title={title}
-      className={twMerge(
-        'flex h-7 shrink-0 items-center gap-1.5 rounded-md px-2 text-xs font-semibold ring-1 ring-inset transition-colors',
-        disabled
-          ? 'cursor-default text-white/40 ring-white/10'
-          : active
-            ? 'cursor-pointer bg-accent/15 text-white ring-accent/40'
-            : 'cursor-pointer text-white/85 ring-white/15 hover:bg-white/[0.06] hover:text-white',
-      )}
-    >
-      <Icon size={13} aria-hidden="true" />
-      {children}
-    </button>
-  )
-}
-
 // 60s was pure habit. The visitor list is not a live feed — two minutes is
 // indistinguishable in use and halves the query volume of an open tab.
 const POLL_MS = 120_000
 
 interface DashboardProps {
   onLogout: () => void
-}
-
-/**
- * Case- and accent-insensitive key for search.
- *
- * A plain `toLowerCase().includes()` is accent-sensitive, so typing "zurich"
- * matched nothing against "Zürich, ZH, CH" — and the field advertises location
- * search. Decomposing to NFD and dropping the combining marks makes o/ö, u/ü,
- * and e/é interchangeable, which matches how the columns already sort
- * (localeCompare with sensitivity 'base').
- */
-function fold(s: string | null | undefined): string {
-  return (s ?? '').normalize('NFD').replace(/\p{Diacritic}/gu, '').toLowerCase()
 }
 
 function pct(n: number, total: number) {
@@ -121,8 +74,8 @@ function pct(n: number, total: number) {
 export default function Dashboard({ onLogout }: DashboardProps) {
   const [visitors, setVisitors] = useState<VisitorSummary[] | null>(null)
   const [stats, setStats] = useState<StatDay[] | null>(null)
+  const [insights, setInsights] = useState<InsightsPayload | null>(null)
   const [loading, setLoading] = useState(false)
-  const [query, setQuery] = useState('')
   // Persisted: if you want crawler noise out of the way, you want it out of the
   // way tomorrow too. Defaults to off so nothing is hidden until asked, and the
   // toolbar always reports the count so it can never hide rows silently.
@@ -144,6 +97,10 @@ export default function Dashboard({ onLogout }: DashboardProps) {
   }, [hideBots, engagedOnly])
   const [lastLoaded, setLastLoaded] = useState<Date | null>(null)
 
+  // One fetch pass for the whole dashboard. The insights aggregate joins this
+  // Promise.all rather than owning a poll of its own: Neon bills compute-hours,
+  // and a second interval would double the query volume of an open tab for a
+  // panel that is read at exactly the same moments as everything else here.
   const fetchData = useCallback(() => {
     return Promise.all([
       apiCall<VisitorListPayload>('/api/admin/visitors', undefined, {
@@ -151,9 +108,11 @@ export default function Dashboard({ onLogout }: DashboardProps) {
         onUnauthorized: onLogout,
       }),
       apiCall<StatsPayload>('/api/admin/stats'),
-    ]).then(([v, s]) => {
+      apiCall<InsightsPayload>('/api/admin/insights'),
+    ]).then(([v, s, i]) => {
       if (v) setVisitors(v.visitors ?? [])
       if (s) setStats(s.days)
+      if (i) setInsights(i)
       setLoading(false)
       setLastLoaded(new Date())
     })
@@ -227,14 +186,6 @@ export default function Dashboard({ onLogout }: DashboardProps) {
   const afterBots = hideBots && visitors ? visitors.filter(v => !isAutomated(v)) : visitors
   const quietCount = afterBots?.filter(v => !hasEngaged(v)).length ?? 0
   const baseVisitors = engagedOnly && afterBots ? afterBots.filter(hasEngaged) : afterBots
-
-  const q = fold(query.trim())
-  const filteredVisitors = !q || !baseVisitors ? baseVisitors : baseVisitors.filter(v =>
-    v.id.startsWith(q) ||
-    fold(v.contact_name).includes(q) ||
-    fold(v.contact_email).includes(q) ||
-    fold(resolveLocation(v).label).includes(q)
-  )
 
   const totalVisitors = baseVisitors?.length ?? 0
   const engaged = baseVisitors?.filter(v => v.chat_message_count > 0).length ?? 0
@@ -321,103 +272,27 @@ export default function Dashboard({ onLogout }: DashboardProps) {
         )}
       </div>
 
-      {/* Hold the previous render at reduced opacity on refetch rather than
-          flashing a skeleton — no layout jump. */}
-      <Panel
-        variant="raised-dark"
-        className={`rounded-2xl shadow-sm transition-opacity duration-300 ${
-          loading && visitors !== null ? 'opacity-40' : 'opacity-100'
-        }`}
-      >
-        {/* Search lives inside the panel it filters. As a free-floating field it
-            wore the same surface as the panels around it and read as another
-            section rather than a control on this table. Here it is a toolbar
-            row: no border, no fill of its own, just a divider against the
-            results below it. */}
-        <div className="flex items-center gap-2.5 border-b border-white/10 px-4 py-3">
-          <Search size={15} className="shrink-0 text-white/70" aria-hidden="true" />
-          <input
-            type="search"
-            value={query}
-            onChange={e => setQuery(e.target.value)}
-            placeholder="Search by name, email, location, or visitor ID…"
-            aria-label="Search visitors"
-            className="h-7 min-w-0 flex-1 bg-transparent text-sm text-white placeholder:text-white/70 outline-none"
-          />
-          {/* Only while filtering: confirms the search is scoped to this table
-              and that an empty result is a filter, not an empty database. */}
-          {q && (
-            <>
-              {filteredVisitors !== null && (
-                <span className="shrink-0 text-xs tabular-nums text-white/70">
-                  {filteredVisitors.length} of {visitors?.length ?? 0}
-                </span>
-              )}
-              <button
-                type="button"
-                onClick={() => setQuery('')}
-                aria-label="Clear search"
-                title="Clear search"
-                className="-m-1 flex h-7 w-7 shrink-0 cursor-pointer items-center justify-center rounded text-white/70 transition-colors hover:text-white"
-              >
-                <X size={14} aria-hidden="true" />
-              </button>
-            </>
-          )}
+      {/* Aggregates that answer questions the visitor table can't: who came
+          back, how far they read, where they arrived from, and when. Fed by the
+          same poll — see fetchData. */}
+      <InsightsPanel data={insights} />
 
-        </div>
-
-        {/* Filters sit on their own row rather than inside the search field.
-            Search is a lookup; these change which rows count at all, including
-            in the metric tiles above — different jobs, different row.
-            The row renders whenever there are visitors, even when a filter
-            currently matches nothing. Hiding it made the feature invisible on
-            clean data — you could not tell whether it existed or had silently
-            failed. A disabled chip with a count of zero says the same thing
-            honestly. */}
-        {visitors !== null && visitors.length > 0 && (
-          <div className="flex flex-wrap items-center gap-2 border-b border-white/10 px-4 py-2.5">
-            <span className="mr-0.5 text-[10px] font-semibold uppercase tracking-wide text-white/70">
-              Filter
-            </span>
-            <FilterChip
-                active={hideBots}
-                disabled={botCount === 0}
-                onClick={() => setHideBots(h => !h)}
-                icon={hideBots ? EyeOff : Bot}
-                title={botCount === 0
-                  ? 'No automated traffic detected in this data, so there is nothing to hide.'
-                  : `${hideBots ? 'Hiding' : 'Hides'} ${botCount} automated ${botCount === 1 ? 'visitor' : 'visitors'} — ` +
-                    'crawlers, headless clients, and fetch-without-reading. Bounces and possible spam always stay visible.'}
-              >
-                {hideBots && botCount > 0 ? `${botCount} bots hidden` : 'Hide bots'}
-              </FilterChip>
-            <FilterChip
-                active={engagedOnly}
-                disabled={quietCount === 0}
-                onClick={() => setEngagedOnly(e => !e)}
-                icon={MessageSquare}
-                title={quietCount === 0
-                  ? 'Every visitor here chatted or submitted the form, so there is nothing to hide.'
-                  : `Show only visitors who chatted or submitted the contact form. Hides ${quietCount} who did neither.`}
-              >
-                {engagedOnly && quietCount > 0 ? `${quietCount} quiet hidden` : 'Engaged only'}
-              </FilterChip>
-          </div>
-        )}
-
-        <div className="p-6">
-          {filteredVisitors === null ? (
-            <VisitorTableSkeleton />
-          ) : filteredVisitors.length === 0 ? (
-            <p className="text-sm text-white/65">
-              {q ? 'No visitors match your search.' : 'No visitors yet.'}
-            </p>
-          ) : (
-            <VisitorList visitors={filteredVisitors} onVisitorDeleted={handleVisitorDeleted} />
-          )}
-        </div>
-      </Panel>
+      {/* The per-row view. It receives rows already narrowed by the filters
+          below, because those define the working set the metric tiles read from
+          too — so the chips live down there but their state lives up here. */}
+      <VisitorsPanel
+        visitors={baseVisitors}
+        totalCount={visitors?.length ?? 0}
+        loading={loading}
+        hasAnyVisitors={visitors !== null && visitors.length > 0}
+        hideBots={hideBots}
+        botCount={botCount}
+        onToggleBots={() => setHideBots(h => !h)}
+        engagedOnly={engagedOnly}
+        quietCount={quietCount}
+        onToggleEngaged={() => setEngagedOnly(e => !e)}
+        onVisitorDeleted={handleVisitorDeleted}
+      />
     </Container>
   )
 }
