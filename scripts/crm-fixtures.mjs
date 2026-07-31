@@ -61,6 +61,11 @@ const BOT_UAS = [
   'Mozilla/5.0 (compatible; bingbot/2.0; +http://www.bing.com/bingbot.htm)',
   'python-requests/2.31.0',
   'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/126.0.0.0 Safari/537.36',
+  // AI agents, so the LLM tag has something to fire on: one training crawler
+  // and one live fetch made because a person asked something.
+  'Mozilla/5.0 AppleWebKit/537.36 (KHTML, like Gecko; compatible; GPTBot/1.2; +https://openai.com/gptbot)',
+  'Mozilla/5.0 (compatible; ClaudeBot/1.0; +claudebot@anthropic.com)',
+  'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36; compatible; ChatGPT-User/1.0; +https://openai.com/bot',
 ]
 
 const SPAM_CONTACTS = [
@@ -270,6 +275,9 @@ export function buildFixtures({ count = 28, seed = 20260729, now = Date.now() } 
       max_scroll_pct: sessions.filter(s => s.visitor_id === id)
         .reduce((m, s) => Math.max(m, s.max_scroll_pct), 0),
       total_engaged_ms: sessions.filter(s => s.visitor_id === id).reduce((a, s) => a + s.engaged_ms, 0),
+      // A couple of rows carrying the synth-traffic marker, so the Test tag and
+      // the bots-and-tests filter have something to act on in the harness.
+      synthetic: !isBot && r() < 0.08,
       last_activity_at: new Date(lastSeen).toISOString(),
       contact_name: contact?.name ?? null,
       contact_email: contact?.email ?? null,

@@ -1,5 +1,8 @@
 import { twMerge } from 'tailwind-merge'
-import { AlertTriangle, BookOpen, Bot, MoonStar, RotateCcw } from 'lucide-react'
+import {
+  AlertTriangle, BookOpen, Bot, EyeOff, FlaskConical, Footprints, MailCheck,
+  MessageSquare, MoonStar, RotateCcw, Sparkles,
+} from 'lucide-react'
 import type { TagTone, VisitorTag } from '../lib/classify'
 
 /**
@@ -22,16 +25,29 @@ const TONE: Record<TagTone, string> = {
   good:   'text-green-400 bg-green-400/10 ring-green-400/25',
   warn:   'text-white/85 bg-white/[0.07] ring-white/15',
   muted:  'text-white/80 bg-white/[0.05] ring-white/10',
+  // Every row carries a tag now, and most carry only an ordinary one. Neutral
+  // is that ordinary case: legible (white/70 is 6.4:1 on the canvas) but with no
+  // fill and the faintest ring, so a screen of them reads as texture and the
+  // exceptions still jump. Anything louder and full coverage would just be noise.
+  neutral: 'text-white/70 ring-white/[0.08]',
 }
 
 const ICON: Record<string, typeof Bot> = {
   'Bot': Bot,
-  'Automated': Bot,
+  'Headless': Bot,
+  // A different glyph from Bot on purpose: same "not a person" verdict, but
+  // traffic we made ourselves, which reads differently at a glance.
+  'Test': FlaskConical,
+  'LLM': Sparkles,
   'No dwell': MoonStar,
   'Bounce': MoonStar,
   'Spam?': AlertTriangle,
   'Returning': RotateCcw,
   'Reader': BookOpen,
+  'Converted': MailCheck,
+  'Chatted': MessageSquare,
+  'Skimmed': Footprints,
+  'Untracked': EyeOff,
 }
 
 export default function VisitorTags({ tags, className }: { tags: VisitorTag[]; className?: string }) {

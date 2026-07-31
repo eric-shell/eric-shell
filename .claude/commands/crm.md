@@ -124,19 +124,29 @@ The direction toggle deliberately uses `ArrowUpNarrowWide` / `ArrowDownWideNarro
 
 **These are presentational only.** Nothing is hidden, filtered, deleted, or blocked on the strength of a tag — they exist so a real lead isn't buried under crawler noise. Every tag carries a `reason`, shown as a title, because an unexplained "spam" badge on a genuine visitor is worse than no badge.
 
-| Tag | Fires when |
-|---|---|
-| `Bot` | User agent matches a curated crawler/automation list |
-| `Automated` | Page views recorded but no browser timezone *or* language — a real browser always sends both |
-| `No dwell` | 3+ page views with under 2s engaged — fetched, not read |
-| `Spam?` | A submission with a URL in the name or a malformed email — or two weaker signals together (disposable email domain, no page view recorded) |
-| `Bounce` | A single view under 5s, and only when nothing else already explains the row |
-| `Returning` | Sessions on 2+ **separate days** — deliberate return, the strongest interest signal here |
-| `Reader` | 45s+ engaged with deep scroll or 3+ pages, and never chatted or submitted |
+**Every row carries exactly one nature tag, plus any qualifiers.** A blank Flags cell is a bug, not a shrug. The nature ladder is ordered by how much it explains — what the client IS beats what it did, and the first rung that matches wins:
 
-**There is deliberately no "Real" or "Authentic" tag.** Absence of bot signals is not evidence of a person: a visitor with no telemetry — every pre-launch row, and anyone sending Global Privacy Control — genuinely cannot be judged either way, and unflagged is the honest answer. Tagging nearly every row would also drown the exceptions the column exists to surface. `Returning` and `Reader` name **what was observed** instead, which is a claim the data supports.
+| # | Nature tag | Fires when | `automated` |
+|---|---|---|---|
+| 1 | `Test` | `utm_campaign=synthetic-test` (our synth-traffic script) or an automation UA — Playwright, Puppeteer, HeadlessChrome, Lighthouse | ✓ |
+| 2 | `LLM` | UA is a self-identified AI crawler or assistant — GPTBot, ClaudeBot, PerplexityBot, CCBot, YouBot, ChatGPT-User… | ✓ |
+| 3 | `Bot` | UA matches the curated crawler / HTTP-client list | ✓ |
+| 4 | `Headless` | Page views recorded but no browser timezone *or* language — a real browser always sends both | ✓ |
+| 5 | `No dwell` | 3+ page views with under 2s engaged — fetched, not read | ✓ |
+| 6 | `Converted` | Submitted the contact form | |
+| 7 | `Chatted` | Used the assistant, never submitted | |
+| 8 | `Untracked` | No page view ever recorded — expected for a GPC/DNT opt-out, since telemetry exits client-side before sending | |
+| 9 | `Reader` | 45s+ engaged with deep scroll or 3+ pages | |
+| 10 | `Bounce` | A single view under 5s | |
+| 11 | `Skimmed` | Everything else with page views — the ordinary middle | |
 
-`Returning` requires distinct *days*, not just two sessions: two visits twenty minutes apart is one sitting. `Reader` is restricted to the silent — anyone who chatted or submitted is already obvious from the Chat and Sent columns, so a tag there would be noise. Neither can fire on a row whose user agent is a known crawler.
+Qualifiers stack on top: `Returning` (sessions on 2+ **separate days** — two visits twenty minutes apart is one sitting) and `Spam?` (a submission with a URL in the name or a malformed email, or two weaker signals together). Neither fires on a machine.
+
+**There is still deliberately no "Real" or "Authentic" tag.** Absence of bot signals is not evidence of a person. Full coverage is achieved by naming what was OBSERVED — `Skimmed`, `Untracked` — never by asserting humanity. The cost of tagging every row is that the column can't spot exceptions by being mostly empty, so **tone does that job instead**: ordinary states use the `neutral` tone (no fill, faintest ring) and recede; only `Spam?` is loud. Don't promote a baseline tag to a louder tone without re-thinking that.
+
+**Tags are derived at render time, never stored.** Changing a rule relabels the whole history on the next paint — there is nothing to backfill, and nothing to migrate if a rule turns out wrong.
+
+`LLM` is checked *before* `Bot` because most AI agents also match `/\bbot\b/`. The UA is the only signal available (it's the one request header stored), and it's self-reported: this catches agents that identify themselves and cannot catch one that doesn't want to be. Anything stronger — Web Bot Auth's `Signature-Agent` header, published IP ranges, reverse DNS — means collecting more per request and disclosing it in [Privacy.tsx](src/components/sections/Privacy/Privacy.tsx).
 
 ### Filters
 
@@ -147,7 +157,7 @@ silent.
 
 | Toggle | Removes |
 |---|---|
-| `Hide bots` | Rows whose tags carry `automated` — Bot, Automated, No dwell |
+| `Hide bots & tests` | Rows whose tags carry `automated` — Test, LLM, Bot, Headless, No dwell |
 | `Engaged only` | Rows that neither chatted nor submitted the form |
 
 **They narrow the metric tiles too**, deliberately. Search does not. A filter is

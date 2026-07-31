@@ -1,3 +1,17 @@
+/**
+ * Campaign tag every visit created by `scripts/synth-traffic.mjs` carries.
+ *
+ * That script drives the live site with Playwright to exercise the real
+ * pipeline, and it deliberately spoofs an ordinary browser user-agent so the
+ * rows aren't hidden by the bot rules — which left our own load tests sitting in
+ * the CRM indistinguishable from strangers. This tag is the honest marker, and
+ * it is what the `Test` classification keys off.
+ *
+ * The script hardcodes the same string (it's plain .mjs and can't import this).
+ * Change one, change both.
+ */
+export const SYNTHETIC_CAMPAIGN = 'synthetic-test'
+
 export interface Visitor {
   id: string
   first_seen_at: string
@@ -96,6 +110,8 @@ export interface VisitorSummary {
   max_scroll_pct: number
   /** Summed engaged time across every session, in milliseconds. */
   total_engaged_ms: number
+  /** Any session tagged `SYNTHETIC_CAMPAIGN` — traffic our own tooling made. */
+  synthetic: boolean
   last_activity_at: string
   contact_name: string | null
   contact_email: string | null

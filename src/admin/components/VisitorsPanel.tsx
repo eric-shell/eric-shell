@@ -346,9 +346,10 @@ export default function VisitorsPanel({
                   title={botCount === 0
                     ? 'No automated traffic detected in this data, so there is nothing to hide.'
                     : `${hideBots ? 'Hiding' : 'Hides'} ${botCount} automated ${botCount === 1 ? 'visitor' : 'visitors'} — ` +
-                      'crawlers, headless clients, and fetch-without-reading. Bounces and possible spam always stay visible.'}
+                      'crawlers, our own test runs, headless clients, and fetch-without-reading. ' +
+                      'Bounces and possible spam always stay visible.'}
                 >
-                  {hideBots && botCount > 0 ? `${botCount} bots hidden` : 'Hide bots'}
+                  {hideBots && botCount > 0 ? `${botCount} hidden` : 'Hide bots & tests'}
                 </FilterChip>
                 <FilterChip
                   active={engagedOnly}

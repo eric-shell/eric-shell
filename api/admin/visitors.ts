@@ -1,7 +1,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 import { requireAdmin } from '../_lib/auth.js'
 import { sql } from '../_lib/db.js'
-import type { VisitorListPayload, VisitorSummary } from '../_lib/types.js'
+import { SYNTHETIC_CAMPAIGN, type VisitorListPayload, type VisitorSummary } from '../_lib/types.js'
 
 export default async function handler(req: VercelRequest, res: VercelResponse): Promise<void> {
   if (!requireAdmin(req, res)) return
@@ -37,6 +37,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
         -- float8, not bigint: the Neon driver returns int8 as a string, which
         -- would silently violate the numeric type on VisitorSummary.
         coalesce(ss.engaged_ms, 0)::float8  as total_engaged_ms,
+        -- Traffic our own synth-traffic script made, tagged at the source.
+        coalesce(ss.synthetic, false)       as synthetic,
         greatest(
           v.last_seen_at,
           coalesce(c.last_chat_at, v.last_seen_at),
@@ -77,7 +79,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
                count(distinct started_at::date) as active_days,
                max(max_scroll_pct) as max_scroll_pct,
                sum(engaged_ms) as engaged_ms,
-               max(last_beat_at) as last_beat_at
+               max(last_beat_at) as last_beat_at,
+               bool_or(utm_campaign = ${SYNTHETIC_CAMPAIGN}) as synthetic
         from visitor_sessions
         group by visitor_id
       ) ss on ss.visitor_id = v.id
