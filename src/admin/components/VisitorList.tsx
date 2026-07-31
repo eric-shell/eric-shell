@@ -316,11 +316,48 @@ function MobileList({
   )
 }
 
+/**
+ * Columns the table is rendering at the current width — 5 below `lg`, 6 below
+ * `xl`, 8 above (see the header row).
+ *
+ * The open-detail row spans them with `colSpan`, and the number has to be
+ * exact. A table's column count is the MAX across its rows, so a span wider
+ * than the rendered set doesn't clamp — it invents phantom columns, and under
+ * `table-fixed` those take a share of the free width. A hardcoded 9 halved the
+ * Location column the moment a row was opened (430px → 215px at 1440, 110px →
+ * 22px at 768). Too small is no better: the panel would stop short of the right
+ * edge. Hence matchMedia — the folded column sets are a layout fact the CSS
+ * knows and `colSpan` can't read.
+ */
+const LG = '(min-width: 1024px)'
+const XL = '(min-width: 1280px)'
+
+function readColumnCount() {
+  if (typeof window === 'undefined') return 8
+  if (window.matchMedia(XL).matches) return 8
+  return window.matchMedia(LG).matches ? 6 : 5
+}
+
+function useColumnCount() {
+  const [count, setCount] = useState(readColumnCount)
+  useEffect(() => {
+    const queries = [window.matchMedia(LG), window.matchMedia(XL)]
+    const sync = () => setCount(readColumnCount())
+    // Re-read on mount too: the first paint can land before the breakpoint
+    // queries settle on a restored window size.
+    sync()
+    queries.forEach(q => q.addEventListener('change', sync))
+    return () => queries.forEach(q => q.removeEventListener('change', sync))
+  }, [])
+  return count
+}
+
 export default function VisitorList({ visitors, onVisitorDeleted }: VisitorListProps) {
   const [selectedId, setSelectedId] = useState<string | null>(
     () => new URLSearchParams(window.location.search).get('v')
   )
   const [page, setPage] = useState(1)
+  const columnCount = useColumnCount()
   const didRestore = useRef(false)
   // Locally applied location corrections, so the cell updates on save without
   // refetching the whole list.
@@ -424,7 +461,10 @@ export default function VisitorList({ visitors, onVisitorDeleted }: VisitorListP
               label="Flags" sortKey="flags" sort={sort} onSort={handleSort} className="hidden w-44 lg:table-cell"
               title="Heuristic traffic-quality flags. Sorts by severity — possible spam first, then automated, then bounces."
             />
-            <SortHeader label="Last seen" sortKey="lastSeen" sort={sort} onSort={handleSort} className="w-32 xl:w-36" />
+            {/* 8.5rem, not 8: the widest realistic value ("May 28, 10:01 AM")
+                measures 114px, and w-32 left 112px inside the gutter — so the
+                one row a month with a two-digit hour wrapped to two lines. */}
+            <SortHeader label="Last seen" sortKey="lastSeen" sort={sort} onSort={handleSort} className="w-34 xl:w-36" />
             {/* Location takes the spare width, not Contact: most visitors are
                 anonymous, so a flexible Contact column just grew whitespace,
                 while a corrected location can be a long hand-typed string. */}
@@ -471,7 +511,7 @@ export default function VisitorList({ visitors, onVisitorDeleted }: VisitorListP
                   <td className="hidden py-3 pr-4 lg:table-cell">
                     {tags.length > 0 ? <VisitorTags tags={tags} /> : <Dash />}
                   </td>
-                  <td className="py-3 pr-4 text-white/85">{formatShort(v.last_activity_at)}</td>
+                  <td className="truncate py-3 pr-4 text-white/85">{formatShort(v.last_activity_at)}</td>
                   <td className="py-3 pr-4 text-white/90 truncate">
                     <LocationValue location={location} />
                   </td>
@@ -501,9 +541,8 @@ export default function VisitorList({ visitors, onVisitorDeleted }: VisitorListP
                 </tr>
                 {isOpen && (
                   <tr>
-                    {/* Every cell in the row, folded or not — the browser clamps
-                        the span to the columns actually rendered. */}
-                    <td colSpan={9} className="pb-3 pt-0">
+                    {/* Exactly the columns on screen — see useColumnCount. */}
+                    <td colSpan={columnCount} className="pb-3 pt-0">
                       <VisitorDetail
                         id={v.id}
                         onClose={() => setSelectedId(null)}
