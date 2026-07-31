@@ -1,5 +1,5 @@
 import { twMerge } from 'tailwind-merge'
-import { AlertTriangle, Bot, MoonStar } from 'lucide-react'
+import { AlertTriangle, BookOpen, Bot, MoonStar, RotateCcw } from 'lucide-react'
 import type { TagTone, VisitorTag } from '../lib/classify'
 
 /**
@@ -17,6 +17,9 @@ import type { TagTone, VisitorTag } from '../lib/classify'
 const TONE: Record<TagTone, string> = {
   // red-400 is 6.10:1 on the canvas — AA text.
   danger: 'text-red-400 bg-red-400/10 ring-red-400/25',
+  // green-400 is 7.04:1 on the canvas — AA text. Paired with an icon, never
+  // colour alone.
+  good:   'text-green-400 bg-green-400/10 ring-green-400/25',
   warn:   'text-white/85 bg-white/[0.07] ring-white/15',
   muted:  'text-white/80 bg-white/[0.05] ring-white/10',
 }
@@ -27,6 +30,8 @@ const ICON: Record<string, typeof Bot> = {
   'No dwell': MoonStar,
   'Bounce': MoonStar,
   'Spam?': AlertTriangle,
+  'Returning': RotateCcw,
+  'Reader': BookOpen,
 }
 
 export default function VisitorTags({ tags, className }: { tags: VisitorTag[]; className?: string }) {

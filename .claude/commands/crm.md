@@ -107,6 +107,12 @@ The direction toggle deliberately uses `ArrowUpNarrowWide` / `ArrowDownWideNarro
 | `No dwell` | 3+ page views with under 2s engaged — fetched, not read |
 | `Spam?` | A submission with a URL in the name, a malformed or disposable email, or no page view at all |
 | `Bounce` | A single view under 5s, and only when nothing else already explains the row |
+| `Returning` | Sessions on 2+ **separate days** — deliberate return, the strongest interest signal here |
+| `Reader` | 45s+ engaged with deep scroll or 3+ pages, and never chatted or submitted |
+
+**There is deliberately no "Real" or "Authentic" tag.** Absence of bot signals is not evidence of a person: a visitor with no telemetry — every pre-launch row, and anyone sending Global Privacy Control — genuinely cannot be judged either way, and unflagged is the honest answer. Tagging nearly every row would also drown the exceptions the column exists to surface. `Returning` and `Reader` name **what was observed** instead, which is a claim the data supports.
+
+`Returning` requires distinct *days*, not just two sessions: two visits twenty minutes apart is one sitting. `Reader` is restricted to the silent — anyone who chatted or submitted is already obvious from the Chat and Sent columns, so a tag there would be noise. Neither can fire on a row whose user agent is a known crawler.
 
 ### Filters
 

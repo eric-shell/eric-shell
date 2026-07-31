@@ -30,6 +30,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
         coalesce(s.contact_count, 0)::int   as contact_count,
         coalesce(p.view_count, 0)::int      as page_view_count,
         coalesce(ss.session_count, 0)::int  as session_count,
+        -- Distinct days with a session, not just a session count: two visits
+        -- twenty minutes apart is one sitting, not a return.
+        coalesce(ss.active_days, 0)::int    as active_days,
+        coalesce(ss.max_scroll_pct, 0)::int as max_scroll_pct,
         -- float8, not bigint: the Neon driver returns int8 as a string, which
         -- would silently violate the numeric type on VisitorSummary.
         coalesce(ss.engaged_ms, 0)::float8  as total_engaged_ms,
@@ -70,6 +74,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
       left join (
         select visitor_id,
                count(*) as session_count,
+               count(distinct started_at::date) as active_days,
+               max(max_scroll_pct) as max_scroll_pct,
                sum(engaged_ms) as engaged_ms,
                max(last_beat_at) as last_beat_at
         from visitor_sessions

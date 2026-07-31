@@ -254,6 +254,12 @@ export function buildFixtures({ count = 28, seed = 20260729, now = Date.now() } 
       contact_count: contact ? 1 : 0,
       page_view_count: totalViews,
       session_count: sessions.filter(s => s.visitor_id === id).length,
+      // Distinct days and peak scroll drive the Returning / Reader flags.
+      active_days: new Set(
+        sessions.filter(s => s.visitor_id === id).map(s => s.started_at.slice(0, 10)),
+      ).size,
+      max_scroll_pct: sessions.filter(s => s.visitor_id === id)
+        .reduce((m, s) => Math.max(m, s.max_scroll_pct), 0),
       total_engaged_ms: sessions.filter(s => s.visitor_id === id).reduce((a, s) => a + s.engaged_ms, 0),
       last_activity_at: new Date(lastSeen).toISOString(),
       contact_name: contact?.name ?? null,

@@ -1,6 +1,6 @@
 import type { VisitorSummary } from '@/../api/_lib/types'
 
-export type TagTone = 'danger' | 'warn' | 'muted'
+export type TagTone = 'danger' | 'warn' | 'muted' | 'good'
 
 export interface VisitorTag {
   /** Short label rendered in the row. */
@@ -62,6 +62,18 @@ const URL_IN_TEXT = /(https?:\/\/|www\.|\.(?:ru|top|xyz|click|loan|work)\b)/i
 const NO_DWELL_MS = 2_000
 const BOUNCE_MS = 5_000
 
+/**
+ * Positive evidence thresholds.
+ *
+ * These flag what was OBSERVED, never a verdict on authenticity. There is no
+ * "Real" tag on purpose: absence of bot signals is not evidence of a person,
+ * and tagging nearly every row would drown the exceptions the column exists to
+ * surface. A visitor with no telemetry stays unflagged, which is the honest
+ * answer — we genuinely do not know.
+ */
+const READER_MS = 45_000
+const READER_SCROLL_PCT = 50
+
 export function classifyVisitor(v: VisitorSummary): VisitorTag[] {
   const tags: VisitorTag[] = []
   const ua = v.user_agent ?? ''
@@ -120,6 +132,33 @@ export function classifyVisitor(v: VisitorSummary): VisitorTag[] {
         reason: `Possible spam submission — ${spamReasons.join(', ')}. Worth reading before replying.`,
       })
     }
+  }
+
+  // Came back on a different day. Not merely two sessions — two visits twenty
+  // minutes apart is one sitting. Worth surfacing because deliberate return is
+  // the strongest interest signal here, and it is invisible everywhere else in
+  // the table.
+  if (!uaIsBot && v.session_count >= 2 && v.active_days >= 2) {
+    tags.push({
+      label: 'Returning',
+      tone: 'good',
+      reason: `Visited on ${v.active_days} separate days across ${v.session_count} sessions.`,
+    })
+  }
+
+  // Read the site properly but never spoke up. Without this, five minutes of
+  // genuine reading is indistinguishable from a bounce — both render unflagged.
+  // Restricted to the silent: anyone who chatted or submitted is already
+  // obvious from the Chat and Sent columns.
+  if (!uaIsBot && !chatted && !converted && engaged >= READER_MS &&
+      (v.max_scroll_pct >= READER_SCROLL_PCT || views >= 3)) {
+    tags.push({
+      label: 'Reader',
+      tone: 'good',
+      reason: `${Math.round(engaged / 1000)}s engaged` +
+        (v.max_scroll_pct > 0 ? `, ${v.max_scroll_pct}% scroll depth` : '') +
+        ` across ${views} ${views === 1 ? 'page' : 'pages'} — read it, but never made contact.`,
+    })
   }
 
   // Only label a bounce when nothing else already explains the row, and never

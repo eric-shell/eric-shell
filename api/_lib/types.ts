@@ -82,6 +82,10 @@ export interface VisitorSummary {
   contact_count: number
   page_view_count: number
   session_count: number
+  /** Distinct calendar days with at least one session. */
+  active_days: number
+  /** Deepest scroll reached in any session, 0-100. */
+  max_scroll_pct: number
   /** Summed engaged time across every session, in milliseconds. */
   total_engaged_ms: number
   last_activity_at: string

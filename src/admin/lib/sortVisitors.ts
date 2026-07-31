@@ -86,7 +86,10 @@ function cellFor(v: VisitorSummary, key: SortKey, locationLabel: string | null):
   }
 }
 
-const TONE_RANK = { danger: 3, muted: 2, warn: 1 } as const
+// Ranked by how much a row wants attention, so a descending sort surfaces
+// problems first. Positive flags sit lowest of the flagged — they are good
+// news, not something to action — but still above unflagged rows.
+const TONE_RANK = { danger: 4, muted: 3, warn: 2, good: 1 } as const
 
 function flagRank(v: VisitorSummary): number {
   return classifyVisitor(v).reduce((max, t) => Math.max(max, TONE_RANK[t.tone] ?? 0), 0)
