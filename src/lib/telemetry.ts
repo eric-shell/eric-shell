@@ -221,9 +221,20 @@ function send(payload: Record<string, unknown>, viaBeacon: boolean) {
     }
     // The pageview goes out as a real fetch so it carries X-Visitor-Id and picks
     // up Vercel's edge geo headers — sendBeacon cannot set headers.
+    //
+    // X-Referrer matters here even though the body already carries `referrer`:
+    // the header is what `visitors.referrer` is written from, and until the
+    // pageview sent one, that column could only ever be filled by a LATER
+    // request in the visit — a chat message or a contact submission, whose
+    // document.referrer is one of our own pages. The visitor-level referrer was
+    // therefore internal by construction, or absent.
     void fetch('/api/track', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'X-Visitor-Id': String(payload.visitorId) },
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Visitor-Id': String(payload.visitorId),
+        'X-Referrer': document.referrer,
+      },
       body,
       keepalive: true,
     }).catch(() => { /* telemetry is never worth surfacing */ })

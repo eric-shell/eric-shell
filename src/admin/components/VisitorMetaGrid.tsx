@@ -40,6 +40,20 @@ export default function VisitorMetaGrid({ id, data }: Props) {
   const sessionCount = sessions.length
   const totalEngagedMs = sessions.reduce((sum, s) => sum + s.engaged_ms, 0)
 
+  /**
+   * Where this visitor came from.
+   *
+   * Falls back to the session, because acquisition genuinely lives there:
+   * `visitors.referrer` is written from the X-Referrer header, which the
+   * pageview only started sending recently, so most rows carry nothing at the
+   * visitor level while their first session has the real value. Sessions arrive
+   * newest-first, so the last one holding a referrer is the earliest — the one
+   * that describes how the visitor arrived, not where they were mid-visit.
+   */
+  const referrer = visitor?.referrer
+    ?? [...sessions].reverse().find(s => s.referrer)?.referrer
+    ?? null
+
   return (
     <div className="grid grid-cols-1 gap-x-8 gap-y-3 sm:grid-cols-2 md:grid-cols-3 flex-1 min-w-0">
       <MetaField icon={Fingerprint} label="Visitor ID" value={id} mono />
@@ -100,7 +114,7 @@ export default function VisitorMetaGrid({ id, data }: Props) {
               title="Engaged time counts only while the tab was visible, summed across sessions."
             />
           )}
-          {visitor?.referrer && <MetaField icon={Link} label="Referrer" value={visitor.referrer} />}
+          {referrer && <MetaField icon={Link} label="Referrer" value={referrer} />}
           {(events?.ada_toggle ?? 0) > 0 && (
             <MetaField icon={Eye} label="High-contrast" value={`${events!.ada_toggle}×`} />
           )}
