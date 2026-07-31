@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { type LucideIcon, Bot, EyeOff, MessageSquare, Search, X } from 'lucide-react'
 import { twMerge } from 'tailwind-merge'
 import { Eyebrow, Panel } from '../../components/ui'
+import { SURFACE, SURFACE_HOVER } from '../../components/ui/variants'
 import VisitorList from './VisitorList'
 import { VisitorTableSkeleton } from './Skeleton'
 import { resolveLocation } from '../lib/location'
@@ -23,6 +24,16 @@ import type { VisitorSummary } from '@/../api/_lib/types'
 /**
  * Toolbar filter toggle. `aria-pressed` rather than a checkbox: it is a control
  * that changes the view, not a value being submitted.
+ *
+ * On is the `primary` fill, the same one `Pill` uses for an active chip — a
+ * filter that is doing something is a solid mark, not a tinted outline. The
+ * earlier accent ring was the wrong signal twice over: `--color-accent` is
+ * reserved for non-text marks, and on this canvas a 15%-alpha fill inside a
+ * 40%-alpha ring read as *disabled* rather than active.
+ *
+ * Every state carries a `border` (transparent where there's nothing to draw)
+ * so the box measures the same on and off and the row doesn't shift by 2px
+ * when a chip toggles.
  */
 function FilterChip({ active, onClick, icon: Icon, title, disabled, children }: {
   active: boolean
@@ -43,12 +54,12 @@ function FilterChip({ active, onClick, icon: Icon, title, disabled, children }: 
         // Taller and wider on a phone: at h-7 these are 28px of tappable height
         // sitting right next to each other, which is a miss waiting to happen.
         // Back to the compact size once there's a pointer driving them.
-        'flex h-9 shrink-0 items-center gap-1.5 rounded-md px-2.5 text-xs font-semibold ring-1 ring-inset transition-colors sm:h-7 sm:px-2',
+        'flex h-9 shrink-0 items-center gap-1.5 rounded-md border px-2.5 text-xs font-semibold transition sm:h-7 sm:px-2',
         disabled
-          ? 'cursor-default text-white/40 ring-white/10'
+          ? 'cursor-default border-white/10 text-white/40'
           : active
-            ? 'cursor-pointer bg-accent/15 text-white ring-accent/40'
-            : 'cursor-pointer text-white/85 ring-white/15 hover:bg-white/[0.06] hover:text-white',
+            ? `cursor-pointer ${SURFACE.primary} ${SURFACE_HOVER.primary}`
+            : 'cursor-pointer border-white/15 text-white/85 hover:bg-white/[0.06] hover:text-white',
       )}
     >
       <Icon size={13} aria-hidden="true" />
@@ -112,10 +123,14 @@ function TimeframeSegments({ value, onChange, labelledBy }: {
             data-timeframe={v}
             title={title}
             className={twMerge(
-              'flex h-6 cursor-pointer items-center rounded px-2 text-xs font-semibold tabular-nums transition-colors',
+              // Same `primary` fill as the filter chips, and a transparent
+              // border on the unselected segments so selecting one doesn't
+              // nudge the group's width. No hover on the selected segment:
+              // it's a radio, so clicking it again does nothing.
+              'flex h-6 cursor-pointer items-center rounded border px-2 text-xs font-semibold tabular-nums transition',
               active
-                ? 'bg-accent/15 text-white ring-1 ring-inset ring-accent/40'
-                : 'text-white/70 hover:bg-white/[0.06] hover:text-white',
+                ? SURFACE.primary
+                : 'border-transparent text-white/70 hover:bg-white/[0.06] hover:text-white',
             )}
           >
             {label}
