@@ -6,9 +6,27 @@ import Input from '../Input'
 import Panel from '../Panel'
 import Textarea from '../Textarea'
 import { toast } from '../Toast'
+import { useIntersectionObserver, useTypedPlaceholder } from '@/hooks'
 import { identityHeaders } from '@/lib/telemetry'
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+
+/**
+ * Typed and erased in the message field in place of a static placeholder — the
+ * same treatment as the chat composer. Each one models a message worth sending,
+ * because "Tell me what you're working on" alone left people staring at an
+ * empty box. Kept short: this field is half-width on desktop and the phrase
+ * must not wrap.
+ */
+const MESSAGE_PLACEHOLDERS = [
+  "Tell me what you're working on…",
+  'Hiring for a role? Tell me about the team.',
+  'Have a project that needs design and code?',
+  'Want to talk design systems? Same.',
+  'Just saying hi works too.',
+]
+
+const MESSAGE_PLACEHOLDER_FALLBACK = "Tell me what you're working on..."
 
 type ErrorField = 'name' | 'email' | 'message' | null
 
@@ -32,6 +50,15 @@ export default function ContactForm({
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [errorField, setErrorField] = useState<ErrorField>(null)
   const [isWhite, setIsWhite] = useState(defaultTheme === 'white')
+
+  // The form sits at the bottom of a long page, and the animation re-renders
+  // this component ~20×/s. Gate it on the form actually being on screen so a
+  // visitor reading the hero isn't paying for a placeholder nobody can see.
+  const { ref: formRef, inView } = useIntersectionObserver<HTMLFormElement>({ threshold: 0.2 })
+  const typedPlaceholder = useTypedPlaceholder(
+    MESSAGE_PLACEHOLDERS,
+    inView && !message && !isSubmitting
+  )
 
   const nameValid = name.trim().length > 0 && name.length <= 100
   const emailValid = EMAIL_RE.test(email.trim()) && email.length <= 100
@@ -126,7 +153,7 @@ export default function ContactForm({
           <span className="font-sans text-xs font-semibold tracking-wide">ADA / WCAG</span>
         </button>
       )}
-      <form onSubmit={handleSubmit} className="flex flex-col pt-5 gap-2" noValidate>
+      <form ref={formRef} onSubmit={handleSubmit} className="flex flex-col pt-5 gap-2" noValidate>
         <div aria-hidden="true" className="sr-only">
           <label htmlFor="contact-website">Website</label>
           <input
@@ -175,7 +202,7 @@ export default function ContactForm({
           theme={isWhite ? 'white' : 'dark'}
           value={message}
           onChange={handleFieldChange('message', setMessage)}
-          placeholder="Tell me what you're working on..."
+          placeholder={typedPlaceholder ?? MESSAGE_PLACEHOLDER_FALLBACK}
           rows={6}
           maxLength={2000}
           disabled={isSubmitting}

@@ -51,18 +51,61 @@ export function VisitorTableSkeleton({ rows = 6 }: { rows?: number }) {
   )
 }
 
+/**
+ * A chat bubble and the timestamp under it, at the geometry
+ * ConversationTimeline renders: `px-4 py-2.5` around a 20px `text-sm` line box,
+ * so `height` is 20px per line of copy plus 20px of padding — `h-10` for one
+ * line, `h-15` for two, `h-20` for three. Then a `mt-1.5` stamp.
+ */
+function BubbleSkeleton({ role, height }: { role: 'user' | 'assistant'; height: string }) {
+  return (
+    <div className={twMerge('flex flex-col', role === 'user' ? 'items-end' : 'items-start')}>
+      <Skeleton className={twMerge('w-[70%] max-w-[85%] rounded-2xl', height)} />
+      <Skeleton className="mt-1.5 mx-2 h-3 w-28" />
+    </div>
+  )
+}
+
 export function DetailSkeleton() {
   return (
     <div className="animate-pulse">
-      <div className="mb-4 flex gap-8 border-b border-white/10 pb-2.5">
-        <Skeleton className="h-3 w-12" />
-        <Skeleton className="h-3 w-16" />
+      {/* Mirrors TabBar: three tabs at `px-4 py-2` around a 16px `text-xs` line
+          box, over the same 2px selected-tab rail. Two stubs in a bare flex row
+          sat ~12px shorter than the real bar and the panel jumped on load. */}
+      <div className="mb-4 flex border-b border-white/10">
+        {['w-16', 'w-20', 'w-20'].map((w, i) => (
+          <div key={i} className="px-4 py-2 border-b-2 border-transparent -mb-px">
+            <Skeleton className={twMerge('h-4', w)} />
+          </div>
+        ))}
       </div>
+
       <div className="flex flex-col gap-3">
-        <div className="flex justify-end"><Skeleton className="h-9 w-48 rounded-2xl" /></div>
-        <div className="flex justify-start"><Skeleton className="h-16 w-64 rounded-2xl" /></div>
-        <div className="flex justify-end"><Skeleton className="h-9 w-36 rounded-2xl" /></div>
-        <div className="flex justify-start"><Skeleton className="h-12 w-52 rounded-2xl" /></div>
+        <BubbleSkeleton role="user" height="h-10" />
+        <BubbleSkeleton role="assistant" height="h-20" />
+        <BubbleSkeleton role="user" height="h-10" />
+        <BubbleSkeleton role="assistant" height="h-15" />
+      </div>
+
+      {/* The Location / Notes / actions footer is always present once the fetch
+          resolves, so leaving it out of the skeleton grew the drawer by ~230px
+          on load and shoved every row below it down the page. */}
+      <div className="mt-5 border-t border-white/10 pt-4">
+        <Skeleton className="mb-1.5 h-3 w-16" />
+        {/* px-3 py-2 around a 20px text-sm line box, plus the 1px border. */}
+        <Skeleton className="h-9.5 w-full rounded-lg" />
+        <Skeleton className="mt-1.5 h-2.5 w-full" />
+        <Skeleton className="mt-1 h-2.5 w-2/3" />
+
+        <Skeleton className="mt-4 mb-1.5 h-3 w-12" />
+        {/* Same, over rows={3}. */}
+        <Skeleton className="h-19.5 w-full rounded-lg" />
+
+        {/* size="sm" buttons: py-1.5 around a 16px text-xs line box + border. */}
+        <div className="mt-2 flex items-center justify-end gap-2">
+          <Skeleton className="h-7.5 w-24 rounded-lg" />
+          <Skeleton className="h-7.5 w-20 rounded-lg" />
+        </div>
       </div>
     </div>
   )
