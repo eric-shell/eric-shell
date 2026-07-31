@@ -145,7 +145,7 @@ export default function ContactForm({
           theme={isWhite ? 'white' : 'dark'}
           value={name}
           onChange={handleFieldChange('name', setName)}
-          placeholder="Jane Smith"
+          placeholder="Sam Miller"
           maxLength={100}
           disabled={isSubmitting}
           required
@@ -160,7 +160,7 @@ export default function ContactForm({
           type="email"
           value={email}
           onChange={handleFieldChange('email', setEmail)}
-          placeholder="jane@example.com"
+          placeholder="smiller@example.com"
           maxLength={100}
           disabled={isSubmitting}
           required
