@@ -3,8 +3,28 @@ import { Menu, X } from 'lucide-react'
 import { CascadeGroup, CascadeItem, Button, Container, Panel } from '../../ui'
 import { navLinks, homeLink } from '@/data'
 
-const eAudio = new Audio('/audio/Eeeeeee.wav')
-eAudio.volume = .4
+/**
+ * The logo easter egg's sound, constructed on first play rather than on import.
+ *
+ * This used to be a module-scope `new Audio(...)`, which runs the moment the
+ * module loads — so every visit to every route eagerly downloaded it. The file
+ * was also a 2.67s 24-bit/48kHz stereo WAV: 750KB, the largest single asset on
+ * the page, larger than every image and larger than all the JavaScript
+ * combined, for a joke that fires when you click a nav item that is already
+ * active. It is now 64kbps mono AAC (16KB) and costs nothing until triggered.
+ *
+ * `??=` means the fetch happens on the first click only. At this size that is
+ * imperceptible, and every later play is instant.
+ */
+let eAudio: HTMLAudioElement | null = null
+
+function playE() {
+  eAudio ??= Object.assign(new Audio('/audio/e.m4a'), { volume: 0.4 })
+  eAudio.currentTime = 0
+  // Autoplay policy rejects this if the click wasn't user-initiated; a silent
+  // easter egg is never worth an unhandled rejection.
+  void eAudio.play().catch(() => {})
+}
 
 /**
  * Auto-dismiss window for the "already active" nav tooltip easter egg.
@@ -144,8 +164,7 @@ export default function Header() {
   }, [])
 
   const handleClick = useCallback(() => {
-    eAudio.currentTime = 0
-    eAudio.play()
+    playE()
 
     const id = Date.now()
     setEchoes(prev => [...prev, id])
