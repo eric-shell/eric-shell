@@ -35,6 +35,20 @@ function isoOrNull(v: unknown): string | null {
   return d.toISOString()
 }
 
+/**
+ * A `date` column as the `YYYY-MM-DD` the visitors chart keys on.
+ *
+ * The driver hands a `date` back as a Date on some paths and a string on others,
+ * so both are handled — and anything else falls back to the epoch rather than
+ * throwing. A surprise type here should cost one bar on one chart, not 500 the
+ * whole insights payload and blank every panel on the dashboard.
+ */
+function ymd(v: unknown): string {
+  if (typeof v === 'string' && v.length >= 10) return v.slice(0, 10)
+  const d = v instanceof Date ? v : new Date(String(v))
+  return Number.isNaN(d.valueOf()) ? '1970-01-01' : d.toISOString().slice(0, 10)
+}
+
 export default async function handler(req: VercelRequest, res: VercelResponse): Promise<void> {
   if (!requireAdmin(req, res)) return
   if (req.method !== 'GET') {
@@ -45,7 +59,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
   try {
     const db = sql()
 
-    const [sessionRows, returnRows, sourceRows, clickRows, pathRows, hourRows] = (await db.transaction([
+    const [sessionRows, returnRows, sourceRows, clickRows, pathRows, hourRows, dayRows] = (await db.transaction([
       // Sessions: totals, viewport mix, and scroll reach in one pass.
       //
       // SCROLL DEPTH IS GATED ON A DERIVED CUTOFF. Every session written before
@@ -190,7 +204,29 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
         group by 1
         order by 1
       `,
+      // New visitors per day, for the chart in the metrics row. Formerly its own
+      // endpoint; it joined this transaction because the dashboard has only ever
+      // fetched the two together, so a separate function was a second invocation
+      // and a second round trip for nothing.
+      //
+      // generate_series drives the join so every day in the window gets a row
+      // even when nobody arrived — a sparse result would make a quiet Tuesday
+      // indistinguishable from a missing one, and the chart draws a bar per day.
+      db`
+        select
+          gs::date        as date,
+          count(v.id)::int as visitors
+        from generate_series(
+          current_date - make_interval(days => ${WINDOW_DAYS - 1}),
+          current_date,
+          interval '1 day'
+        ) as gs
+        left join visitors v on v.first_seen_at::date = gs::date
+        group by gs
+        order by gs
+      `,
     ])) as [
+      Record<string, unknown>[],
       Record<string, unknown>[],
       Record<string, unknown>[],
       Record<string, unknown>[],
@@ -250,6 +286,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
         visitors: num(row.visitors),
       })),
       hourly: Array.from({ length: 24 }, (_, hour) => ({ hour, views: byHour.get(hour) ?? 0 })),
+      days: dayRows.map(row => ({ date: ymd(row.date), visitors: num(row.visitors) })),
     }
 
     res.status(200).json(payload)

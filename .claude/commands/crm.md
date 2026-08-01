@@ -10,7 +10,7 @@ A password-gated admin page at `/dashboard` (sign-in at `/login`) for viewing ev
 | Neon HTTP client (cached `sql()` helper) | [api/_lib/db.ts](api/_lib/db.ts) |
 | Visitor upsert (validates `X-Visitor-Id` header) | [api/_lib/visitor.ts](api/_lib/visitor.ts) |
 | Admin auth (HMAC cookie, password check, 2FA challenge, `requireAdmin`) | [api/_lib/auth.ts](api/_lib/auth.ts) |
-| Admin endpoints | [api/admin/login.ts](api/admin/login.ts), [api/admin/verify.ts](api/admin/verify.ts), [api/admin/logout.ts](api/admin/logout.ts), [api/admin/session.ts](api/admin/session.ts), [api/admin/visitors.ts](api/admin/visitors.ts), [api/admin/visitors/[id].ts](api/admin/visitors/%5Bid%5D.ts) |
+| Admin endpoints | [api/admin/login.ts](api/admin/login.ts), [api/admin/verify.ts](api/admin/verify.ts), [api/admin/logout.ts](api/admin/logout.ts), [api/admin/session.ts](api/admin/session.ts), [api/admin/visitors.ts](api/admin/visitors.ts), [api/admin/visitors/[id].ts](api/admin/visitors/%5Bid%5D.ts), [api/admin/insights.ts](api/admin/insights.ts) |
 | Chat persistence wiring | [api/chat.ts](api/chat.ts) (after `res.end()`) |
 | Contact persistence wiring | [api/contact.ts](api/contact.ts) (visitor resolved before the send, row inserted before `res.json()`) |
 | "New since last visit" watermark | [src/admin/lib/lastVisit.ts](src/admin/lib/lastVisit.ts) — `useLastVisit()` / `isNewSince()` |
@@ -42,6 +42,16 @@ A password-gated admin page at `/dashboard` (sign-in at `/login`) for viewing ev
 - **Every visitor-row writer must go through `upsertVisitor`** ([api/_lib/visitor.ts](api/_lib/visitor.ts)). `events.ts` originally did a bare `insert into visitors (id)`, which stranded events-only visitors (opened the chat, toggled high-contrast, never sent a message) with no UA, geo, or referrer — permanently, since nothing later backfills them. The `on conflict` clause uses `coalesce(existing, new)`, which keeps the first non-null sighting *and* backfills columns still null, so a later edge request repairs an incomplete row.
 - **`x-vercel-ip-city` is percent-encoded.** Decode via `readGeoHeader`, which try/catches `decodeURIComponent` — a malformed sequence used to reject the whole `upsertVisitor` promise, and in `chat.ts` that discarded the entire transcript, not just the city.
 - **The contact notification email carries a link to the visitor's CRM row.** `contact.ts` therefore resolves `upsertVisitor(req)` *before* the Resend send rather than after, and reuses the returned id for the insert — don't upsert twice. It has its own try/catch: a Postgres outage costs the link, never the email, and the submission still inserts with a null `visitor_id`. The URL is built from the request's own host (`crmLink`), so a preview deployment links to its own dashboard.
+
+## THE FUNCTION BUDGET IS FULL
+
+**Vercel Hobby rejects any deployment with more than 12 serverless functions, and `api/` is at exactly 12.** Adding a file under `api/` breaks production deploys — and does it *quietly*: the build succeeds and the failure lands afterwards at `patchBuild`, so `npm run build`, `tsc` and `lint` all pass. The message (`exceeded_serverless_functions_per_deployment`) appears only in the Vercel REST API response for the deployment, not in the build log and not in `vercel inspect`.
+
+A previous deploy stays aliased when a new one errors, so a rejection doesn't take the site down — it silently keeps serving old code, which is easy to mistake for "the change didn't do anything".
+
+**To add an endpoint, free a slot first.** `stats.ts` was the last easy one; the remaining candidate is folding `logout.ts` into `session.ts` as a DELETE on one session resource, which touches the auth flow and deserves care.
+
+**`/api/admin/stats` no longer exists.** Its visitors-per-day series is the seventh statement in the `insights.ts` transaction and arrives as `InsightsPayload.days`. The dashboard had only ever fetched the two together in one `Promise.all`, so a separate function cost a second invocation and a second Neon round trip for data never read on its own — merging freed the slot the retention cron needed *and* removed a round trip.
 
 ## Auth: `/login`, `/dashboard`, and the second factor
 
@@ -251,6 +261,7 @@ surface on the site, so the defaults matter. Per **one open tab for an hour**:
 The levers, and why each one is where it is — don't undo these casually:
 
 - **The dashboard polls only while visible.** Neon bills compute-hours and autosuspends an idle endpoint; a background tab firing two aggregate queries every 60s pinned the compute awake around the clock, for data nobody was looking at. `POLL_MS` is 120s, and `visibilitychange` starts/stops the interval and refetches on return.
+- **A dashboard poll is two requests, not three.** The visitors-per-day series lives inside the insights transaction rather than in its own endpoint — see the function-budget note above. One fewer invocation and one fewer Neon round trip per poll, per open tab.
 - **A pageview is one round trip, not four.** `db.transaction([...])` batches the visitor upsert, session upsert, and page-view insert. The Neon HTTP driver bills and delays *per request*, so the old fan-out cost 4x compute and stacked 4x latency. `readVisitorGeo()` exists so the geo headers can be inlined into that batch instead of paying for a second query.
 - **Heartbeats back off**: 15s, 30s, 60s, 120s, then every 5 minutes — 15 beats an hour instead of 180. Periodic beats only bound data loss when `pagehide`/`visibilitychange` never fire (mobile Safari); the final value comes from that flush. A hidden tab schedules nothing, because it accrues no engaged time and every beat would be a guaranteed no-op write.
 - **Heartbeats never touch `visitors`.** Rewriting `last_seen_at` every beat dirtied a row for nothing — the session's own `last_beat_at` records recency.
@@ -342,7 +353,7 @@ If `/api/admin/visitors` returns 500, check `vercel dev` terminal output for the
 
 - **No in-app reply.** The admin is read-only by design. There's no email collected at chat time, so there's nothing to reply to. If you ever want a reply path, it requires durable visitor identity + a polling/SSE channel back to the visitor's browser.
 - **No pagination.** The visitor list query has `limit 500`. Add pagination when you actually have hundreds of visitors.
-- **No retention/pruning job for `page_views`.** It's the fastest-growing table by far (one row per document load). When it gets unwieldy, add a scheduled delete for rows older than N months — nothing depends on old page views.
+- **No retention/pruning job for `page_views`.** The delete is written down in [db/schema.sql](db/schema.sql); a scheduled job for it needs a function slot, which the merge above has just freed.
 - **No section-impression or click tracking.** Deliberately scoped out: what someone scrolled past and what they clicked is a meaningfully bigger privacy footprint than "which pages, how long". `visitor_events` already has a `jsonb metadata` column if that changes — widen its `type` check constraint rather than adding tables.
 - **No GDPR delete-my-data endpoint.** Trivial to add (`delete from visitors where id = $1` cascades to chat_messages and nulls contact_submissions.visitor_id) — write it when you actually need it.
 - **No rate-limiting on `/api/chat` or `/api/contact`.** Existing honeypot field on both is the only protection. Add Vercel KV-backed throttling if abuse becomes a problem.

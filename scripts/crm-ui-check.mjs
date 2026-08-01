@@ -134,6 +134,8 @@ function buildInsights() {
       visitors: new Set(f.pageViews.filter(p => p.path === path).map(p => p.visitor_id)).size,
     })).sort((a, b) => b.views - a.views).slice(0, 8),
     hourly: Array.from({ length: 24 }, (_, hour) => ({ hour, views: hourCounts.get(hour) ?? 0 })),
+    // Formerly stubbed as its own /api/admin/stats route; folded into insights.
+    days,
   }
 }
 
@@ -158,9 +160,6 @@ for (const width of WIDTHS) {
     const v = f.visitors.find(x => x.id === id) ?? target
     return r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(detailFor(v)) })
   })
-  await page.route('**/api/admin/stats', r => r.fulfill({
-    status: 200, contentType: 'application/json', body: JSON.stringify({ days }),
-  }))
   await page.route('**/api/admin/insights', r => r.fulfill({
     status: 200, contentType: 'application/json', body: JSON.stringify(insights),
   }))

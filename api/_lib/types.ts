@@ -125,14 +125,16 @@ export interface VisitorSummary {
   contact_email: string | null
 }
 
+/**
+ * One day of the visitors chart. Delivered inside `InsightsPayload.days` — the
+ * `/api/admin/stats` endpoint that used to own it was folded into the insights
+ * transaction, since the dashboard never read one without the other.
+ */
 export interface StatDay {
   date: string
   visitors: number
 }
 
-export interface StatsPayload {
-  days: StatDay[]
-}
 
 export interface VisitorListPayload {
   visitors: VisitorSummary[]

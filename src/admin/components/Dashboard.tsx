@@ -13,7 +13,7 @@ import { formatDuration } from '../lib/dateFormat'
 import { detectProxyBursts, isAutomated } from '../lib/classify'
 import { isNewSince, useLastVisit } from '../lib/lastVisit'
 import { DEFAULT_TIMEFRAME, isTimeframe, withinTimeframe, type Timeframe } from '../lib/timeframe'
-import type { StatDay, StatsPayload, VisitorListPayload, VisitorSummary } from '@/../api/_lib/types'
+import type { StatDay, VisitorListPayload, VisitorSummary } from '@/../api/_lib/types'
 import type { InsightsPayload } from '@/../api/_lib/insights-types'
 
 /**
@@ -116,22 +116,30 @@ export default function Dashboard({ onLogout }: DashboardProps) {
   // about the last time you were here at all.
   const newSince = useLastVisit()
 
-  // One fetch pass for the whole dashboard. The insights aggregate joins this
-  // Promise.all rather than owning a poll of its own: Neon bills compute-hours,
-  // and a second interval would double the query volume of an open tab for a
-  // panel that is read at exactly the same moments as everything else here.
+  // One fetch pass for the whole dashboard, now two requests rather than three.
+  //
+  // The insights aggregate joins this Promise.all rather than owning a poll of
+  // its own: Neon bills compute-hours, and a second interval would double the
+  // query volume of an open tab for a panel that is read at exactly the same
+  // moments as everything else here.
+  //
+  // The visitors-per-day series used to be a third call to `/api/admin/stats`.
+  // It was only ever read alongside the insights — same poll, same render — so
+  // a separate endpoint bought a second invocation and a second Neon round trip
+  // for nothing. It is now one more statement inside the insights transaction.
   const fetchData = useCallback(() => {
     return Promise.all([
       apiCall<VisitorListPayload>('/api/admin/visitors', undefined, {
         errorMessage: 'Failed to load visitors.',
         onUnauthorized: onLogout,
       }),
-      apiCall<StatsPayload>('/api/admin/stats'),
       apiCall<InsightsPayload>('/api/admin/insights'),
-    ]).then(([v, s, i]) => {
+    ]).then(([v, i]) => {
       if (v) setVisitors(v.visitors ?? [])
-      if (s) setStats(s.days)
-      if (i) setInsights(i)
+      if (i) {
+        setInsights(i)
+        setStats(i.days)
+      }
       setLoading(false)
       setLastLoaded(new Date())
     })

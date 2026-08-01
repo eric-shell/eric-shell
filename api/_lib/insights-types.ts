@@ -10,6 +10,8 @@
  * duplicate), so the UI has to say so — see `InsightsPanel`.
  */
 
+import type { StatDay } from './types.js'
+
 /** Sessions bucketed by the deepest scroll they reached, as "at least N%". */
 export interface ScrollReach {
   /** Sessions that scrolled at least 25% of the page. */
@@ -122,4 +124,14 @@ export interface InsightsPayload {
   paths: PathRow[]
   /** Always 24 rows, 0–23, zero-filled. */
   hourly: HourRow[]
+  /**
+   * New visitors per day for the visitors chart, zero-filled across the window.
+   *
+   * This used to be its own endpoint (`/api/admin/stats`). It rides here because
+   * the dashboard has only ever fetched the two together in one `Promise.all`,
+   * so a second function bought a second invocation and a second Neon round trip
+   * for data that is never read separately — and on the Hobby plan a function is
+   * a scarce resource (12 per deployment, and we were at the cap).
+   */
+  days: StatDay[]
 }
