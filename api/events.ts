@@ -4,7 +4,17 @@ import { checkRateLimit } from './_lib/ratelimit.js'
 import { readVisitorId, upsertVisitor } from './_lib/visitor.js'
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
-const VALID_TYPES = ['ada_toggle', 'chat_cleared', 'speech_input', 'outbound_click']
+// Must stay in step with VisitorEventType (src/lib/telemetry.ts) AND with the
+// `type` check constraint on visitor_events. A type present here but missing
+// from the constraint is dropped silently by the catch below — see db/schema.sql.
+const VALID_TYPES = [
+  'ada_toggle',
+  'chat_cleared',
+  'speech_input',
+  'outbound_click',
+  'chat_error',
+  'section_error',
+]
 
 /**
  * Ceiling on the serialized metadata blob.

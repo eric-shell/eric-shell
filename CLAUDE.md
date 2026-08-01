@@ -63,7 +63,7 @@ src/
 ├── data/                  # Typed data files (work.ts, testimonials.ts, instagram.ts, navigation.ts, resume.ts, chat-context.ts)
 ├── hooks/                 # useChat, useCarousel, useIntersectionObserver, useParallax, useTitleCycle
 ├── lib/                   # Browser-side helpers (visitorId.ts, telemetry.ts, markdown.tsx)
-├── utils/                 # Utilities (analytics.ts, htmlToCanvas.ts)
+├── utils/                 # Utilities (htmlToCanvas.ts)
 ├── assets/                # Images, fonts, static files
 ├── App.tsx                # Root component — assembles sections, routes /resume and /privacy
 ├── main.tsx               # React entry point
@@ -75,7 +75,7 @@ api/                       # Vercel serverless functions (auto-discovered)
 ├── cron/                  # Scheduled jobs (see vercel.json `crons`) — prune.ts retention pass
 ├── chat.ts                # Groq streaming + chat persistence (rate-limited)
 ├── contact.ts             # Resend email (with a CRM deep link) + contact persistence (rate-limited)
-├── events.ts              # ada_toggle / chat_cleared event log (rate-limited)
+├── events.ts              # visitor interaction + error event log (rate-limited)
 └── track.ts               # page views + session engagement beacon (rate-limited)
 
 db/schema.sql              # Postgres schema (Neon) — apply manually, see /crm
@@ -172,6 +172,10 @@ Home section order in `App.tsx`:
 - **The work grid's `ItemList` JSON-LD is generated at build time** by the `workSchema()` plugin in `vite.config.ts`, from `src/data/work.ts`, into `index.html` only. Hand-copying 39 entries into the HTML would be stale within a release, and a stale ItemList is worse than none. It deliberately omits `image` (the cards hotlink Unsplash stock that has nothing to do with the projects — asserting that as a project's image tells a crawler something false) and uses `contributor` rather than `author` (client and agency work; Eric contributed front-end architecture, he did not author these properties). Add `image` back when the cards carry real screenshots.
 - **No `twitter:creator` / `twitter:site`** — there is no X/Twitter account in `navigation.ts` or the JSON-LD `sameAs`. Don't add one speculatively; the Twitter card works without it.
 - Icons and `site.webmanifest` are generated from `public/favicon.svg` against `#111521` (blue-950, resolved from `oklch(0.198 0.025 269.84)` — the dark canvas every route opens on, which is also `theme-color`).
+- **There is no Google Analytics, and no third-party analytics of any kind.** It was removed once measurement showed it cost 149KB, ~40ms of LCP and ~210ms of load, to collect a subset of what `lib/telemetry.ts` already records first-party and more precisely. The CSP was tightened to match — `connect-src` is now `'self'` alone. **Don't reintroduce a tag manager without re-widening the CSP**, and note the site now sets **no cookies at all** on the public routes, which [Privacy.tsx](src/components/sections/Privacy/Privacy.tsx) states plainly.
+- `script-src` still needs `'unsafe-inline'` even with GA gone: the JSON-LD blocks are inline `<script>` elements and CSP applies `script-src` to them. Removing it silently kills every structured-data block on the site.
+- **Adding a `VisitorEventType` is a three-file change plus a manual migration.** `src/lib/telemetry.ts` (the union), `api/events.ts` (`VALID_TYPES`), and the `type` check constraint on `visitor_events` in [db/schema.sql](db/schema.sql) — and the constraint has to be widened by hand in the Neon SQL editor, because `create table if not exists` will not alter a table that already exists. Until that ALTER runs, `/api/events` accepts the event and the insert is swallowed by its best-effort catch: **the event silently vanishes.** The ALTER is kept ready to paste at the bottom of schema.sql.
+- **The logo easter-egg sound is constructed on first play, not on import.** It was a module-scope `new Audio()` pointing at a 750KB WAV — the largest asset on the page, downloaded on every route, for a joke that fires on clicking an already-active nav item. Now 16KB AAC, fetched on first trigger. Don't move the construction back to module scope.
 
 ## Admin CRM
 

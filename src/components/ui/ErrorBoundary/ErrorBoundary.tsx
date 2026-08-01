@@ -1,5 +1,5 @@
 import { Component, type ErrorInfo, type ReactNode } from 'react'
-import { trackEvent } from '@/utils/analytics'
+import { sendEvent } from '@/lib/telemetry'
 
 interface ErrorBoundaryProps {
   children: ReactNode
@@ -22,7 +22,7 @@ export default class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBo
 
   componentDidCatch(error: Error, info: ErrorInfo) {
     console.error(`[${this.props.name}] section crashed:`, error, info.componentStack)
-    trackEvent('section_error', { section: this.props.name, message: error.message })
+    sendEvent('section_error', { section: this.props.name, message: error.message })
   }
 
   render() {

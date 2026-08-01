@@ -76,8 +76,8 @@ export default function Privacy() {
                     <dd className="text-blue-950/80">Your name, email, and message are emailed to me and saved in the database.</dd>
                   </div>
                   <div>
-                    <dt className="font-semibold">Google Analytics</dt>
-                    <dd className="text-blue-950/80">Aggregate page-view and session metrics via Google Analytics 4. Subject to <a href="https://policies.google.com/privacy" target="_blank" rel="noopener noreferrer" className="font-semibold underline underline-offset-2 hover:opacity-70 transition-opacity">Google's Privacy Policy</a>. You can block this with a privacy extension or browser setting at any time.</dd>
+                    <dt className="font-semibold">Errors</dt>
+                    <dd className="text-blue-950/80">When something on the page breaks — a section fails to render, or a chat message doesn't go through — the failure is recorded so I can fix it. That means which section or which step failed, an error type, and how long the request took. No message content, and nothing about you.</dd>
                   </div>
                 </dl>
               </div>
@@ -114,7 +114,7 @@ export default function Privacy() {
               <div className="flex flex-col gap-4">
                 <H2>Cookies</H2>
                 <p className="font-sans text-base md:text-lg leading-relaxed">
-                  This site uses localStorage (not cookies) to remember your visitor ID and chat history on the home page. Google Analytics sets its own cookies; clearing site data in your browser removes all of it.
+                  This site sets no cookies. It uses localStorage to remember your visitor ID and chat history on the home page, and clearing site data in your browser removes all of it.
                 </p>
               </div>
             </CascadeItem>

@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { toast } from '../components/ui'
-import { trackEvent } from '../utils/analytics'
-import { identityHeaders } from '../lib/telemetry'
+import { identityHeaders, sendEvent } from '../lib/telemetry'
 
 export type ChatMessage = {
   role: 'user' | 'assistant'
@@ -56,11 +55,6 @@ export function useChat() {
     setInput('')
     setIsLoading(true)
 
-    trackEvent('chat_submit', {
-      turn_index: turnIndex,
-      message_length: trimmed.length,
-    })
-
     try {
       const response = await fetch('/api/chat', {
         method: 'POST',
@@ -77,7 +71,7 @@ export function useChat() {
         toast.error(data.error || 'Chat failed. Please try again.')
         setMessages(prev => prev.slice(0, -1))
         setInput(trimmed)
-        trackEvent('chat_error', {
+        sendEvent('chat_error', {
           turn_index: turnIndex,
           error_type: 'http_error',
           duration_ms: elapsed(),
@@ -89,7 +83,7 @@ export function useChat() {
         toast.error('Chat failed. Please try again.')
         setMessages(prev => prev.slice(0, -1))
         setInput(trimmed)
-        trackEvent('chat_error', {
+        sendEvent('chat_error', {
           turn_index: turnIndex,
           error_type: 'empty_body',
           duration_ms: elapsed(),
@@ -101,14 +95,12 @@ export function useChat() {
 
       const reader = response.body.getReader()
       const decoder = new TextDecoder()
-      let accumulated = ''
 
       while (true) {
         const { value, done } = await reader.read()
         if (done) break
         const text = decoder.decode(value, { stream: true })
         if (!text) continue
-        accumulated += text
         setMessages(prev => {
           const next = prev.slice()
           const last = next[next.length - 1]
@@ -118,11 +110,6 @@ export function useChat() {
         })
       }
 
-      trackEvent('chat_response', {
-        turn_index: turnIndex,
-        response_length: accumulated.length,
-        duration_ms: elapsed(),
-      })
     } catch {
       toast.error('An unexpected error occurred. Please try again.')
       setMessages(prev => {
@@ -133,7 +120,7 @@ export function useChat() {
         return prev.slice(0, -1)
       })
       setInput(trimmed)
-      trackEvent('chat_error', {
+      sendEvent('chat_error', {
         turn_index: turnIndex,
         error_type: 'network',
         duration_ms: elapsed(),

@@ -71,8 +71,27 @@ export function identityHeaders(): Record<string, string> {
   }
 }
 
-/** Interaction events `/api/events` accepts. Mirrors its `VALID_TYPES`. */
-export type VisitorEventType = 'ada_toggle' | 'chat_cleared' | 'speech_input' | 'outbound_click'
+/**
+ * Interaction events `/api/events` accepts. Mirrors its `VALID_TYPES` — and
+ * the `type` check constraint on `visitor_events`, which is the one that bites:
+ * the endpoint silently drops any type the constraint rejects, so a new member
+ * here is inert until the ALTER in db/schema.sql has been run against Neon.
+ *
+ * `chat_error` and `section_error` arrived when Google Analytics was removed.
+ * They were the only two of its events carrying signal nothing else records —
+ * a chat that fails never reaches chat.ts's insert, and a section that throws
+ * leaves no trace at all. The chat *funnel* events it also had (`chat_submit`,
+ * `chat_response`) were deliberately not carried over: `chat_messages` already
+ * stores every user and assistant turn with roles and content, so they were
+ * asking the database to record something it could already derive.
+ */
+export type VisitorEventType =
+  | 'ada_toggle'
+  | 'chat_cleared'
+  | 'speech_input'
+  | 'outbound_click'
+  | 'chat_error'
+  | 'section_error'
 
 /**
  * Fire-and-forget interaction event.
