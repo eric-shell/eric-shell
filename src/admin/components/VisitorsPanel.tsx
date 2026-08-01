@@ -243,7 +243,12 @@ export default function VisitorsPanel({
     v.id.startsWith(q) ||
     fold(v.contact_name).includes(q) ||
     fold(v.contact_email).includes(q) ||
-    fold(resolveLocation(v).label).includes(q)
+    fold(resolveLocation(v).label).includes(q) ||
+    // Notes are the only text here you wrote yourself, which makes them the
+    // thing you're most likely to come back looking for — "the agency guy",
+    // "quoted in March". Everything else in this predicate is data about the
+    // visitor; this is the one field that's data about your own thinking.
+    fold(v.notes).includes(q)
   )
 
   return (
@@ -279,7 +284,7 @@ export default function VisitorsPanel({
             type="search"
             value={query}
             onChange={e => setQuery(e.target.value)}
-            placeholder="Search by name, email, location, or visitor ID…"
+            placeholder="Search by name, email, location, notes, or visitor ID…"
             aria-label="Search visitors"
             className="h-7 min-w-0 flex-1 bg-transparent text-sm text-white placeholder:text-white/70 outline-none"
           />

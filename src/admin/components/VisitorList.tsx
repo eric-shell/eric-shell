@@ -1,9 +1,10 @@
 import { Fragment, type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   ArrowDownWideNarrow, ArrowUpNarrowWide, ChevronDown, ChevronLeft,
-  ChevronRight, ChevronUp, MailCheck, MessageSquare, Pencil,
+  ChevronRight, ChevronUp, MailCheck, MessageSquare, Pencil, StickyNote,
 } from 'lucide-react'
 import VisitorDetail from './VisitorDetail'
+import type { VisitorEdits } from '../hooks/useVisitorDetail'
 import { detailStamp } from '../lib/detailCache'
 import { Button } from '../../components/ui'
 import { twMerge } from 'tailwind-merge'
@@ -77,6 +78,32 @@ function LocationValue({ location }: { location: ReturnType<typeof resolveLocati
         <Pencil size={11} className="ml-1 inline-block align-[-1px] text-white/80" aria-label="manually corrected" />
       )}
     </span>
+  )
+}
+
+/**
+ * The visitor id, plus the mark that rides with it.
+ *
+ * Deliberately quiet. This column is scanned, not read, and a row that merely
+ * carries a note is not an exception in the way `Spam?` is — the Flags column
+ * next door already owns loud.
+ */
+function VisitorIdValue({ v }: { v: VisitorSummary }) {
+  return (
+    <div className="flex items-center gap-1.5">
+      <span className="truncate font-mono text-xs font-semibold text-white/95">{shortId(v.id)}</span>
+      {/* The note itself is in the drawer; this only says one exists. Without it
+          a note was write-only — you had to already know which row you'd left it
+          on to ever find it again. */}
+      {v.notes && (
+        // `title` on the wrapper, not the icon: React's SVG prop types don't
+        // carry it. The tooltip is the whole note, so a one-line reminder needs
+        // no click at all.
+        <span title={v.notes} className="flex shrink-0 items-center">
+          <StickyNote size={11} className="text-white/80" aria-label="Has notes" />
+        </span>
+      )}
+    </div>
   )
 }
 
@@ -270,7 +297,8 @@ function SortBar({ sort, onSort, className }: {
  * drift. Sorting comes from the shared SortBar above.
  */
 function MobileList({
-  rows, bursts, selectedId, closingId, onSelect, locationFor, onVisitorDeleted, onSaved,
+  rows, bursts, selectedId, closingId, onSelect, locationFor,
+  onVisitorDeleted, onSaved,
 }: {
   rows: VisitorSummary[]
   bursts?: BurstMap
@@ -281,7 +309,7 @@ function MobileList({
   /** Same resolver the table uses, so the "corrected" marker stays truthful. */
   locationFor: (v: VisitorSummary) => ReturnType<typeof resolveLocation>
   onVisitorDeleted?: (id: string) => void
-  onSaved: (id: string, override: string | null) => void
+  onSaved: (id: string, edits: VisitorEdits) => void
 }) {
   return (
     <div className="md:hidden">
@@ -303,7 +331,7 @@ function MobileList({
                 )}
               >
                 <div className="flex items-start justify-between gap-3">
-                  <span className="font-mono text-xs font-semibold text-white/95">{shortId(v.id)}</span>
+                  <VisitorIdValue v={v} />
                   <span className="shrink-0 text-xs text-white/85">{formatShort(v.last_activity_at)}</span>
                 </div>
                 {tags.length > 0 && <VisitorTags tags={tags} className="mt-1" />}
@@ -404,27 +432,38 @@ export default function VisitorList({ visitors, bursts, onVisitorDeleted }: Visi
   // instantly and there would be nothing left to animate.
   const [closingId, setClosingId] = useState<string | null>(null)
   const didRestore = useRef(false)
-  // Locally applied location corrections, so the cell updates on save without
-  // refetching the whole list.
-  const [savedOverrides, setSavedOverrides] = useState<Record<string, string | null>>({})
+  // Locally applied edits, so the Location cell and the notes marker update on
+  // save without refetching the whole list.
+  const [savedEdits, setSavedEdits] = useState<Record<string, VisitorEdits>>({})
   const [sort, setSort] = useState<SortState>(DEFAULT_SORT)
+
+  /**
+   * The rows as they should read right now, with any edit saved from an open
+   * drawer folded in — so the Location cell and the notes marker update on save
+   * without waiting for the next poll.
+   *
+   * Merged once here rather than at each call site: the location resolver, the
+   * sort comparator, the table and the phone cards all have to agree about what
+   * a row says, and four independent merges is four chances to disagree.
+   */
+  const rows = useMemo(
+    () => Object.keys(savedEdits).length === 0
+      ? visitors
+      : visitors.map(v => v.id in savedEdits ? { ...v, ...savedEdits[v.id] } : v),
+    [visitors, savedEdits],
+  )
+
+  const handleSaved = useCallback((id: string, edits: VisitorEdits) => {
+    setSavedEdits(prev => ({ ...prev, [id]: edits }))
+  }, [])
 
   // Sort against the label the cell actually shows, override included, so the
   // Location column can never order by something different from what's on screen.
-  const locationFor = useCallback(
-    (v: VisitorSummary) => resolveLocation(
-      v.id in savedOverrides ? { ...v, location_override: savedOverrides[v.id] } : v
-    ),
-    [savedOverrides],
-  )
-  const labelFor = useCallback(
-    (v: VisitorSummary) => locationFor(v).label,
-    [locationFor],
-  )
+  const labelFor = useCallback((v: VisitorSummary) => resolveLocation(v).label, [])
 
   const sorted = useMemo(
-    () => sortVisitors(visitors, sort, labelFor, bursts),
-    [visitors, sort, labelFor, bursts],
+    () => sortVisitors(rows, sort, labelFor, bursts),
+    [rows, sort, labelFor, bursts],
   )
 
   /**
@@ -559,7 +598,7 @@ export default function VisitorList({ visitors, bursts, onVisitorDeleted }: Visi
         <tbody>
           {pageVisitors.map(v => {
             const isOpen = selectedId === v.id
-            const location = locationFor(v)
+            const location = resolveLocation(v)
             const tags = classifyVisitor(v, bursts)
             return (
               <Fragment key={v.id}>
@@ -571,7 +610,7 @@ export default function VisitorList({ visitors, bursts, onVisitorDeleted }: Visi
                   )}
                 >
                   <td className="py-3 px-4">
-                    <div className="truncate font-mono text-xs font-semibold text-white/95">{shortId(v.id)}</div>
+                    <VisitorIdValue v={v} />
                     {/* Below `lg` the Flags column is folded away, so the badges
                         ride under the id — the same stacking the phone card uses. */}
                     {tags.length > 0 && <VisitorTags tags={tags} className="mt-1 lg:hidden" />}
@@ -620,9 +659,7 @@ export default function VisitorList({ visitors, bursts, onVisitorDeleted }: Visi
                             stamp={detailStamp(v)}
                             onClose={() => handleSelect(null)}
                             onDeleted={onVisitorDeleted}
-                            onSaved={(id, override) =>
-                              setSavedOverrides(prev => ({ ...prev, [id]: override }))
-                            }
+                            onSaved={handleSaved}
                           />
                         </div>
                       </DetailCollapse>
@@ -642,9 +679,9 @@ export default function VisitorList({ visitors, bursts, onVisitorDeleted }: Visi
         selectedId={selectedId}
         closingId={closingId}
         onSelect={handleSelect}
-        locationFor={locationFor}
+        locationFor={resolveLocation}
         onVisitorDeleted={onVisitorDeleted}
-        onSaved={(id, override) => setSavedOverrides(prev => ({ ...prev, [id]: override }))}
+        onSaved={handleSaved}
       />
 
       {totalPages > 1 && (

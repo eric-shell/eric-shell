@@ -100,6 +100,14 @@ export interface VisitorSummary {
   client_timezone: string | null
   language: string | null
   referrer: string | null
+  /**
+   * The private note, carried on the list row rather than left in the detail
+   * payload. It is the one piece of human-authored data in the CRM, and until it
+   * shipped here it was write-only — invisible from the list, findable only by
+   * reopening the exact row you wrote it on. Short free text on an admin-only
+   * endpoint, so the payload cost is nil and search can cover it.
+   */
+  notes: string | null
   chat_message_count: number
   contact_count: number
   page_view_count: number

@@ -26,6 +26,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
         v.client_timezone,
         v.language,
         v.referrer,
+        v.notes,
         coalesce(c.chat_count, 0)::int      as chat_message_count,
         coalesce(s.contact_count, 0)::int   as contact_count,
         coalesce(p.view_count, 0)::int      as page_view_count,

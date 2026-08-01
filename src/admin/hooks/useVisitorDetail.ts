@@ -4,11 +4,20 @@ import { apiCall } from '../lib/api'
 import { dropDetail, readDetail, writeDetail } from '../lib/detailCache'
 import type { VisitorDetailPayload } from '@/../api/_lib/types'
 
+/** The admin-editable fields, as the list row should now show them. */
+export interface VisitorEdits {
+  location_override: string | null
+  notes: string | null
+}
+
 interface Options {
   onClose: () => void
   onDeleted?: (id: string) => void
-  /** Lets the parent list re-render its Location cell without a refetch. */
-  onSaved?: (id: string, locationOverride: string | null) => void
+  /**
+   * Lets the parent list re-render its Location cell and notes marker without
+   * waiting for the next poll.
+   */
+  onSaved?: (id: string, edits: VisitorEdits) => void
 }
 
 /**
@@ -70,15 +79,12 @@ export function useVisitorDetail(id: string, stamp: string, { onClose, onDeleted
     }, { errorMessage: 'Failed to save changes.' })
     setSaving(false)
     if (result) {
-      setData(prev => prev ? {
-        ...prev,
-        visitor: {
-          ...prev.visitor,
-          notes: notes.trim() || null,
-          location_override: locationOverride.trim() || null,
-        },
-      } : prev)
-      onSaved?.(id, locationOverride.trim() || null)
+      const edits = {
+        notes: notes.trim() || null,
+        location_override: locationOverride.trim() || null,
+      }
+      setData(prev => prev ? { ...prev, visitor: { ...prev.visitor, ...edits } } : prev)
+      onSaved?.(id, edits)
       toast.success('Changes saved.')
     }
   }

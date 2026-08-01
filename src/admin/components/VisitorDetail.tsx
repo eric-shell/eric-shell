@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Save, Trash2, X } from 'lucide-react'
 import { Button, Panel } from '../../components/ui'
-import { useVisitorDetail } from '../hooks/useVisitorDetail'
+import { useVisitorDetail, type VisitorEdits } from '../hooks/useVisitorDetail'
 import { DetailSkeleton } from './Skeleton'
 import VisitorMetaGrid from './VisitorMetaGrid'
 import ConversationTimeline from './ConversationTimeline'
@@ -18,7 +18,7 @@ interface VisitorDetailProps {
   stamp: string
   onClose: () => void
   onDeleted?: (id: string) => void
-  onSaved?: (id: string, locationOverride: string | null) => void
+  onSaved?: (id: string, edits: VisitorEdits) => void
 }
 
 type Tab = 'chat' | 'contact' | 'activity'

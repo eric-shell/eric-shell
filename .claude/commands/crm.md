@@ -174,6 +174,12 @@ These are the CRM's only **cross-row** signals. `classifyVisitor` takes an optio
 
 `LLM` is checked *before* `Bot` because most AI agents also match `/\bbot\b/`. The UA is the only signal available (it's the one request header stored), and it's self-reported: this catches agents that identify themselves and cannot catch one that doesn't want to be. Anything stronger — Web Bot Auth's `Signature-Agent` header, published IP ranges, reverse DNS — means collecting more per request and disclosing it in [Privacy.tsx](src/components/sections/Privacy/Privacy.tsx).
 
+### The note marker
+
+A sticky note beside the short id says this visitor has a private note. `notes` is selected onto `VisitorSummary` for exactly this; before that it was **write-only** — findable only by reopening the row you happened to write it on. The tooltip is the whole note, and the search field matches against it, since it is the only text on a row that you wrote yourself and therefore what you come back looking for.
+
+It is deliberately quiet: this column is scanned, not read, and a row that merely carries a note is not an exception in the way `Spam?` is.
+
 ### Filters
 
 Two opt-in toggles sit in a `FILTER` row above the table (not inside the search
