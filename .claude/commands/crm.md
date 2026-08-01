@@ -11,6 +11,7 @@ A password-gated admin page at `/dashboard` (sign-in at `/login`) for viewing ev
 | Visitor upsert (validates `X-Visitor-Id` header) | [api/_lib/visitor.ts](api/_lib/visitor.ts) |
 | Admin auth (HMAC cookie, password check, 2FA challenge, `requireAdmin`) | [api/_lib/auth.ts](api/_lib/auth.ts) |
 | Admin endpoints | [api/admin/login.ts](api/admin/login.ts), [api/admin/verify.ts](api/admin/verify.ts), [api/admin/logout.ts](api/admin/logout.ts), [api/admin/session.ts](api/admin/session.ts), [api/admin/visitors.ts](api/admin/visitors.ts), [api/admin/visitors/[id].ts](api/admin/visitors/%5Bid%5D.ts) |
+| Retention cron (`page_views` / `visitor_sessions`) | [api/cron/prune.ts](api/cron/prune.ts) — scheduled in [vercel.json](vercel.json) `crons` |
 | Chat persistence wiring | [api/chat.ts](api/chat.ts) (after `res.end()`) |
 | Contact persistence wiring | [api/contact.ts](api/contact.ts) (visitor resolved before the send, row inserted before `res.json()`) |
 | Page-view / session telemetry endpoint | [api/track.ts](api/track.ts) — `pageview` + `heartbeat` ops |
@@ -41,6 +42,15 @@ A password-gated admin page at `/dashboard` (sign-in at `/login`) for viewing ev
 - **Every visitor-row writer must go through `upsertVisitor`** ([api/_lib/visitor.ts](api/_lib/visitor.ts)). `events.ts` originally did a bare `insert into visitors (id)`, which stranded events-only visitors (opened the chat, toggled high-contrast, never sent a message) with no UA, geo, or referrer — permanently, since nothing later backfills them. The `on conflict` clause uses `coalesce(existing, new)`, which keeps the first non-null sighting *and* backfills columns still null, so a later edge request repairs an incomplete row.
 - **`x-vercel-ip-city` is percent-encoded.** Decode via `readGeoHeader`, which try/catches `decodeURIComponent` — a malformed sequence used to reject the whole `upsertVisitor` promise, and in `chat.ts` that discarded the entire transcript, not just the city.
 - **The contact notification email carries a link to the visitor's CRM row.** `contact.ts` therefore resolves `upsertVisitor(req)` *before* the Resend send rather than after, and reuses the returned id for the insert — don't upsert twice. It has its own try/catch: a Postgres outage costs the link, never the email, and the submission still inserts with a null `visitor_id`. The URL is built from the request's own host (`crmLink`), so a preview deployment links to its own dashboard.
+
+## Retention
+
+[api/cron/prune.ts](api/cron/prune.ts), daily at 04:00 UTC via the `crons` block in [vercel.json](vercel.json). Deletes `page_views` and `visitor_sessions` older than `RETENTION_MONTHS` (6), matching the window written down in [db/schema.sql](db/schema.sql).
+
+- **Needs `CRON_SECRET`.** Vercel attaches `Authorization: Bearer $CRON_SECRET` automatically once the variable exists. Without it this is a public URL that deletes data on request, so an **unset secret is a hard 503** — the opposite of how the 2FA path fails, because failing open here costs data rather than access. Compared with a constant-time loop, same reasoning as the session cookie.
+- **The count comes from a CTE.** A bare `delete` over the Neon HTTP driver resolves to an empty array, so `returning 1` counted inside the same statement is the only way to log a row count in one round trip. `returning id` would haul every deleted key back to be thrown away.
+- **`make_interval(months => …)`, not a JS-computed cutoff**, so "6 months" means calendar months rather than 180 days.
+- Safe by construction: both tables are derived telemetry, `page_views.session_id` cascades from `visitor_sessions`, and nothing reads this far back (the detail view caps at 500 page views, the activity chart looks back 30 days).
 
 ## Auth: `/login`, `/dashboard`, and the second factor
 
@@ -296,6 +306,8 @@ There is **no local Postgres** in this project — `POSTGRES_URL` points at the 
 | `RESEND_API_KEY` | Already required by `/api/contact`. | Also sends the 2FA code. **Absent → password-only sign-in** (and no contact email). |
 | `UPSTASH_REDIS_REST_URL` / `UPSTASH_REDIS_REST_TOKEN` | Injected as `KV_REST_API_*` by the Vercel ↔ Upstash Marketplace integration; either prefix is accepted. | Rate limiting on every public endpoint, plus the 2FA challenge store. **Absent → limiter soft-fails open and sign-in is password-only.** |
 
+| `CRON_SECRET` | Set in `production` with `npx vercel env add CRON_SECRET production`; any 32+ random string. Vercel attaches it to scheduled invocations automatically. | Authorizes [api/cron/prune.ts](api/cron/prune.ts). **Absent → the retention pass 503s and never runs** — deliberately, since without it the endpoint would delete data for anyone who asked. |
+
 `POSTGRES_URL`, `ADMIN_PASSWORD` and `ADMIN_SESSION_SECRET` must exist in `development` for `vercel dev` to work, and in `production` for the live site. Add to `preview` if you want preview deploys to function. The rest degrade gracefully — see the fail-open note in the auth section.
 
 ## Verifying it works
@@ -338,7 +350,7 @@ If `/api/admin/visitors` returns 500, check `vercel dev` terminal output for the
 
 - **No in-app reply.** The admin is read-only by design. There's no email collected at chat time, so there's nothing to reply to. If you ever want a reply path, it requires durable visitor identity + a polling/SSE channel back to the visitor's browser.
 - **No pagination.** The visitor list query has `limit 500`. Add pagination when you actually have hundreds of visitors.
-- **No retention/pruning job for `page_views`.** It's the fastest-growing table by far (one row per document load). When it gets unwieldy, add a scheduled delete for rows older than N months — nothing depends on old page views.
+- ~~No retention/pruning job for `page_views`~~ — built; see the Retention section above.
 - **No section-impression or click tracking.** Deliberately scoped out: what someone scrolled past and what they clicked is a meaningfully bigger privacy footprint than "which pages, how long". `visitor_events` already has a `jsonb metadata` column if that changes — widen its `type` check constraint rather than adding tables.
 - **No GDPR delete-my-data endpoint.** Trivial to add (`delete from visitors where id = $1` cascades to chat_messages and nulls contact_submissions.visitor_id) — write it when you actually need it.
 - **No rate-limiting on `/api/chat` or `/api/contact`.** Existing honeypot field on both is the only protection. Add Vercel KV-backed throttling if abuse becomes a problem.
