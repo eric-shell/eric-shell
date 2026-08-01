@@ -10,7 +10,7 @@ const u = (id: string) => `https://images.unsplash.com/${id}?w=800&q=80&auto=for
 
 export const workItems: WorkItem[] = [
   { url: "https://localfoodie.io/", title: "Local Foodie", solution: "Discover the best places to eat in San Luis Obispo, California", tags: ["AI", "React", "Vite", "Regional"], image: u('photo-1511690656952-34342bb7c2f2') },
-  { url: "https://isaiah.app.link/", title: "Ask Isaiah", solution: "Faith-based AI assistant for connection, scripture and guidence", tags: ["AI", "React Native", "Expo", "Chatbot"], image: u('photo-1450558415837-1f5e21a17709') },
+  { url: "https://isaiah.app.link/", title: "Ask Isaiah", solution: "Faith-based AI assistant for connection, scripture and guidance", tags: ["AI", "React Native", "Expo", "Chatbot"], image: u('photo-1450558415837-1f5e21a17709') },
   { url: "https://www.fws.gov/", title: "U.S. Fish & Wildlife Service", solution: "Species management and tracking applications", tags: ["Drupal", "Government"], image: u('photo-1611689342806-0863700ce1e4') },
   { url: "https://www.bubbas33.com/", title: "Bubba's 33", solution: "Order Ahead Marketing Application", tags: ["Drupal", "QSR"], image: u('photo-1466978913421-dad2ebd01d17') },
   { url: "https://www.noodles.com/", title: "Noodles & Company", solution: "Order Ahead Marketing Application", tags: ["Drupal", "QSR"], image: u('photo-1623341214825-9f4f963727da') },
