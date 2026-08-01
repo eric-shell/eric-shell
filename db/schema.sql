@@ -128,21 +128,15 @@ create index if not exists page_views_visitor_idx
   on page_views (visitor_id);
 
 -- RETENTION. Nothing reads page views older than a few months; the admin detail
--- view caps at 500 rows and the activity chart looks back 30 days. These keep
--- the table — and therefore the aggregate scans behind the visitor list —
--- bounded:
+-- view caps at 500 rows and the activity chart looks back 30 days. Run this
+-- periodically (Neon SQL editor, or a scheduled job) to keep the table — and
+-- therefore the aggregate scans behind the visitor list — bounded:
 --
 --   delete from page_views where created_at < now() - interval '6 months';
 --   delete from visitor_sessions where last_beat_at < now() - interval '6 months';
 --
 -- Both are safe to run any time: sessions and page views are derived telemetry,
 -- and deleting them never touches a visitor, chat transcript, or submission.
---
--- THIS NOW RUNS ITSELF, daily at 04:00 UTC — api/cron/prune.ts, scheduled by the
--- `crons` block in vercel.json, gated on CRON_SECRET. The statements above are
--- kept here as the canonical definition of the window; change RETENTION_MONTHS
--- in that file and this comment together, or run them by hand against a branch
--- the cron doesn't reach.
 
 -- `outbound_click` records a click on a link that LEAVES this site (different
 -- host, or a mailto:/tel: scheme). Internal navigation is deliberately absent —
