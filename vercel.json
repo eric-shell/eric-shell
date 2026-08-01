@@ -4,6 +4,9 @@
       "includeFiles": "data/bio.csv"
     }
   },
+  "crons": [
+    { "path": "/api/cron/prune", "schedule": "0 4 * * *" }
+  ],
   "rewrites": [
     { "source": "/dashboard", "destination": "/dashboard.html" },
     { "source": "/login", "destination": "/dashboard.html" },

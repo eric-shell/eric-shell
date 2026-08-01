@@ -11,6 +11,7 @@ A password-gated admin page at `/dashboard` (sign-in at `/login`) for viewing ev
 | Visitor upsert (validates `X-Visitor-Id` header) | [api/_lib/visitor.ts](api/_lib/visitor.ts) |
 | Admin auth (HMAC cookie, password check, 2FA challenge, `requireAdmin`) | [api/_lib/auth.ts](api/_lib/auth.ts) |
 | Admin endpoints | [api/admin/login.ts](api/admin/login.ts), [api/admin/verify.ts](api/admin/verify.ts), [api/admin/logout.ts](api/admin/logout.ts), [api/admin/session.ts](api/admin/session.ts), [api/admin/visitors.ts](api/admin/visitors.ts), [api/admin/visitors/[id].ts](api/admin/visitors/%5Bid%5D.ts), [api/admin/insights.ts](api/admin/insights.ts) |
+| Retention cron (`page_views` / `visitor_sessions`) | [api/cron/prune.ts](api/cron/prune.ts) — scheduled in [vercel.json](vercel.json) `crons` |
 | Chat persistence wiring | [api/chat.ts](api/chat.ts) (after `res.end()`) |
 | Contact persistence wiring | [api/contact.ts](api/contact.ts) (visitor resolved before the send, row inserted before `res.json()`) |
 | "New since last visit" watermark | [src/admin/lib/lastVisit.ts](src/admin/lib/lastVisit.ts) — `useLastVisit()` / `isNewSince()` |
@@ -52,6 +53,15 @@ A previous deploy stays aliased when a new one errors, so a rejection doesn't ta
 **To add an endpoint, free a slot first.** `stats.ts` was the last easy one; the remaining candidate is folding `logout.ts` into `session.ts` as a DELETE on one session resource, which touches the auth flow and deserves care.
 
 **`/api/admin/stats` no longer exists.** Its visitors-per-day series is the seventh statement in the `insights.ts` transaction and arrives as `InsightsPayload.days`. The dashboard had only ever fetched the two together in one `Promise.all`, so a separate function cost a second invocation and a second Neon round trip for data never read on its own — merging freed the slot the retention cron needed *and* removed a round trip.
+
+## Retention
+
+[api/cron/prune.ts](api/cron/prune.ts), daily at 04:00 UTC via the `crons` block in [vercel.json](vercel.json). Deletes `page_views` and `visitor_sessions` older than `RETENTION_MONTHS` (6), matching the window written down in [db/schema.sql](db/schema.sql).
+
+- **Needs `CRON_SECRET`.** Vercel attaches `Authorization: Bearer $CRON_SECRET` automatically once the variable exists. Without it this is a public URL that deletes data on request, so an **unset secret is a hard 503** — the opposite of how the 2FA path fails, because failing open here costs data rather than access. Compared with a constant-time loop, same reasoning as the session cookie.
+- **The count comes from a CTE.** A bare `delete` over the Neon HTTP driver resolves to an empty array, so `returning 1` counted inside the same statement is the only way to log a row count in one round trip. `returning id` would haul every deleted key back to be thrown away.
+- **`make_interval(months => …)`, not a JS-computed cutoff**, so "6 months" means calendar months rather than 180 days.
+- Safe by construction: both tables are derived telemetry, `page_views.session_id` cascades from `visitor_sessions`, and nothing reads this far back (the detail view caps at 500 page views, the activity chart looks back 30 days).
 
 ## Auth: `/login`, `/dashboard`, and the second factor
 
@@ -310,6 +320,7 @@ There is **no local Postgres** in this project — `POSTGRES_URL` points at the 
 | `ADMIN_2FA_EMAIL` | **Optional.** `npx vercel env add ADMIN_2FA_EMAIL <env>`. | Where the 6-digit sign-in code is emailed. **Absent → no second factor: the correct password alone signs you in.** Same fallback if `RESEND_API_KEY` or the Upstash vars are absent, or if the Resend send fails at request time. |
 | `RESEND_API_KEY` | Already required by `/api/contact`. | Also sends the 2FA code. **Absent → password-only sign-in** (and no contact email). |
 | `UPSTASH_REDIS_REST_URL` / `UPSTASH_REDIS_REST_TOKEN` | Injected as `KV_REST_API_*` by the Vercel ↔ Upstash Marketplace integration; either prefix is accepted. | Rate limiting on every public endpoint, plus the 2FA challenge store. **Absent → limiter soft-fails open and sign-in is password-only.** |
+| `CRON_SECRET` | Set in `production` with `npx vercel env add CRON_SECRET production`; any 32+ random string. Vercel attaches it to scheduled invocations automatically. | Authorizes [api/cron/prune.ts](api/cron/prune.ts). **Absent → the retention pass 503s and never runs** — deliberately, since without it the endpoint would delete data for anyone who asked. |
 
 `POSTGRES_URL`, `ADMIN_PASSWORD` and `ADMIN_SESSION_SECRET` must exist in `development` for `vercel dev` to work, and in `production` for the live site. Add to `preview` if you want preview deploys to function. The rest degrade gracefully — see the fail-open note in the auth section.
 
@@ -353,7 +364,7 @@ If `/api/admin/visitors` returns 500, check `vercel dev` terminal output for the
 
 - **No in-app reply.** The admin is read-only by design. There's no email collected at chat time, so there's nothing to reply to. If you ever want a reply path, it requires durable visitor identity + a polling/SSE channel back to the visitor's browser.
 - **No pagination.** The visitor list query has `limit 500`. Add pagination when you actually have hundreds of visitors.
-- **No retention/pruning job for `page_views`.** The delete is written down in [db/schema.sql](db/schema.sql); a scheduled job for it needs a function slot, which the merge above has just freed.
+- ~~No retention/pruning job for `page_views`~~ — built; see the Retention section above.
 - **No section-impression or click tracking.** Deliberately scoped out: what someone scrolled past and what they clicked is a meaningfully bigger privacy footprint than "which pages, how long". `visitor_events` already has a `jsonb metadata` column if that changes — widen its `type` check constraint rather than adding tables.
 - **No GDPR delete-my-data endpoint.** Trivial to add (`delete from visitors where id = $1` cascades to chat_messages and nulls contact_submissions.visitor_id) — write it when you actually need it.
 - **No rate-limiting on `/api/chat` or `/api/contact`.** Existing honeypot field on both is the only protection. Add Vercel KV-backed throttling if abuse becomes a problem.
