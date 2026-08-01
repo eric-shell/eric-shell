@@ -1,6 +1,6 @@
 import { useLayoutEffect, useRef, useState } from 'react'
 import { ArrowDownAZ, ArrowUpRight, ArrowUpZA, CalendarDays, Plus, RotateCcw, X } from 'lucide-react'
-import { workItems } from '@/data'
+import { WORK_IMAGE_SIZES, workImageSrc, workImageSrcSet, workItems } from '@/data'
 import { Backdrop, Button, Card, CascadeGroup, CascadeItem, Container, Dropdown, SectionHeader } from '../../ui'
 
 type SortOrder = 'chronological' | 'asc' | 'desc'
@@ -155,7 +155,9 @@ export default function Work() {
                   href={url}
                   title={title}
                   description={solution}
-                  image={image}
+                  image={workImageSrc(image)}
+                  imageSrcSet={workImageSrcSet(image)}
+                  imageSizes={WORK_IMAGE_SIZES}
                   tags={tags}
                   activeTags={activeTags}
                   onTagClick={toggleTag}

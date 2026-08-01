@@ -7,6 +7,14 @@ interface CardProps {
   title: string
   description: string
   image?: string
+  /**
+   * Candidate set for `image`. Card stays ignorant of where the candidates come
+   * from — the work grid derives its own from Unsplash ids (see
+   * `workImageSrcSet`), and a file-backed caller would pass a local ladder.
+   */
+  imageSrcSet?: string
+  /** Required alongside `imageSrcSet`; without it the browser assumes 100vw. */
+  imageSizes?: string
   tags?: string[]
   activeTags?: string[]
   onTagClick?: (tag: string) => void
@@ -19,6 +27,8 @@ export default function Card({
   title,
   description,
   image,
+  imageSrcSet,
+  imageSizes,
   tags = [],
   activeTags = [],
   onTagClick,
@@ -35,8 +45,11 @@ export default function Card({
           <div className="aspect-[16/10] overflow-hidden bg-blue-100">
             <img
               src={image}
+              srcSet={imageSrcSet}
+              sizes={imageSizes}
               alt=""
               loading="lazy"
+              decoding="async"
               className="w-full h-full object-cover transition duration-500 group-hover:scale-[1.03]"
             />
           </div>

@@ -1,4 +1,4 @@
-export { workItems } from './work'
+export { workItems, workImageSrc, workImageSrcSet, WORK_IMAGE_SIZES } from './work'
 export { testimonials } from './testimonials'
 export { instagramPosts } from './instagram'
 export { navLinks, homeLink, connectLinks, socialLinks } from './navigation'
