@@ -353,10 +353,16 @@ export default function VisitorsPanel({
                   title={botCount === 0
                     ? 'No automated traffic detected in this data, so there is nothing to hide.'
                     : `${hideBots ? 'Hiding' : 'Hides'} ${botCount} automated ${botCount === 1 ? 'visitor' : 'visitors'} — ` +
-                      'crawlers, our own test runs, headless clients, and fetch-without-reading. ' +
-                      'Bounces and possible spam always stay visible.'}
+                      'crawlers, AI agents, our own test runs, headless clients, rotating-proxy clusters, ' +
+                      'and fetch-without-reading. Bounces and possible spam always stay visible.'}
                 >
-                  {hideBots && botCount > 0 ? `${botCount} hidden` : 'Hide bots & tests'}
+                  {/* "Hide automated" names the predicate — `VisitorTag.automated`
+                      — rather than listing what currently satisfies it. The old
+                      "Hide bots & tests" had already been wrong once (it never
+                      mentioned LLM or headless) and went wrong again the moment
+                      Proxy shipped, which is a label that has to be edited every
+                      time the classifier grows. This one doesn't. */}
+                  {hideBots && botCount > 0 ? `${botCount} hidden` : 'Hide automated'}
                 </FilterChip>
                 <FilterChip
                   active={engagedOnly}

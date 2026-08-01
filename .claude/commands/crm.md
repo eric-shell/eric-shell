@@ -182,8 +182,10 @@ silent.
 
 | Toggle | Removes |
 |---|---|
-| `Hide bots & tests` | Rows whose tags carry `automated` — Test, LLM, Bot, Headless, No dwell |
+| `Hide automated` | Rows whose tags carry `automated` — Test, LLM, Bot, Proxy, Headless, No dwell |
 | `Engaged only` | Rows that neither chatted nor submitted the form |
+
+The label names the **predicate**, not the list. It was "Hide bots & tests" while it hid five things and had been inaccurate since `LLM` shipped; a label that enumerates has to be edited every time the classifier grows, and won't be. `VisitorTag.automated` is the contract — keep the label pointed at it.
 
 **They narrow the metric tiles too**, deliberately. Search does not. A filter is
 a statement about which traffic counts, so leaving the tiles reading 28 while
@@ -201,6 +203,15 @@ than in the UI.
 
 Considered and rejected: a "Hide bounces" toggle (hides real humans) and a
 "Hide spam" toggle (see above).
+
+**Also rejected: folding `Spam?` into the automated filter, or renaming that
+filter around spam.** They measure different things and fail in opposite
+directions. `automated` answers "is this a machine" and is safe to hide, because
+being wrong costs you a crawler. `Spam?` answers "is this submission worth
+reading before replying" — it fires on rows that are, by definition, a human who
+filled in your contact form, and being wrong costs you a lead. Naming one filter
+after the other would put a question-marked heuristic in charge of whether real
+enquiries appear. The question mark in `Spam?` is load-bearing.
 
 Rules that keep it honest, and that you should preserve when tuning:
 
