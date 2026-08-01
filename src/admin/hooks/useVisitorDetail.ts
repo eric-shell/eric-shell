@@ -69,6 +69,23 @@ export function useVisitorDetail(id: string, stamp: string, { onClose, onDeleted
     if (data) writeDetail(id, key, data)
   }, [id, key, data])
 
+  /**
+   * Whether either editable field has been changed but not saved.
+   *
+   * Compared trimmed, against the values the server holds: `saveDetails` stores
+   * `trim() || null`, so a field holding only whitespace is not a pending edit
+   * and must not raise a discard prompt.
+   *
+   * The list guards every close path against this — see `handleSelect` in
+   * VisitorList. That is the last gap in the protection this hook already gives
+   * Notes: the frozen stamp keeps a poll from wiping what you typed, and this
+   * keeps a stray click from doing it instead.
+   */
+  const dirty = data !== null && (
+    notes.trim() !== (data.visitor.notes ?? '') ||
+    locationOverride.trim() !== (data.visitor.location_override ?? '')
+  )
+
   async function saveDetails() {
     if (!data) return
     setSaving(true)
@@ -110,6 +127,7 @@ export function useVisitorDetail(id: string, stamp: string, { onClose, onDeleted
     data,
     notes, setNotes,
     locationOverride, setLocationOverride,
+    dirty,
     saving, saveDetails,
     deleting, deleteVisitor,
   }

@@ -298,7 +298,7 @@ function SortBar({ sort, onSort, className }: {
  */
 function MobileList({
   rows, bursts, selectedId, closingId, onSelect, locationFor,
-  onVisitorDeleted, onSaved,
+  onVisitorDeleted, onSaved, onDirtyChange,
 }: {
   rows: VisitorSummary[]
   bursts?: BurstMap
@@ -310,6 +310,7 @@ function MobileList({
   locationFor: (v: VisitorSummary) => ReturnType<typeof resolveLocation>
   onVisitorDeleted?: (id: string) => void
   onSaved: (id: string, edits: VisitorEdits) => void
+  onDirtyChange: (dirty: boolean) => void
 }) {
   return (
     <div className="md:hidden">
@@ -374,6 +375,7 @@ function MobileList({
                     onClose={() => onSelect(null)}
                     onDeleted={onVisitorDeleted}
                     onSaved={onSaved}
+                    onDirtyChange={onDirtyChange}
                   />
                 </DetailCollapse>
               )}
@@ -467,18 +469,45 @@ export default function VisitorList({ visitors, bursts, onVisitorDeleted }: Visi
   )
 
   /**
+   * Whether the open drawer is holding edits that haven't been saved.
+   *
+   * A ref, not state: nothing renders from it, and it is written by a child
+   * effect on every keystroke in Notes. As state that would re-render the whole
+   * table — every row, every classification — while someone is typing.
+   */
+  const dirtyRef = useRef(false)
+  const setDirty = useCallback((d: boolean) => { dirtyRef.current = d }, [])
+
+  /**
    * Open a row, close one, or swap between two.
    *
    * The outgoing row is handed to `closingId` rather than dropped, and a
    * re-open of a row still animating out reclaims it immediately — otherwise it
    * would be mounted twice, once opening and once fading away.
+   *
+   * Every close path funnels through here — the drawer's X, a click on the open
+   * row, and a click on a different row — which is why the unsaved-edits guard
+   * lives here and not in the drawer. `useVisitorDetail` already refuses to let
+   * a background poll overwrite what you typed into Notes; this is the other
+   * half, and the one that was actually costing work.
    */
   const handleSelect = useCallback((id: string | null) => {
     // Read `selectedId` directly rather than from a setState updater: updaters
     // must be pure, and React would run this one twice in StrictMode.
-    setClosingId(selectedId && selectedId !== id ? selectedId : null)
+    const leaving = selectedId !== null && selectedId !== id
+    if (leaving && dirtyRef.current &&
+      !confirm('You have unsaved changes to this visitor. Discard them?')) return
+    setClosingId(leaving ? selectedId : null)
     setSelectedId(id)
   }, [selectedId])
+
+  const handleDeleted = useCallback((id: string) => {
+    // Before the drawer unmounts. The row and everything on it are gone, so
+    // whatever was typed into Notes is no longer an unsaved edit — without this
+    // the delete's own `onClose` would stop to ask about discarding it.
+    dirtyRef.current = false
+    onVisitorDeleted?.(id)
+  }, [onVisitorDeleted])
 
   // Drop the closing row once its animation is over. A timer rather than
   // `transitionend`: under `prefers-reduced-motion` there is no transition, so
@@ -658,8 +687,9 @@ export default function VisitorList({ visitors, bursts, onVisitorDeleted }: Visi
                             id={v.id}
                             stamp={detailStamp(v)}
                             onClose={() => handleSelect(null)}
-                            onDeleted={onVisitorDeleted}
+                            onDeleted={handleDeleted}
                             onSaved={handleSaved}
+                            onDirtyChange={setDirty}
                           />
                         </div>
                       </DetailCollapse>
@@ -680,8 +710,9 @@ export default function VisitorList({ visitors, bursts, onVisitorDeleted }: Visi
         closingId={closingId}
         onSelect={handleSelect}
         locationFor={resolveLocation}
-        onVisitorDeleted={onVisitorDeleted}
+        onVisitorDeleted={handleDeleted}
         onSaved={handleSaved}
+        onDirtyChange={setDirty}
       />
 
       {totalPages > 1 && (

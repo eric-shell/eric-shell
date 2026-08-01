@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Save, Trash2, X } from 'lucide-react'
 import { Button, Panel } from '../../components/ui'
 import { useVisitorDetail, type VisitorEdits } from '../hooks/useVisitorDetail'
@@ -19,19 +19,34 @@ interface VisitorDetailProps {
   onClose: () => void
   onDeleted?: (id: string) => void
   onSaved?: (id: string, edits: VisitorEdits) => void
+  /**
+   * Reports whether there are unsaved edits in here, so the list can guard the
+   * close paths it owns — clicking the row again, clicking a different row, and
+   * Escape. Those don't route through this component, so the flag has to travel
+   * up rather than the guard living down here.
+   */
+  onDirtyChange?: (dirty: boolean) => void
 }
 
 type Tab = 'chat' | 'contact' | 'activity'
 
-export default function VisitorDetail({ id, stamp, onClose, onDeleted, onSaved }: VisitorDetailProps) {
+export default function VisitorDetail({ id, stamp, onClose, onDeleted, onSaved, onDirtyChange }: VisitorDetailProps) {
   const {
     data,
     notes, setNotes,
     locationOverride, setLocationOverride,
+    dirty,
     saving, saveDetails,
     deleting, deleteVisitor,
   } = useVisitorDetail(id, stamp, { onClose, onDeleted, onSaved })
   const [tab, setTab] = useState<Tab>('chat')
+
+  // Cleared on unmount as well as on change: once this drawer is gone there is
+  // nothing left to discard, and a stale `true` would prompt on the next close.
+  useEffect(() => {
+    onDirtyChange?.(dirty)
+    return () => onDirtyChange?.(false)
+  }, [dirty, onDirtyChange])
 
   // Shown as placeholder context so it's obvious what the override replaces.
   const ipGuess = [data?.visitor.city, data?.visitor.region, data?.visitor.country]
