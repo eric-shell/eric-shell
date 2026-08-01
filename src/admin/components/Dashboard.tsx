@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import {
   type LucideIcon, LogOut, MailCheck, MessageSquare, MousePointer2,
   RefreshCw, Users,
@@ -10,7 +10,7 @@ import VisitorsPanel from './VisitorsPanel'
 import { MetricsRowSkeleton, Skeleton } from './Skeleton'
 import { apiCall } from '../lib/api'
 import { formatDuration } from '../lib/dateFormat'
-import { isAutomated } from '../lib/classify'
+import { detectProxyBursts, isAutomated } from '../lib/classify'
 import { DEFAULT_TIMEFRAME, isTimeframe, withinTimeframe, type Timeframe } from '../lib/timeframe'
 import type { StatDay, StatsPayload, VisitorListPayload, VisitorSummary } from '@/../api/_lib/types'
 import type { InsightsPayload } from '@/../api/_lib/insights-types'
@@ -200,11 +200,18 @@ export default function Dashboard({ onLogout }: DashboardProps) {
   // fall in the window, not a re-aggregate of the window itself; the row data
   // isn't broken out by day.
   const hasEngaged = (v: VisitorSummary) => v.chat_message_count > 0 || v.contact_count > 0
+
+  // Computed over the FULL list, before the timeframe narrows it. A burst is a
+  // fact about the traffic, not about the window you happen to be looking
+  // through — scoping it to the last 24h would dissolve a cluster that straddles
+  // midnight and quietly relabel half of it as ordinary.
+  const bursts = useMemo(() => detectProxyBursts(visitors ?? []), [visitors])
+
   const inWindow = visitors && withinTimeframe(visitors, timeframe)
-  const botCount = inWindow?.filter(isAutomated).length ?? 0
+  const botCount = inWindow?.filter(v => isAutomated(v, bursts)).length ?? 0
   // Counted after the bot filter, so the label doesn't promise to hide rows
   // that are already gone.
-  const afterBots = hideBots && inWindow ? inWindow.filter(v => !isAutomated(v)) : inWindow
+  const afterBots = hideBots && inWindow ? inWindow.filter(v => !isAutomated(v, bursts)) : inWindow
   const quietCount = afterBots?.filter(v => !hasEngaged(v)).length ?? 0
   const baseVisitors = engagedOnly && afterBots ? afterBots.filter(hasEngaged) : afterBots
 
@@ -307,6 +314,7 @@ export default function Dashboard({ onLogout }: DashboardProps) {
         // the search field would otherwise measure results against rows the
         // timeframe has already excluded.
         totalCount={inWindow?.length ?? 0}
+        bursts={bursts}
         loading={loading}
         hasAnyVisitors={visitors !== null && visitors.length > 0}
         timeframe={timeframe}

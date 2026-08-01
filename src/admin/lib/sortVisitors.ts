@@ -1,5 +1,5 @@
 import type { VisitorSummary } from '@/../api/_lib/types'
-import { classifyVisitor } from './classify'
+import { classifyVisitor, type BurstMap } from './classify'
 
 export type SortKey =
   | 'visitor' | 'flags' | 'lastSeen' | 'location' | 'contact' | 'engagement' | 'chat' | 'sent'
@@ -65,13 +65,13 @@ const RAW_KEYS = new Set<SortKey>(['visitor', 'lastSeen'])
  * derived here so the sort matches exactly what the cell renders — including any
  * unsaved location override the list is holding locally.
  */
-function cellFor(v: VisitorSummary, key: SortKey, locationLabel: string | null): Cell {
+function cellFor(v: VisitorSummary, key: SortKey, locationLabel: string | null, bursts?: BurstMap): Cell {
   switch (key) {
     case 'visitor':    return { s: v.id }
     // Rank by how much the row wants attention: a possible spam submission
     // outranks a crawler, which outranks a bounce. Unflagged rows are null, so
     // they sink under the blanks-last rule rather than crowding the top.
-    case 'flags':      return { n: flagRank(v) || null }
+    case 'flags':      return { n: flagRank(v, bursts) || null }
     case 'lastSeen':   return { s: v.last_activity_at }   // ISO-8601 sorts lexicographically
     case 'location':   return { s: locationLabel }
     case 'contact':    return { s: v.contact_name ?? v.contact_email ?? null }
@@ -95,8 +95,8 @@ function cellFor(v: VisitorSummary, key: SortKey, locationLabel: string | null):
 // the exceptional ones.
 const TONE_RANK = { danger: 4, muted: 3, warn: 2, good: 1, neutral: 0 } as const
 
-function flagRank(v: VisitorSummary): number {
-  return classifyVisitor(v).reduce((max, t) => Math.max(max, TONE_RANK[t.tone] ?? 0), 0)
+function flagRank(v: VisitorSummary, bursts?: BurstMap): number {
+  return classifyVisitor(v, bursts).reduce((max, t) => Math.max(max, TONE_RANK[t.tone] ?? 0), 0)
 }
 
 /** Empty is "no data", not "lowest value" — see the nulls-last rule below. */
@@ -107,12 +107,14 @@ export function sortVisitors(
   rows: VisitorSummary[],
   { key, dir }: SortState,
   locationLabelFor: (v: VisitorSummary) => string | null,
+  /** Cross-row clusters, so the Flags column sorts by what the cell renders. */
+  bursts?: BurstMap,
 ): VisitorSummary[] {
   const sign = dir === 'asc' ? 1 : -1
 
   return [...rows].sort((a, b) => {
-    const ca = cellFor(a, key, locationLabelFor(a))
-    const cb = cellFor(b, key, locationLabelFor(b))
+    const ca = cellFor(a, key, locationLabelFor(a), bursts)
+    const cb = cellFor(b, key, locationLabelFor(b), bursts)
 
     // Blanks always sink, in BOTH directions. Flipping them to the top on a
     // descending sort just fills the screen with em-dashes, which is never what

@@ -7,6 +7,7 @@ import VisitorList from './VisitorList'
 import { VisitorTableSkeleton } from './Skeleton'
 import { resolveLocation } from '../lib/location'
 import { TIMEFRAMES, type Timeframe } from '../lib/timeframe'
+import type { BurstMap } from '../lib/classify'
 import type { VisitorSummary } from '@/../api/_lib/types'
 
 /**
@@ -199,6 +200,11 @@ interface VisitorsPanelProps {
   visitors: VisitorSummary[] | null
   /** Unfiltered count, for the "N of M" readout while searching. */
   totalCount: number
+  /**
+   * Cross-row arrival clusters, computed once over the full list upstream.
+   * Passed straight through to the classifier — see `detectProxyBursts`.
+   */
+  bursts?: BurstMap
   /** True while a refetch is in flight, to dim rather than flash a skeleton. */
   loading: boolean
   /** False when there are no rows at all, which hides the filter row entirely. */
@@ -217,6 +223,7 @@ interface VisitorsPanelProps {
 export default function VisitorsPanel({
   visitors,
   totalCount,
+  bursts,
   loading,
   hasAnyVisitors,
   timeframe,
@@ -382,7 +389,7 @@ export default function VisitorsPanel({
                   : 'No visitors active in this timeframe.'}
             </p>
           ) : (
-            <VisitorList visitors={filteredVisitors} onVisitorDeleted={onVisitorDeleted} />
+            <VisitorList visitors={filteredVisitors} bursts={bursts} onVisitorDeleted={onVisitorDeleted} />
           )}
         </div>
       </Panel>

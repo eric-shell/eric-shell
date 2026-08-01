@@ -132,16 +132,40 @@ The direction toggle deliberately uses `ArrowUpNarrowWide` / `ArrowDownWideNarro
 | 1 | `Test` | `utm_campaign=synthetic-test` (our synth-traffic script) or an automation UA — Playwright, Puppeteer, HeadlessChrome, Lighthouse | ✓ |
 | 2 | `LLM` | UA is a self-identified AI crawler or assistant — GPTBot, ClaudeBot, PerplexityBot, CCBot, YouBot, ChatGPT-User… | ✓ |
 | 3 | `Bot` | UA matches the curated crawler / HTTP-client list | ✓ |
-| 4 | `Headless` | Page views recorded but no browser timezone *or* language — a real browser always sends both | ✓ |
-| 5 | `No dwell` | 3+ page views with under 2s engaged — fetched, not read | ✓ |
-| 6 | `Converted` | Submitted the contact form | |
-| 7 | `Chatted` | Used the assistant, never submitted | |
-| 8 | `Untracked` | No page view ever recorded — expected for a GPC/DNT opt-out, since telemetry exits client-side before sending | |
-| 9 | `Reader` | 45s+ engaged with deep scroll or 3+ pages | |
-| 10 | `Bounce` | A single view under 5s | |
-| 11 | `Skimmed` | Everything else with page views — the ordinary middle | |
+| 4 | `Proxy` | In a `Burst` **and** ≥4h of `VPN?` clock disagreement — see below | ✓ |
+| 5 | `Headless` | Page views recorded but no browser timezone *or* language — a real browser always sends both | ✓ |
+| 6 | `No dwell` | 3+ page views with under 2s engaged — fetched, not read | ✓ |
+| 7 | `Converted` | Submitted the contact form | |
+| 8 | `Chatted` | Used the assistant, never submitted | |
+| 9 | `Untracked` | No page view ever recorded — expected for a GPC/DNT opt-out, since telemetry exits client-side before sending | |
+| 10 | `Reader` | 45s+ engaged with deep scroll or 3+ pages | |
+| 11 | `Bounce` | A single view under 5s | |
+| 12 | `Skimmed` | Everything else with page views — the ordinary middle | |
 
-Qualifiers stack on top: `Returning` (sessions on 2+ **separate days** — two visits twenty minutes apart is one sitting) and `Spam?` (a submission with a URL in the name or a malformed email, or two weaker signals together). Neither fires on a machine.
+Qualifiers stack on top:
+
+| Qualifier | Fires when | On machines |
+|---|---|---|
+| `Returning` | Sessions on 2+ **separate days** — two visits twenty minutes apart is one sitting | |
+| `Spam?` | A submission with a URL in the name or a malformed email, or two weaker signals together | |
+| `VPN?` | `client_timezone` and IP-derived `timezone` are ≥4h apart at the visit's own instant | ✓ |
+| `Burst` | 3+ **separate visitor rows** in 10 minutes sharing one `(client_timezone, user_agent)` across 2+ IP locations | ✓ |
+
+`Returning` and `Spam?` describe a person's behaviour and never fire on a machine. `VPN?` and `Burst` describe infrastructure, so they *do* — knowing a crawler came through rotating addresses is worth as much as knowing a person did. Both are suppressed under `Proxy`, whose own reason already says both things.
+
+### The proxy rules
+
+Added after seven visitors arrived in two tight bursts, all reporting `Europe/Berlin` on an identical Windows Chrome UA while their addresses geolocated to Buffalo, Columbia, Spokane, New York and Milledgeville. Rotating exit IPs behind one automated client: the addresses are what rotates, the clock is what they forgot to rotate.
+
+These are the CRM's only **cross-row** signals. `classifyVisitor` takes an optional `BurstMap` from `detectProxyBursts(visitors)`; omit it and they simply don't fire, which is the safe direction to fail. `Dashboard` computes it once over the **full** list — before the timeframe narrows it, so a cluster straddling midnight doesn't half-dissolve — and threads it through `VisitorsPanel` → `VisitorList` and into `sortVisitors`, so the Flags column sorts by what its cell renders.
+
+- **Neither half convicts alone, and that's the whole design.** A clock that disagrees with the address is a VPN, which plenty of real readers use; arriving alongside others is what a link doing the rounds looks like. Only the confluence is decisive, which is why `Proxy` is a nature and the two halves are qualifiers carrying no `automated`.
+- **Four hours, not three.** Three is exactly the width of the continental US — someone in LA whose corporate VPN exits in Virginia is an ordinary thing to be. Verified against real data: a Boydton, VA row (an Azure region) sits at exactly 3h and correctly stays `Skimmed`.
+- **Offsets are computed at the visit's own timestamp**, never "now". Europe/Berlin is +1 in January and +2 in July, and the hemispheres change over on different dates; comparing at the wrong instant manufactures an hour of disagreement.
+- **Grouping on the UA is what keeps ordinary traffic out.** The owner testing across a laptop, phone and tablet makes a tight one-city cluster — but three user agents, so it splits into groups too small to fire. Verified: ten such rows stayed `Skimmed`. Real people also don't agree on a browser patch version.
+- **Two distinct locations is enough** *because* of that grouping — one fingerprint in two cities inside ten minutes is already the contradiction.
+- **Rows are the unit, not page views.** A visitor id lives in localStorage, so one person reloading stays one row however many times they hit the page. Three rows means three storage contexts.
+- **A missing fingerprint is not a shared one.** Rows with no UA or no browser timezone are skipped, or they'd all pile into one group and burst together.
 
 **There is still deliberately no "Real" or "Authentic" tag.** Absence of bot signals is not evidence of a person. Full coverage is achieved by naming what was OBSERVED — `Skimmed`, `Untracked` — never by asserting humanity. The cost of tagging every row is that the column can't spot exceptions by being mostly empty, so **tone does that job instead**: ordinary states use the `neutral` tone (no fill, faintest ring) and recede; only `Spam?` is loud. Don't promote a baseline tag to a louder tone without re-thinking that.
 
@@ -187,7 +211,9 @@ Rules that keep it honest, and that you should preserve when tuning:
 - **A missing page view is not evidence of a bot.** Telemetry is suppressed client-side for anyone sending Do Not Track or GPC, so an honored opt-out and a direct-POST bot look identical on that test. It was the sole reason `Spam?` fired on ordinary submissions from privacy-conscious visitors.
 - `Spam?` keeps its question mark on purpose. It is a prompt to read the message, not a verdict.
 
-Signals are limited to what a list row carries (`VisitorSummary`). Anything needing message bodies or scroll depth belongs in the detail view.
+Signals are limited to what a list row carries (`VisitorSummary`) — plus, for the two proxy rules, the other rows in the same list. Anything needing message bodies or scroll depth belongs in the detail view.
+
+**No new data is collected for any of this.** `client_timezone` and `timezone` were both already stored and already disclosed on the privacy page; the proxy rules are inference over columns that existed. Keep it that way — a rule needing a new request header is a privacy decision, not a tuning change.
 
 ## Cost & performance
 

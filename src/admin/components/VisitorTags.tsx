@@ -1,7 +1,7 @@
 import { twMerge } from 'tailwind-merge'
 import {
-  AlertTriangle, BookOpen, Bot, EyeOff, FlaskConical, Footprints, MailCheck,
-  MessageSquare, MoonStar, RotateCcw, Sparkles,
+  AlertTriangle, BookOpen, Bot, EyeOff, FlaskConical, Footprints, Globe,
+  MailCheck, MessageSquare, MoonStar, RotateCcw, Sparkles, Waypoints,
 } from 'lucide-react'
 import type { TagTone, VisitorTag } from '../lib/classify'
 
@@ -41,6 +41,11 @@ const ICON: Record<string, typeof Bot> = {
   'LLM': Sparkles,
   'No dwell': MoonStar,
   'Bounce': MoonStar,
+  // Both about where the traffic came through rather than what it did, so
+  // neither gets the Bot glyph: one of them lands on ordinary people.
+  'Proxy': Waypoints,
+  'Burst': Waypoints,
+  'VPN?': Globe,
   'Spam?': AlertTriangle,
   'Returning': RotateCcw,
   'Reader': BookOpen,

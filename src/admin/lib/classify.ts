@@ -32,10 +32,17 @@ export interface VisitorTag {
  * that, what it did — and then **any number of qualifiers** on top. Nothing is
  * ever unlabelled, so a blank Flags cell now means a bug rather than a shrug.
  *
- *   nature (one, always)   Test · LLM · Bot · Headless · No dwell ·
+ *   nature (one, always)   Test · LLM · Bot · Proxy · Headless · No dwell ·
  *                          Converted · Chatted · Reader · Bounce · Skimmed ·
  *                          Untracked
- *   qualifiers (any)       Returning · Spam?
+ *   qualifiers (any)       Returning · Spam? · VPN? · Burst
+ *
+ * Most signals come off a single row. Two do not: `VPN?` compares the browser's
+ * clock against the one its IP implies, and `Burst` needs the whole list to see
+ * that several rows arrived together. The latter is why `classifyVisitor` takes
+ * an optional `BurstMap` — compute it once per list with `detectProxyBursts`
+ * and pass it down. Omit it and every cross-row rule simply doesn't fire, which
+ * is the safe direction to fail.
  *
  * The nature ladder is ordered by how much it explains: what the client IS
  * outranks what it did, and a contact form beats a chat beats a long read beats
@@ -142,6 +149,143 @@ const NO_DWELL_MS = 2_000
 const BOUNCE_MS = 5_000
 
 /**
+ * Minutes east of UTC for an IANA zone at a given instant, or null if the zone
+ * name is one `Intl` won't take.
+ *
+ * Evaluated at the visit's own timestamp rather than "now", because the answer
+ * moves: Europe/Berlin is +1 in January and +2 in July, and the northern and
+ * southern hemispheres change over on different dates. Comparing two zones at
+ * the wrong instant manufactures an hour of disagreement that wasn't there.
+ */
+function tzOffsetMinutes(tz: string, at: Date): number | null {
+  try {
+    const name = new Intl.DateTimeFormat('en-US', { timeZone: tz, timeZoneName: 'shortOffset' })
+      .formatToParts(at).find(p => p.type === 'timeZoneName')?.value
+    if (!name) return null
+    // "GMT" | "GMT+2" | "GMT-7" | "GMT+5:30"
+    const m = /^GMT([+-])(\d{1,2})(?::(\d{2}))?$/.exec(name)
+    if (!m) return name === 'GMT' ? 0 : null
+    return (m[1] === '-' ? -1 : 1) * (Number(m[2]) * 60 + Number(m[3] ?? 0))
+  } catch {
+    // An unknown zone throws RangeError. Unknown is not evidence of anything.
+    return null
+  }
+}
+
+/**
+ * How far apart the browser's clock and the IP's clock are, in minutes, or null
+ * when either is missing or unparseable.
+ *
+ * These are two genuinely independent readings — `client_timezone` is what the
+ * browser said, `timezone` is what the edge inferred from the address — so a
+ * large gap means one of them is being carried by something other than a person
+ * sitting where the packets appear to come from.
+ */
+function timezoneGapMinutes(v: VisitorSummary): number | null {
+  if (!v.client_timezone || !v.timezone) return null
+  const at = new Date(v.first_seen_at)
+  if (Number.isNaN(at.getTime())) return null
+  const browser = tzOffsetMinutes(v.client_timezone, at)
+  const ip = tzOffsetMinutes(v.timezone, at)
+  if (browser === null || ip === null) return null
+  return Math.abs(browser - ip)
+}
+
+/**
+ * Four hours, not three.
+ *
+ * Three is exactly the width of the continental US, and someone in Los Angeles
+ * whose corporate VPN exits in Virginia is an ordinary thing to be — flagging
+ * them would fire on the most privacy-conscious ordinary visitors, which is the
+ * mistake `Spam?` already had to be walked back from. Four hours means the two
+ * readings are at least a continent apart, which no domestic VPN produces.
+ */
+const TZ_GAP_MINUTES = 240
+
+/** A coordinated arrival this row was part of. */
+export interface BurstInfo {
+  /** Distinct visitor rows in the run. */
+  size: number
+  /** Distinct IP-derived locations across them. */
+  locations: number
+  /** First to last arrival, in ms. */
+  spanMs: number
+}
+
+export type BurstMap = ReadonlyMap<string, BurstInfo>
+
+const BURST_WINDOW_MS = 10 * 60_000
+const BURST_MIN_VISITORS = 3
+const BURST_MIN_LOCATIONS = 2
+
+function locationKey(v: VisitorSummary): string {
+  return `${v.city ?? ''}|${v.region ?? ''}|${v.country ?? ''}`.toLowerCase()
+}
+
+/**
+ * Finds runs of visitors that arrived together behind rotating exit addresses.
+ *
+ * The tell is a contradiction: several **separate visitor rows**, in a few
+ * minutes, reporting byte-identical browser fingerprints but scattered across
+ * different IP locations. Distinct rows matter — a visitor id lives in
+ * localStorage, so one person reloading stays one row no matter how many times
+ * they hit the page. Three rows means three storage contexts.
+ *
+ * Grouping on `(client_timezone, user_agent)` does most of the work, and it is
+ * what keeps ordinary traffic out: the owner testing the site across a laptop,
+ * a phone and a tablet in one sitting produces a tight cluster from one city,
+ * but three different user agents, so it splits into three groups of one or two
+ * and never reaches the threshold. Real people also don't agree on a browser
+ * patch version.
+ *
+ * Two distinct locations is enough BECAUSE of that grouping — one client
+ * fingerprint appearing in two cities inside ten minutes is already the
+ * contradiction. Nothing here is decided on this alone; see the `Proxy` rung.
+ */
+export function detectProxyBursts(visitors: VisitorSummary[]): BurstMap {
+  const groups = new Map<string, VisitorSummary[]>()
+  for (const v of visitors) {
+    // A missing fingerprint is not a shared one. Rows with no UA or no browser
+    // timezone would otherwise all pile into a single group and burst together.
+    if (!v.client_timezone || !v.user_agent) continue
+    const key = `${v.client_timezone} ${v.user_agent}`
+    const list = groups.get(key)
+    if (list) list.push(v)
+    else groups.set(key, [v])
+  }
+
+  const found = new Map<string, BurstInfo>()
+  for (const list of groups.values()) {
+    if (list.length < BURST_MIN_VISITORS) continue
+    const rows = [...list].sort((a, b) => a.first_seen_at.localeCompare(b.first_seen_at))
+    const times = rows.map(r => new Date(r.first_seen_at).getTime())
+
+    for (let i = 0; i < rows.length; i++) {
+      let j = i
+      while (j + 1 < rows.length && times[j + 1] - times[i] <= BURST_WINDOW_MS) j++
+      const run = rows.slice(i, j + 1)
+      if (run.length < BURST_MIN_VISITORS) continue
+      const locations = new Set(run.map(locationKey)).size
+      if (locations < BURST_MIN_LOCATIONS) continue
+
+      const info: BurstInfo = { size: run.length, locations, spanMs: times[j] - times[i] }
+      // Windows overlap, so a row can land in several runs. Keep the largest —
+      // it is the one that best describes what the row was part of.
+      for (const r of run) {
+        const prev = found.get(r.id)
+        if (!prev || info.size > prev.size) found.set(r.id, info)
+      }
+    }
+  }
+  return found
+}
+
+function hours(minutes: number): string {
+  const h = minutes / 60
+  return `${Number.isInteger(h) ? h : h.toFixed(1)}h`
+}
+
+/**
  * Positive evidence threshold.
  *
  * Flags what was OBSERVED, never a verdict on authenticity — see the module
@@ -163,7 +307,7 @@ const READER_SCROLL_PCT = 50
  * what it did. First rung that matches wins — see the ladder in the module
  * comment.
  */
-function natureOf(v: VisitorSummary): VisitorTag {
+function natureOf(v: VisitorSummary, burst: BurstInfo | undefined, gap: number | null): VisitorTag {
   const ua = v.user_agent ?? ''
   const views = v.page_view_count
   const engaged = v.total_engaged_ms
@@ -205,6 +349,28 @@ function natureOf(v: VisitorSummary): VisitorTag {
       automated: true,
       tone: 'muted',
       reason: `User agent matches a known crawler or HTTP client: ${ua.slice(0, 80)}`,
+    }
+  }
+
+  // Below the self-identified crawlers, above the inferred ones: a client that
+  // names itself has told you more than "it came through a proxy", but this
+  // beats anything derived from behaviour.
+  //
+  // Deliberately requires BOTH halves. A clock that disagrees with the address
+  // is a VPN, which plenty of real readers use; arriving alongside others is a
+  // coincidence that a popular link can manufacture. Together they are not a
+  // coincidence: one browser fingerprint, one frozen clock, several addresses,
+  // minutes apart. The addresses are what rotates — the clock is what they
+  // forgot to rotate.
+  if (burst && gap !== null && gap >= TZ_GAP_MINUTES) {
+    return {
+      label: 'Proxy',
+      automated: true,
+      tone: 'muted',
+      reason: `Arrived with ${burst.size - 1} other ${burst.size === 2 ? 'visitor' : 'visitors'} inside ` +
+        `${Math.round(burst.spanMs / 1000)}s, sharing one browser fingerprint across ${burst.locations} ` +
+        `different IP locations — while the browser's clock (${v.client_timezone}) sits ${hours(gap)} from ` +
+        `the one its address implies (${v.timezone}). Rotating exit IPs behind a single automated client.`,
     }
   }
 
@@ -290,8 +456,10 @@ function natureOf(v: VisitorSummary): VisitorTag {
   }
 }
 
-export function classifyVisitor(v: VisitorSummary): VisitorTag[] {
-  const nature = natureOf(v)
+export function classifyVisitor(v: VisitorSummary, bursts?: BurstMap): VisitorTag[] {
+  const burst = bursts?.get(v.id)
+  const gap = timezoneGapMinutes(v)
+  const nature = natureOf(v, burst, gap)
   const tags: VisitorTag[] = [nature]
   const views = v.page_view_count
   const converted = v.contact_count > 0
@@ -330,6 +498,35 @@ export function classifyVisitor(v: VisitorSummary): VisitorTag[] {
     }
   }
 
+  // Infrastructure qualifiers, not behavioural ones, so unlike Returning and
+  // Spam? they do apply to a machine — knowing a crawler came through rotating
+  // addresses is worth as much as knowing a person did. They are suppressed
+  // only under `Proxy`, whose own reason already says both things.
+  //
+  // Neither carries `automated`. A VPN is a preference, not a tell, and a burst
+  // on its own is what a link doing the rounds looks like. Only the confluence
+  // is decisive, and that is a nature, not a qualifier.
+  if (nature.label !== 'Proxy') {
+    if (gap !== null && gap >= TZ_GAP_MINUTES) {
+      tags.push({
+        label: 'VPN?',
+        tone: 'warn',
+        reason: `The browser reported ${v.client_timezone} but the address geolocates to ${v.timezone} — ` +
+          `${hours(gap)} apart, so at least a continent. Usually a VPN or a remote desktop, both of which ` +
+          'ordinary readers use. Not a judgement on its own.',
+      })
+    }
+    if (burst) {
+      tags.push({
+        label: 'Burst',
+        tone: 'warn',
+        reason: `One of ${burst.size} separate visitors that arrived within ${Math.round(burst.spanMs / 1000)}s ` +
+          `sharing an identical browser fingerprint, across ${burst.locations} IP locations. ` +
+          'Could be a link doing the rounds; could be one client behind several addresses.',
+      })
+    }
+  }
+
   // Came back on a different day. Not merely two sessions — two visits twenty
   // minutes apart is one sitting. Worth surfacing because deliberate return is
   // the strongest interest signal here, and it is invisible everywhere else in
@@ -351,6 +548,6 @@ export function classifyVisitor(v: VisitorSummary): VisitorTag[] {
  * This is what the "Hide bots" toggle filters on — see `VisitorTag.automated`
  * for why `Bounce` and `Spam?` are deliberately excluded.
  */
-export function isAutomated(v: VisitorSummary): boolean {
-  return classifyVisitor(v).some(t => t.automated)
+export function isAutomated(v: VisitorSummary, bursts?: BurstMap): boolean {
+  return classifyVisitor(v, bursts).some(t => t.automated)
 }

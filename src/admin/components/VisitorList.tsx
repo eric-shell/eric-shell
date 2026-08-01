@@ -10,7 +10,7 @@ import { twMerge } from 'tailwind-merge'
 import type { VisitorSummary } from '@/../api/_lib/types'
 import { formatDuration, formatShort } from '../lib/dateFormat'
 import { resolveLocation } from '../lib/location'
-import { classifyVisitor } from '../lib/classify'
+import { classifyVisitor, type BurstMap } from '../lib/classify'
 import VisitorTags from './VisitorTags'
 import {
   DEFAULT_SORT, SORT_LABEL, nextSort, sortVisitors,
@@ -52,6 +52,11 @@ function DetailCollapse({ open, children }: { open: boolean; children: ReactNode
 
 interface VisitorListProps {
   visitors: VisitorSummary[]
+  /**
+   * Arrival clusters found across the whole list upstream. Optional: without it
+   * the cross-row rules simply don't fire, which is the safe direction to fail.
+   */
+  bursts?: BurstMap
   onVisitorDeleted?: (id: string) => void
 }
 
@@ -265,9 +270,10 @@ function SortBar({ sort, onSort, className }: {
  * drift. Sorting comes from the shared SortBar above.
  */
 function MobileList({
-  rows, selectedId, closingId, onSelect, locationFor, onVisitorDeleted, onSaved,
+  rows, bursts, selectedId, closingId, onSelect, locationFor, onVisitorDeleted, onSaved,
 }: {
   rows: VisitorSummary[]
+  bursts?: BurstMap
   selectedId: string | null
   /** Row on its way out — still mounted so it can animate closed. */
   closingId: string | null
@@ -283,7 +289,7 @@ function MobileList({
         {rows.map(v => {
           const isOpen = selectedId === v.id
           const location = locationFor(v)
-          const tags = classifyVisitor(v)
+          const tags = classifyVisitor(v, bursts)
           return (
             <li key={v.id}>
               {/* Whole card is the tap target — 44px+ tall by construction. */}
@@ -387,7 +393,7 @@ function useColumnCount() {
   return count
 }
 
-export default function VisitorList({ visitors, onVisitorDeleted }: VisitorListProps) {
+export default function VisitorList({ visitors, bursts, onVisitorDeleted }: VisitorListProps) {
   const [selectedId, setSelectedId] = useState<string | null>(
     () => new URLSearchParams(window.location.search).get('v')
   )
@@ -417,8 +423,8 @@ export default function VisitorList({ visitors, onVisitorDeleted }: VisitorListP
   )
 
   const sorted = useMemo(
-    () => sortVisitors(visitors, sort, labelFor),
-    [visitors, sort, labelFor],
+    () => sortVisitors(visitors, sort, labelFor, bursts),
+    [visitors, sort, labelFor, bursts],
   )
 
   /**
@@ -554,7 +560,7 @@ export default function VisitorList({ visitors, onVisitorDeleted }: VisitorListP
           {pageVisitors.map(v => {
             const isOpen = selectedId === v.id
             const location = locationFor(v)
-            const tags = classifyVisitor(v)
+            const tags = classifyVisitor(v, bursts)
             return (
               <Fragment key={v.id}>
                 <tr
@@ -632,6 +638,7 @@ export default function VisitorList({ visitors, onVisitorDeleted }: VisitorListP
 
       <MobileList
         rows={pageVisitors}
+        bursts={bursts}
         selectedId={selectedId}
         closingId={closingId}
         onSelect={handleSelect}
