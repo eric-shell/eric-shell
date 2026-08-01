@@ -28,7 +28,11 @@
     <meta name="twitter:image" content="https://eric.sh/social.jpg" />
     <meta name="twitter:image:alt" content="Eric Shell — AI Design Systems Engineer" />
 
-    <meta name="theme-color" content="#111a2e" />
+    <!-- blue-950, the dark canvas every route opens on (hero / resume masthead
+         / privacy masthead). Resolved from oklch(0.198 0.025 269.84). -->
+    <meta name="theme-color" content="#111521" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link rel="manifest" href="/site.webmanifest" />
 
     <!-- Structured data -->
     <script type="application/ld+json">
@@ -62,6 +66,12 @@
       ]
     }
     </script>
+
+    <!-- The work grid hotlinks its card images from Unsplash. Interim: this
+         saves the DNS + TLS setup on what is the site's primary content
+         section. The real fix is to stop hotlinking stock at all — see the
+         note on work.ts. -->
+    <link rel="preconnect" href="https://images.unsplash.com" crossorigin />
 
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
