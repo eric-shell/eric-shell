@@ -183,7 +183,7 @@ A password-gated admin page at `/dashboard` (sign-in at `/login`, both served fr
 - **`--color-accent` (index.css) is admin-only.** Every step of the blue ramp is below the dataviz chroma floor and reads gray as a data mark, which is why charts from the ramp looked washed out. It is for **non-text marks only** (chart, focus rings, tab underline) — white ink on it is 2.36:1, so it must never back a label. The palette still cannot carry a multi-series categorical chart.
 - **Telemetry is metered and tuned** — visible-only dashboard polling, one batched round trip per page view, backing-off heartbeats. Run `/crm` before changing any cadence; the cost table explains why each number is what it is.
 - **The contact notification email links to the visitor's CRM row**, which is why `contact.ts` resolves `upsertVisitor()` before the Resend send. Don't upsert twice, and keep the link's try/catch — a DB outage must cost the link, not the email.
-- **Every close path for the visitor drawer is guarded against unsaved Notes** (`handleSelect` in VisitorList, fed by `onDirtyChange`). New close paths must route through `handleSelect`.
+- **Every close path for the visitor drawer is guarded against unsaved Notes** (`handleSelect` in VisitorList, fed by `onDirtyChange`). Escape closes it and inherits the same guard. New close paths must route through `handleSelect`.
 
 ## Deployment
 

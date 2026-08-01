@@ -486,7 +486,7 @@ export default function VisitorList({ visitors, bursts, onVisitorDeleted }: Visi
    * would be mounted twice, once opening and once fading away.
    *
    * Every close path funnels through here — the drawer's X, a click on the open
-   * row, and a click on a different row — which is why the unsaved-edits guard
+   * row, a click on a different row, and Escape — which is why the unsaved-edits guard
    * lives here and not in the drawer. `useVisitorDetail` already refuses to let
    * a background poll overwrite what you typed into Notes; this is the other
    * half, and the one that was actually costing work.
@@ -500,6 +500,21 @@ export default function VisitorList({ visitors, bursts, onVisitorDeleted }: Visi
     setClosingId(leaving ? selectedId : null)
     setSelectedId(id)
   }, [selectedId])
+
+  // Escape closes the drawer — the first key anyone reaches for on a panel that
+  // opened over a table. Routed through `handleSelect`, so it inherits the
+  // unsaved-edits guard rather than becoming a fourth way to lose a note.
+  // Deliberately not scoped to focus inside the drawer: after clicking a row the
+  // focus is on the row, not in the panel.
+  useEffect(() => {
+    if (!selectedId) return
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key !== 'Escape' || e.defaultPrevented) return
+      handleSelect(null)
+    }
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [selectedId, handleSelect])
 
   const handleDeleted = useCallback((id: string) => {
     // Before the drawer unmounts. The row and everything on it are gone, so
