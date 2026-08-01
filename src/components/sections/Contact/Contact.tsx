@@ -22,20 +22,23 @@ export default function Contact() {
       className="relative min-h-screen overflow-hidden flex items-center"
     >
       <picture>
+        {/* No 2560 candidate: the source is 2048px wide, so that variant was a
+            clamped 2048 advertising itself as 2560 and getting picked over the
+            1920 on high-DPI displays for pixels it did not have. */}
         <source
           type="image/avif"
-          srcSet="/contact/EJS01845-640.avif 640w, /contact/EJS01845-1280.avif 1280w, /contact/EJS01845-1920.avif 1920w, /contact/EJS01845-2560.avif 2560w"
+          srcSet="/contact/EJS01845-640.avif 640w, /contact/EJS01845-1280.avif 1280w, /contact/EJS01845-1920.avif 1920w"
           sizes="100vw"
         />
         <source
           type="image/webp"
-          srcSet="/contact/EJS01845-640.webp 640w, /contact/EJS01845-1280.webp 1280w, /contact/EJS01845-1920.webp 1920w, /contact/EJS01845-2560.webp 2560w"
+          srcSet="/contact/EJS01845-640.webp 640w, /contact/EJS01845-1280.webp 1280w, /contact/EJS01845-1920.webp 1920w"
           sizes="100vw"
         />
         <img
           ref={bgRef}
           src="/contact/EJS01845-1920.jpg"
-          srcSet="/contact/EJS01845-640.jpg 640w, /contact/EJS01845-1280.jpg 1280w, /contact/EJS01845-1920.jpg 1920w, /contact/EJS01845-2560.jpg 2560w"
+          srcSet="/contact/EJS01845-640.jpg 640w, /contact/EJS01845-1280.jpg 1280w, /contact/EJS01845-1920.jpg 1920w"
           sizes="100vw"
           alt="Eric looking up toward the sky"
           aria-hidden="true"
