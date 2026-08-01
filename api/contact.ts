@@ -15,6 +15,22 @@ function isString(v: unknown): v is string {
   return typeof v === 'string'
 }
 
+/**
+ * Absolute link to this visitor's row in the admin CRM.
+ *
+ * `?v=<id>` is the deep link `VisitorList` already restores from on mount — it
+ * finds the row, pages to it, and opens the drawer. Built from the request's own
+ * host so a preview deployment links to its own dashboard rather than sending
+ * you to production for a submission that never landed there.
+ */
+function crmLink(req: VercelRequest, visitorId: string): string {
+  const host = req.headers['x-forwarded-host'] ?? req.headers.host
+  if (typeof host !== 'string' || !host) return `https://eric.sh/dashboard?v=${visitorId}`
+  const proto = req.headers['x-forwarded-proto']
+  const scheme = typeof proto === 'string' && proto ? proto.split(',')[0] : 'https'
+  return `${scheme}://${host}/dashboard?v=${visitorId}`
+}
+
 function validate(body: ContactPayload): { ok: true; name: string; email: string; message: string } | { ok: false; error: string } {
   const { name, email, message } = body
 
@@ -70,17 +86,36 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
 
   try {
     const rawCity = req.headers['x-vercel-ip-city']
-  const rawCountry = req.headers['x-vercel-ip-country']
-  const city = typeof rawCity === 'string' ? decodeURIComponent(rawCity) : null
-  const country = typeof rawCountry === 'string' ? rawCountry : null
-  const locationLine = [city, country].filter(Boolean).join(', ')
+    const rawCountry = req.headers['x-vercel-ip-country']
+    const city = typeof rawCity === 'string' ? decodeURIComponent(rawCity) : null
+    const country = typeof rawCountry === 'string' ? rawCountry : null
+    const locationLine = [city, country].filter(Boolean).join(', ')
 
-  const { error } = await resend.emails.send({
+    // Resolved BEFORE the send so the notification can carry a link straight to
+    // this person's CRM row — the moment you hear about a lead is the moment you
+    // have the least context on them, and hunting for the row by hand is the
+    // step that was missing. Its own try/catch: a Postgres outage costs the link,
+    // never the email. Persistence below reuses the id rather than upserting a
+    // second time.
+    let visitorId: string | null = null
+    try {
+      visitorId = await upsertVisitor(req)
+    } catch (err) {
+      console.error('Contact visitor upsert failed:', err)
+    }
+
+    const { error } = await resend.emails.send({
       from: 'Eric Shell Website Form Submission <onboarding@resend.dev>',
       to: 'ericjshell@gmail.com',
       replyTo: email,
       subject: `New message from ${name} via eric.sh`,
-      text: `From: ${name} <${email}>${locationLine ? `\nLocation: ${locationLine}` : ''}\n\n${message}`,
+      text: [
+        `From: ${name} <${email}>`,
+        locationLine ? `Location: ${locationLine}` : null,
+        visitorId ? `CRM: ${crmLink(req, visitorId)}` : null,
+        '',
+        message,
+      ].filter(l => l !== null).join('\n'),
     })
 
     if (error) {
@@ -92,7 +127,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
     // Persist BEFORE responding. Vercel can freeze the function container
     // as soon as the response is flushed, dropping any trailing async work.
     try {
-      const visitorId = await upsertVisitor(req)
       const db = sql()
       await db`
         insert into contact_submissions (visitor_id, name, email, message)

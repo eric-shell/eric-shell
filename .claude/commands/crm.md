@@ -12,7 +12,7 @@ A password-gated admin page at `/dashboard` (sign-in at `/login`) for viewing ev
 | Admin auth (HMAC cookie, password check, 2FA challenge, `requireAdmin`) | [api/_lib/auth.ts](api/_lib/auth.ts) |
 | Admin endpoints | [api/admin/login.ts](api/admin/login.ts), [api/admin/verify.ts](api/admin/verify.ts), [api/admin/logout.ts](api/admin/logout.ts), [api/admin/session.ts](api/admin/session.ts), [api/admin/visitors.ts](api/admin/visitors.ts), [api/admin/visitors/[id].ts](api/admin/visitors/%5Bid%5D.ts) |
 | Chat persistence wiring | [api/chat.ts](api/chat.ts) (after `res.end()`) |
-| Contact persistence wiring | [api/contact.ts](api/contact.ts) (after Resend send) |
+| Contact persistence wiring | [api/contact.ts](api/contact.ts) (visitor resolved before the send, row inserted before `res.json()`) |
 | Page-view / session telemetry endpoint | [api/track.ts](api/track.ts) — `pageview` + `heartbeat` ops |
 | Client telemetry beacon | [src/lib/telemetry.ts](src/lib/telemetry.ts) — init'd from [src/main.tsx](src/main.tsx), outside the React tree |
 | Location display resolver | [src/admin/lib/location.ts](src/admin/lib/location.ts) — `resolveLocation()` |
@@ -40,6 +40,7 @@ A password-gated admin page at `/dashboard` (sign-in at `/login`) for viewing ev
 - **All geo headers are absent outside the edge**, so local `vercel dev` legitimately writes nulls. A blank location with a non-null `user_agent` is almost always a dev-session row.
 - **Every visitor-row writer must go through `upsertVisitor`** ([api/_lib/visitor.ts](api/_lib/visitor.ts)). `events.ts` originally did a bare `insert into visitors (id)`, which stranded events-only visitors (opened the chat, toggled high-contrast, never sent a message) with no UA, geo, or referrer — permanently, since nothing later backfills them. The `on conflict` clause uses `coalesce(existing, new)`, which keeps the first non-null sighting *and* backfills columns still null, so a later edge request repairs an incomplete row.
 - **`x-vercel-ip-city` is percent-encoded.** Decode via `readGeoHeader`, which try/catches `decodeURIComponent` — a malformed sequence used to reject the whole `upsertVisitor` promise, and in `chat.ts` that discarded the entire transcript, not just the city.
+- **The contact notification email carries a link to the visitor's CRM row.** `contact.ts` therefore resolves `upsertVisitor(req)` *before* the Resend send rather than after, and reuses the returned id for the insert — don't upsert twice. It has its own try/catch: a Postgres outage costs the link, never the email, and the submission still inserts with a null `visitor_id`. The URL is built from the request's own host (`crmLink`), so a preview deployment links to its own dashboard.
 
 ## Auth: `/login`, `/dashboard`, and the second factor
 

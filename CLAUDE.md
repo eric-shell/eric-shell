@@ -73,7 +73,7 @@ api/                       # Vercel serverless functions (auto-discovered)
 ├── _lib/                  # Shared helpers (auth, db, visitor, ratelimit, types) — leading underscore = not a route
 ├── admin/                 # Password-gated CRM endpoints — see /crm
 ├── chat.ts                # Groq streaming + chat persistence (rate-limited)
-├── contact.ts             # Resend email + contact persistence (rate-limited)
+├── contact.ts             # Resend email (with a CRM deep link) + contact persistence (rate-limited)
 ├── events.ts              # ada_toggle / chat_cleared event log (rate-limited)
 └── track.ts               # page views + session engagement beacon (rate-limited)
 
@@ -182,6 +182,7 @@ A password-gated admin page at `/dashboard` (sign-in at `/login`, both served fr
 - **The admin is dark**, using the site's dark-section vocabulary (`Backdrop tone="dark"` over `bg-blue-950`, `Eyebrow`+`H2`). This is not "dark mode" — the public site stays light-first; the admin is a separate bundle. Panel surfaces use the `raised-dark` variant and CTAs use `primary`; never hand-roll them.
 - **`--color-accent` (index.css) is admin-only.** Every step of the blue ramp is below the dataviz chroma floor and reads gray as a data mark, which is why charts from the ramp looked washed out. It is for **non-text marks only** (chart, focus rings, tab underline) — white ink on it is 2.36:1, so it must never back a label. The palette still cannot carry a multi-series categorical chart.
 - **Telemetry is metered and tuned** — visible-only dashboard polling, one batched round trip per page view, backing-off heartbeats. Run `/crm` before changing any cadence; the cost table explains why each number is what it is.
+- **The contact notification email links to the visitor's CRM row**, which is why `contact.ts` resolves `upsertVisitor()` before the Resend send. Don't upsert twice, and keep the link's try/catch — a DB outage must cost the link, not the email.
 
 ## Deployment
 
