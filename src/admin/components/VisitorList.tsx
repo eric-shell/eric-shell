@@ -654,13 +654,13 @@ export default function VisitorList({ visitors, bursts, onVisitorDeleted }: Visi
           </p>
           <div className="flex gap-1">
             <Button
-              variant="raised-dark" size="sm" onClick={() => setPage(p => p - 1)} disabled={page === 1}
+              variant="primary" size="sm" onClick={() => setPage(p => p - 1)} disabled={page === 1}
               leftIcon={<ChevronLeft aria-hidden="true" />}
             >
               Prev
             </Button>
             <Button
-              variant="raised-dark" size="sm" onClick={() => setPage(p => p + 1)} disabled={page === totalPages}
+              variant="primary" size="sm" onClick={() => setPage(p => p + 1)} disabled={page === totalPages}
               rightIcon={<ChevronRight aria-hidden="true" />}
             >
               Next
