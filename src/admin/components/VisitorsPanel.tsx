@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { type LucideIcon, Cpu, MessageSquare, Search, X } from 'lucide-react'
+import { type LucideIcon, Cpu, Handshake, Search, X } from 'lucide-react'
 import { twMerge } from 'tailwind-merge'
 import { Eyebrow, Panel } from '../../components/ui'
 import { SURFACE, SURFACE_HOVER } from '../../components/ui/variants'
@@ -377,11 +377,25 @@ export default function VisitorsPanel({
                       time the classifier grows. This one doesn't. */}
                   {hideBots && botCount > 0 ? `${botCount} hidden` : 'Hide automated'}
                 </FilterChip>
+                {/* `Handshake` — contact was made, without naming the channel.
+                    This chip keeps `chatted OR submitted`, so `MessageSquare`
+                    named half of it, and it is the glyph that already means
+                    "chat" everywhere else in the admin: the `Chatted` tag, the
+                    message count in `ActivityValue`, the Engaged stat tile. A
+                    visitor who sent the contact form and never opened the chat
+                    is kept by this filter and has nothing to do with a speech
+                    bubble.
+                    Deliberately NOT a person glyph, tempting as the pairing
+                    against `Cpu` is. This filter does not select humans — it
+                    selects visitors who reached out, and a quiet five-minute
+                    reader is hidden by it. `classify.ts` refuses to assert
+                    humanity anywhere; an icon must not smuggle the claim back
+                    in. */}
                 <FilterChip
                   active={engagedOnly}
                   disabled={quietCount === 0}
                   onClick={onToggleEngaged}
-                  icon={MessageSquare}
+                  icon={Handshake}
                   title={quietCount === 0
                     ? 'Every visitor here chatted or submitted the form, so there is nothing to hide.'
                     : `Show only visitors who chatted or submitted the contact form. Hides ${quietCount} who did neither.`}
