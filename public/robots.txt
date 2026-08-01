@@ -3,5 +3,7 @@ Allow: /
 Disallow: /dashboard
 Disallow: /login
 Disallow: /api/admin/
+Disallow: /email-signature.html
+Disallow: /email.png
 
 Sitemap: https://eric.sh/sitemap.xml
