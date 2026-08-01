@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react'
 import { makeSprite, type ParticlesMode, type RGB } from './particleSprite'
+import { visibleRafLoop } from './visibleRafLoop'
 
 const COUNT = 7
 
@@ -109,7 +110,6 @@ export default function ParticlesLarge({
       }
     }
 
-    let raf: number
     let t = 0
 
     function tickAcross() {
@@ -169,14 +169,13 @@ export default function ParticlesLarge({
       ctx.globalAlpha = 1
     }
 
-    function tick() {
-      raf = requestAnimationFrame(tick)
+    // Only runs while the canvas is actually on screen — see visibleRafLoop
+    // for why pausing is safe for a fixed-step sim.
+    const stopLoop = visibleRafLoop(canvas, () => {
       if (mode === 'fall-toward') tickToward()
       else tickAcross()
       draw()
-    }
-
-    tick()
+    })
 
     const onResize = () => {
       W = canvas.offsetWidth
@@ -187,7 +186,7 @@ export default function ParticlesLarge({
     window.addEventListener('resize', onResize)
 
     return () => {
-      cancelAnimationFrame(raf)
+      stopLoop()
       window.removeEventListener('resize', onResize)
     }
   }, [mode, color])
