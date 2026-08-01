@@ -205,6 +205,10 @@ interface VisitorsPanelProps {
    * Passed straight through to the classifier — see `detectProxyBursts`.
    */
   bursts?: BurstMap
+  /** Epoch ms of the previous dashboard visit — see `useLastVisit`. */
+  newSince: number | null
+  /** How many of the rows above are new since that visit. */
+  newCount: number
   /** True while a refetch is in flight, to dim rather than flash a skeleton. */
   loading: boolean
   /** False when there are no rows at all, which hides the filter row entirely. */
@@ -224,6 +228,8 @@ export default function VisitorsPanel({
   visitors,
   totalCount,
   bursts,
+  newSince,
+  newCount,
   loading,
   hasAnyVisitors,
   timeframe,
@@ -254,9 +260,23 @@ export default function VisitorsPanel({
   return (
     <section aria-labelledby="visitors-heading" className="flex flex-col gap-3">
       <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
-        <h2 id="visitors-heading">
-          <Eyebrow className="text-xs text-white/85">Visitors</Eyebrow>
-        </h2>
+        <div className="flex items-baseline gap-2">
+          <h2 id="visitors-heading">
+            <Eyebrow className="text-xs text-white/85">Visitors</Eyebrow>
+          </h2>
+          {/* The count behind the dots on the rows. Sits by the heading rather
+              than in the toolbar because it is not a filter — there is no "show
+              only new" here, deliberately: the watermark is a reading aid, and
+              turning it into a filter would make leaving the tab open change
+              which rows exist. The `accent` dot matches the row marker exactly,
+              so the two read as one idea. */}
+          {newCount > 0 && (
+            <span className="flex items-center gap-1.5 text-[11px] font-semibold text-white/85">
+              <span className="h-1.5 w-1.5 rounded-full bg-accent" aria-hidden="true" />
+              {newCount} new since your last visit
+            </span>
+          )}
+        </div>
         {/* The mirror of the note on Insights. There the point is that the
             filters don't reach the aggregates; here it is that they do, so the
             two panels can disagree without either being wrong. */}
@@ -427,7 +447,12 @@ export default function VisitorsPanel({
                   : 'No visitors active in this timeframe.'}
             </p>
           ) : (
-            <VisitorList visitors={filteredVisitors} bursts={bursts} onVisitorDeleted={onVisitorDeleted} />
+            <VisitorList
+              visitors={filteredVisitors}
+              bursts={bursts}
+              newSince={newSince}
+              onVisitorDeleted={onVisitorDeleted}
+            />
           )}
         </div>
       </Panel>

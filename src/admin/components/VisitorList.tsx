@@ -11,6 +11,7 @@ import { twMerge } from 'tailwind-merge'
 import type { VisitorSummary } from '@/../api/_lib/types'
 import { formatDuration, formatShort } from '../lib/dateFormat'
 import { resolveLocation } from '../lib/location'
+import { isNewSince } from '../lib/lastVisit'
 import { classifyVisitor, type BurstMap } from '../lib/classify'
 import VisitorTags from './VisitorTags'
 import {
@@ -58,6 +59,13 @@ interface VisitorListProps {
    * the cross-row rules simply don't fire, which is the safe direction to fail.
    */
   bursts?: BurstMap
+  /**
+   * Epoch ms of the previous dashboard visit. Rows with activity after it get
+   * the "new" dot. Null on a first-ever visit, which marks nothing — there is no
+   * "last time" for them to be new since, and dotting all 500 rows would say
+   * nothing at all.
+   */
+  newSince?: number | null
   onVisitorDeleted?: (id: string) => void
 }
 
@@ -82,15 +90,38 @@ function LocationValue({ location }: { location: ReturnType<typeof resolveLocati
 }
 
 /**
- * The visitor id, plus the mark that rides with it.
+ * The visitor id, plus the two marks that ride with it.
  *
- * Deliberately quiet. This column is scanned, not read, and a row that merely
- * carries a note is not an exception in the way `Spam?` is — the Flags column
- * next door already owns loud.
+ * Both are deliberately quiet. This column is scanned, not read, and a row that
+ * is merely *unread* or *annotated* is not an exception in the way `Spam?` is —
+ * the Flags column next door already owns loud.
  */
-function VisitorIdValue({ v }: { v: VisitorSummary }) {
+function VisitorIdValue({ v, isNew, reserveDot }: {
+  v: VisitorSummary
+  isNew: boolean
+  /**
+   * Hold the dot's width open on rows that don't have one. A column of
+   * monospace ids is read by scanning down its left edge, and letting the dot
+   * push only some of them right puts a wobble in exactly the line the eye is
+   * following. False on a first-ever visit, where no row can be new and the
+   * gutter would be reserved for a mark that cannot appear.
+   */
+  reserveDot: boolean
+}) {
   return (
     <div className="flex items-center gap-1.5">
+      {/* `--color-accent` is admin-only and non-text-only, which is exactly what
+          a 6px dot is. Never color alone: it carries a title and an sr-only
+          label, because "this arrived while you were away" is not something a
+          screen reader should have to infer from a decorative span. */}
+      {(isNew || reserveDot) && (
+        <span
+          title={isNew ? 'New activity since you last opened the dashboard' : undefined}
+          className={twMerge('h-1.5 w-1.5 shrink-0 rounded-full', isNew && 'bg-accent')}
+        >
+          {isNew && <span className="sr-only">New since your last visit. </span>}
+        </span>
+      )}
       <span className="truncate font-mono text-xs font-semibold text-white/95">{shortId(v.id)}</span>
       {/* The note itself is in the drawer; this only says one exists. Without it
           a note was write-only — you had to already know which row you'd left it
@@ -297,7 +328,7 @@ function SortBar({ sort, onSort, className }: {
  * drift. Sorting comes from the shared SortBar above.
  */
 function MobileList({
-  rows, bursts, selectedId, closingId, onSelect, locationFor,
+  rows, bursts, selectedId, closingId, onSelect, locationFor, isNew, reserveDot,
   onVisitorDeleted, onSaved, onDirtyChange,
 }: {
   rows: VisitorSummary[]
@@ -308,6 +339,9 @@ function MobileList({
   onSelect: (id: string | null) => void
   /** Same resolver the table uses, so the "corrected" marker stays truthful. */
   locationFor: (v: VisitorSummary) => ReturnType<typeof resolveLocation>
+  isNew: (v: VisitorSummary) => boolean
+  /** Hold the dot's gutter open on un-new rows — see `VisitorIdValue`. */
+  reserveDot: boolean
   onVisitorDeleted?: (id: string) => void
   onSaved: (id: string, edits: VisitorEdits) => void
   onDirtyChange: (dirty: boolean) => void
@@ -332,7 +366,7 @@ function MobileList({
                 )}
               >
                 <div className="flex items-start justify-between gap-3">
-                  <VisitorIdValue v={v} />
+                  <VisitorIdValue v={v} isNew={isNew(v)} reserveDot={reserveDot} />
                   <span className="shrink-0 text-xs text-white/85">{formatShort(v.last_activity_at)}</span>
                 </div>
                 {tags.length > 0 && <VisitorTags tags={tags} className="mt-1" />}
@@ -423,7 +457,7 @@ function useColumnCount() {
   return count
 }
 
-export default function VisitorList({ visitors, bursts, onVisitorDeleted }: VisitorListProps) {
+export default function VisitorList({ visitors, bursts, newSince, onVisitorDeleted }: VisitorListProps) {
   const [selectedId, setSelectedId] = useState<string | null>(
     () => new URLSearchParams(window.location.search).get('v')
   )
@@ -459,6 +493,12 @@ export default function VisitorList({ visitors, bursts, onVisitorDeleted }: Visi
     setSavedEdits(prev => ({ ...prev, [id]: edits }))
   }, [])
 
+  /** Activity this row has picked up since the previous dashboard visit. */
+  const isNew = useCallback(
+    (v: VisitorSummary) => isNewSince(v, newSince ?? null),
+    [newSince],
+  )
+
   // Sort against the label the cell actually shows, override included, so the
   // Location column can never order by something different from what's on screen.
   const labelFor = useCallback((v: VisitorSummary) => resolveLocation(v).label, [])
@@ -486,10 +526,10 @@ export default function VisitorList({ visitors, bursts, onVisitorDeleted }: Visi
    * would be mounted twice, once opening and once fading away.
    *
    * Every close path funnels through here — the drawer's X, a click on the open
-   * row, a click on a different row, and Escape — which is why the unsaved-edits guard
-   * lives here and not in the drawer. `useVisitorDetail` already refuses to let
-   * a background poll overwrite what you typed into Notes; this is the other
-   * half, and the one that was actually costing work.
+   * row, a click on a different row, and Escape — which is why the unsaved-edits
+   * guard lives here and not in the drawer. `useVisitorDetail` already refuses
+   * to let a background poll overwrite what you typed into Notes; this is the
+   * other half, and the one that was actually costing work.
    */
   const handleSelect = useCallback((id: string | null) => {
     // Read `selectedId` directly rather than from a setState updater: updaters
@@ -654,7 +694,7 @@ export default function VisitorList({ visitors, bursts, onVisitorDeleted }: Visi
                   )}
                 >
                   <td className="py-3 px-4">
-                    <VisitorIdValue v={v} />
+                    <VisitorIdValue v={v} isNew={isNew(v)} reserveDot={newSince != null} />
                     {/* Below `lg` the Flags column is folded away, so the badges
                         ride under the id — the same stacking the phone card uses. */}
                     {tags.length > 0 && <VisitorTags tags={tags} className="mt-1 lg:hidden" />}
@@ -725,6 +765,8 @@ export default function VisitorList({ visitors, bursts, onVisitorDeleted }: Visi
         closingId={closingId}
         onSelect={handleSelect}
         locationFor={resolveLocation}
+        isNew={isNew}
+        reserveDot={newSince != null}
         onVisitorDeleted={handleDeleted}
         onSaved={handleSaved}
         onDirtyChange={setDirty}

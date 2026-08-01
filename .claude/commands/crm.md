@@ -14,6 +14,7 @@ A password-gated admin page at `/dashboard` (sign-in at `/login`) for viewing ev
 | Retention cron (`page_views` / `visitor_sessions`) | [api/cron/prune.ts](api/cron/prune.ts) — scheduled in [vercel.json](vercel.json) `crons` |
 | Chat persistence wiring | [api/chat.ts](api/chat.ts) (after `res.end()`) |
 | Contact persistence wiring | [api/contact.ts](api/contact.ts) (visitor resolved before the send, row inserted before `res.json()`) |
+| "New since last visit" watermark | [src/admin/lib/lastVisit.ts](src/admin/lib/lastVisit.ts) — `useLastVisit()` / `isNewSince()` |
 | Page-view / session telemetry endpoint | [api/track.ts](api/track.ts) — `pageview` + `heartbeat` ops |
 | Client telemetry beacon | [src/lib/telemetry.ts](src/lib/telemetry.ts) — init'd from [src/main.tsx](src/main.tsx), outside the React tree |
 | Location display resolver | [src/admin/lib/location.ts](src/admin/lib/location.ts) — `resolveLocation()` |
@@ -184,11 +185,14 @@ These are the CRM's only **cross-row** signals. `classifyVisitor` takes an optio
 
 `LLM` is checked *before* `Bot` because most AI agents also match `/\bbot\b/`. The UA is the only signal available (it's the one request header stored), and it's self-reported: this catches agents that identify themselves and cannot catch one that doesn't want to be. Anything stronger — Web Bot Auth's `Signature-Agent` header, published IP ranges, reverse DNS — means collecting more per request and disclosing it in [Privacy.tsx](src/components/sections/Privacy/Privacy.tsx).
 
-### The note marker
+### The two marks in the Visitor column
 
-A sticky note beside the short id says this visitor has a private note. `notes` is selected onto `VisitorSummary` for exactly this; before that it was **write-only** — findable only by reopening the row you happened to write it on. The tooltip is the whole note, and the search field matches against it, since it is the only text on a row that you wrote yourself and therefore what you come back looking for.
+Both ride beside the short id, both deliberately quiet — the Flags column next door already owns loud.
 
-It is deliberately quiet: this column is scanned, not read, and a row that merely carries a note is not an exception in the way `Spam?` is.
+- **Sticky note** — this visitor has a private note. `notes` is selected onto `VisitorSummary` for exactly this; before that it was **write-only**, findable only by reopening the row you happened to write it on. The tooltip is the whole note, and the search field matches against it (it is the only text on a row that you wrote yourself, so it's what you come back looking for).
+- **Accent dot** — activity since the previous dashboard visit, from `useLastVisit()` in [src/admin/lib/lastVisit.ts](src/admin/lib/lastVisit.ts). The watermark is **read once and frozen for the session**, then re-stamped on unmount / `pagehide` / tab-hidden; advancing it live would un-mark rows under the cursor. A first-ever visit marks nothing. The dot's gutter is held open on un-new rows so the monospace id column doesn't wobble — that column is scanned down its left edge.
+
+**Deliberately not a filter.** There is no "show only new": leaving the tab open would then change which rows exist. The count beside the `Visitors` heading is scoped to the rows the real filters left on screen, so it can never promise dots that aren't there.
 
 ### Filters
 
@@ -305,7 +309,6 @@ There is **no local Postgres** in this project — `POSTGRES_URL` points at the 
 | `ADMIN_2FA_EMAIL` | **Optional.** `npx vercel env add ADMIN_2FA_EMAIL <env>`. | Where the 6-digit sign-in code is emailed. **Absent → no second factor: the correct password alone signs you in.** Same fallback if `RESEND_API_KEY` or the Upstash vars are absent, or if the Resend send fails at request time. |
 | `RESEND_API_KEY` | Already required by `/api/contact`. | Also sends the 2FA code. **Absent → password-only sign-in** (and no contact email). |
 | `UPSTASH_REDIS_REST_URL` / `UPSTASH_REDIS_REST_TOKEN` | Injected as `KV_REST_API_*` by the Vercel ↔ Upstash Marketplace integration; either prefix is accepted. | Rate limiting on every public endpoint, plus the 2FA challenge store. **Absent → limiter soft-fails open and sign-in is password-only.** |
-
 | `CRON_SECRET` | Set in `production` with `npx vercel env add CRON_SECRET production`; any 32+ random string. Vercel attaches it to scheduled invocations automatically. | Authorizes [api/cron/prune.ts](api/cron/prune.ts). **Absent → the retention pass 503s and never runs** — deliberately, since without it the endpoint would delete data for anyone who asked. |
 
 `POSTGRES_URL`, `ADMIN_PASSWORD` and `ADMIN_SESSION_SECRET` must exist in `development` for `vercel dev` to work, and in `production` for the live site. Add to `preview` if you want preview deploys to function. The rest degrade gracefully — see the fail-open note in the auth section.

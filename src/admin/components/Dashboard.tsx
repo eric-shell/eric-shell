@@ -11,6 +11,7 @@ import { MetricsRowSkeleton, Skeleton } from './Skeleton'
 import { apiCall } from '../lib/api'
 import { formatDuration } from '../lib/dateFormat'
 import { detectProxyBursts, isAutomated } from '../lib/classify'
+import { isNewSince, useLastVisit } from '../lib/lastVisit'
 import { DEFAULT_TIMEFRAME, isTimeframe, withinTimeframe, type Timeframe } from '../lib/timeframe'
 import type { StatDay, StatsPayload, VisitorListPayload, VisitorSummary } from '@/../api/_lib/types'
 import type { InsightsPayload } from '@/../api/_lib/insights-types'
@@ -109,6 +110,11 @@ export default function Dashboard({ onLogout }: DashboardProps) {
     } catch { /* private mode */ }
   }, [hideBots, engagedOnly, timeframe])
   const [lastLoaded, setLastLoaded] = useState<Date | null>(null)
+
+  // Frozen for the session and re-stamped on the way out — see `useLastVisit`.
+  // Distinct from `lastLoaded`, which is about this tab's poll: this one is
+  // about the last time you were here at all.
+  const newSince = useLastVisit()
 
   // One fetch pass for the whole dashboard. The insights aggregate joins this
   // Promise.all rather than owning a poll of its own: Neon bills compute-hours,
@@ -215,6 +221,10 @@ export default function Dashboard({ onLogout }: DashboardProps) {
   const quietCount = afterBots?.filter(v => !hasEngaged(v)).length ?? 0
   const baseVisitors = engagedOnly && afterBots ? afterBots.filter(hasEngaged) : afterBots
 
+  // Counted over the rows actually on screen, so the readout can never promise
+  // dots the filters have taken away.
+  const newCount = baseVisitors?.filter(v => isNewSince(v, newSince)).length ?? 0
+
   const totalVisitors = baseVisitors?.length ?? 0
   const engaged = baseVisitors?.filter(v => v.chat_message_count > 0).length ?? 0
   const converted = baseVisitors?.filter(v => v.contact_count > 0).length ?? 0
@@ -315,6 +325,8 @@ export default function Dashboard({ onLogout }: DashboardProps) {
         // timeframe has already excluded.
         totalCount={inWindow?.length ?? 0}
         bursts={bursts}
+        newSince={newSince}
+        newCount={newCount}
         loading={loading}
         hasAnyVisitors={visitors !== null && visitors.length > 0}
         timeframe={timeframe}

@@ -59,7 +59,7 @@ src/
 ├── admin/                 # Admin CRM SPA (separate Vite entry; see /crm)
 │   ├── components/        # Dashboard, Login, VisitorList, VisitorDetail (orchestrator), VisitorMetaGrid, ConversationTimeline, ActivityTimeline, VisitorsChart, ContactSubmissionList, TabBar, Skeleton
 │   ├── hooks/             # useVisitorDetail (fetch + notes/location save + delete + dirty flag)
-│   └── lib/               # api.ts (apiCall helper), dateFormat.ts, location.ts (resolveLocation), userAgent.ts
+│   └── lib/               # api.ts (apiCall helper), dateFormat.ts, location.ts (resolveLocation), lastVisit.ts, userAgent.ts
 ├── data/                  # Typed data files (work.ts, testimonials.ts, instagram.ts, navigation.ts, resume.ts, chat-context.ts)
 ├── hooks/                 # useChat, useCarousel, useIntersectionObserver, useParallax, useTitleCycle
 ├── lib/                   # Browser-side helpers (visitorId.ts, telemetry.ts, markdown.tsx)

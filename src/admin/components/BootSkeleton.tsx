@@ -50,6 +50,11 @@ export function DashboardBoot() {
       <VisitorsPanel
         visitors={null}
         totalCount={0}
+        // No rows yet, so nothing can be new. The real watermark is read by the
+        // Dashboard this is standing in for — reading it here would stamp a
+        // visit that hasn't loaded anything.
+        newSince={null}
+        newCount={0}
         loading={false}
         // Hides the filter row: with no rows loaded there is nothing yet to say
         // how much a filter would remove, and a row of chips reporting zero
