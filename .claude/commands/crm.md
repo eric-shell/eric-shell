@@ -10,7 +10,7 @@ A password-gated admin page at `/dashboard` (sign-in at `/login`) for viewing ev
 | Neon HTTP client (cached `sql()` helper) | [api/_lib/db.ts](api/_lib/db.ts) |
 | Visitor upsert (validates `X-Visitor-Id` header) | [api/_lib/visitor.ts](api/_lib/visitor.ts) |
 | Admin auth (HMAC cookie, password check, 2FA challenge, `requireAdmin`) | [api/_lib/auth.ts](api/_lib/auth.ts) |
-| Admin endpoints | [api/admin/login.ts](api/admin/login.ts), [api/admin/verify.ts](api/admin/verify.ts), [api/admin/logout.ts](api/admin/logout.ts), [api/admin/session.ts](api/admin/session.ts), [api/admin/visitors.ts](api/admin/visitors.ts), [api/admin/visitors/[id].ts](api/admin/visitors/%5Bid%5D.ts), [api/admin/insights.ts](api/admin/insights.ts) |
+| Admin endpoints | [api/admin/login.ts](api/admin/login.ts), [api/admin/verify.ts](api/admin/verify.ts), [api/admin/session.ts](api/admin/session.ts) (GET probe + DELETE sign-out), [api/admin/visitors.ts](api/admin/visitors.ts), [api/admin/visitors/[id].ts](api/admin/visitors/%5Bid%5D.ts), [api/admin/insights.ts](api/admin/insights.ts) |
 | Retention cron (`page_views` / `visitor_sessions`) | [api/cron/prune.ts](api/cron/prune.ts) — scheduled in [vercel.json](vercel.json) `crons` |
 | Chat persistence wiring | [api/chat.ts](api/chat.ts) (after `res.end()`) |
 | Contact persistence wiring | [api/contact.ts](api/contact.ts) (visitor resolved before the send, row inserted before `res.json()`) |
@@ -50,7 +50,9 @@ A password-gated admin page at `/dashboard` (sign-in at `/login`) for viewing ev
 
 A previous deploy stays aliased when a new one errors, so a rejection doesn't take the site down — it silently keeps serving old code, which is easy to mistake for "the change didn't do anything".
 
-**To add an endpoint, free a slot first.** `stats.ts` was the last easy one; the remaining candidate is folding `logout.ts` into `session.ts` as a DELETE on one session resource, which touches the auth flow and deserves care.
+**`api/` now sits at 11, so there is exactly one slot spare.** Both easy merges are spent: `stats.ts` folded into `insights.ts`, and `logout.ts` into `session.ts`. A second new endpoint means finding a genuinely harder merge, or moving to Pro.
+
+**`/api/admin/logout` no longer exists** — sign-out is `DELETE /api/admin/session`, the same resource the route guard `GET`s. See the auth section for why that one branch runs before `requireAdmin`.
 
 **`/api/admin/stats` no longer exists.** Its visitors-per-day series is the seventh statement in the `insights.ts` transaction and arrives as `InsightsPayload.days`. The dashboard had only ever fetched the two together in one `Promise.all`, so a separate function cost a second invocation and a second Neon round trip for data never read on its own — merging freed the slot the retention cron needed *and* removed a round trip.
 
@@ -74,6 +76,7 @@ A previous deploy stays aliased when a new one errors, so a rejection doesn't ta
 - **The stored code is an HMAC keyed on `ADMIN_SESSION_SECRET`**, not a bare digest. Six digits is trivially enumerable offline, so a plain SHA-256 sitting in Redis would be equivalent to storing the code in clear.
 - **Session cookie**: HMAC-SHA256-signed timestamp, `HttpOnly` + `Secure` + `SameSite=Strict` + `Path=/`, **24-hour** max-age (was 7 days), verified with `timingSafeEqual`. Still no server-side revocation list — rotating `ADMIN_SESSION_SECRET` is how you kill every session.
 - **The cookie has two names and that is not a bug.** Deployed environments get `__Host-admin_session`; the prefix makes a browser refuse the cookie unless it is `Secure`, `Path=/` and `Domain`-less, so no sibling subdomain can plant or overwrite an admin session. The prefix is not dependably settable on `http://localhost`, so `vercel dev` keeps the unprefixed `admin_session` (plain `Secure` has always worked there — localhost is a trustworthy origin). `requireAdmin` reads either, preferring the prefixed one; `clearSessionCookie` expires both. Don't "simplify" this to one name without testing local sign-in.
+- **Sign-out is the one handler under `api/admin/` that must NOT start with `requireAdmin`.** `DELETE /api/admin/session` clears the cookie with no auth check at all, and the method branch therefore sits *above* the guard. Clearing your own cookie is not a privileged action, and gating it would make an expired or malformed session unclearable — which is precisely the state you most need to sign out of. `SameSite=Strict` keeps a cross-site forced sign-out out of reach; the worst a same-site one achieves is making the owner log in again. `clearSessionCookie` expires **both** cookie names, so the localhost and `__Host-` variants can't outlive each other.
 - Single user only; no multi-account support.
 
 ### The sign-in / error page family
@@ -298,7 +301,7 @@ There is **no local Postgres** in this project — `POSTGRES_URL` points at the 
 ## Adding a new admin endpoint
 
 1. Create `api/admin/<name>.ts` (or `api/admin/<group>/<name>.ts` for nesting; dynamic segments use `[id].ts`).
-2. **First line of the handler** must be `if (!requireAdmin(req, res)) return` from [api/_lib/auth.ts](api/_lib/auth.ts) — sends 401 if the cookie is missing or invalid.
+2. **First line of the handler** must be `if (!requireAdmin(req, res)) return` from [api/_lib/auth.ts](api/_lib/auth.ts) — sends 401 if the cookie is missing or invalid. The sole exception is the `DELETE` branch of `session.ts`; see the auth section for why.
 3. Validate the HTTP method explicitly. Don't trust callers.
 4. Use `sql()` from [api/_lib/db.ts](api/_lib/db.ts); always parameterize via the tagged template, never interpolate user input into the SQL string.
 5. Validate any path/query params (UUIDs, ids, etc.) before passing to the DB.

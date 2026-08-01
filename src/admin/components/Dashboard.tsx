@@ -188,8 +188,11 @@ export default function Dashboard({ onLogout }: DashboardProps) {
     }
   }, [load])
 
+  // DELETE on the session resource, which is also what the route guard GETs.
+  // Failure is swallowed on purpose: the local sign-out must happen either way,
+  // or a network blip would leave you looking at a dashboard you asked to leave.
   async function logout() {
-    try { await fetch('/api/admin/logout', { method: 'POST' }) } catch { /* ignore */ }
+    try { await fetch('/api/admin/session', { method: 'DELETE' }) } catch { /* ignore */ }
     onLogout()
   }
 
