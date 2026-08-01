@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { type LucideIcon, Bot, EyeOff, MessageSquare, Search, X } from 'lucide-react'
+import { type LucideIcon, Cpu, MessageSquare, Search, X } from 'lucide-react'
 import { twMerge } from 'tailwind-merge'
 import { Eyebrow, Panel } from '../../components/ui'
 import { SURFACE, SURFACE_HOVER } from '../../components/ui/variants'
@@ -345,11 +345,24 @@ export default function VisitorsPanel({
               {/* Own row so the chips stay side by side under the label on a
                   phone instead of inheriting the group's vertical stack. */}
               <div className="flex flex-wrap items-center gap-2">
+                {/* `Cpu`, and the same glyph in both states.
+                    `Bot` named one of the six things this chip hides — the same
+                    mistake the label made — and it is the exact icon the Flags
+                    column stamps on the `Bot` and `Headless` tags, so the chip
+                    read as filtering that one tag rather than every machine.
+                    `Cpu` names the category instead, and collides with nothing
+                    in the tag set.
+                    The old active state swapped in `EyeOff`, which means
+                    `Untracked` in the column right beside it. Nothing is lost by
+                    dropping the swap: the pressed state already carries a solid
+                    `primary` fill and the label already changes to "N hidden",
+                    so the glyph was a third telling of the same thing at the
+                    cost of a chip that changed shape under the cursor. */}
                 <FilterChip
                   active={hideBots}
                   disabled={botCount === 0}
                   onClick={onToggleBots}
-                  icon={hideBots ? EyeOff : Bot}
+                  icon={Cpu}
                   title={botCount === 0
                     ? 'No automated traffic detected in this data, so there is nothing to hide.'
                     : `${hideBots ? 'Hiding' : 'Hides'} ${botCount} automated ${botCount === 1 ? 'visitor' : 'visitors'} — ` +
