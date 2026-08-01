@@ -13,27 +13,47 @@
  * rAF already stops in a background *tab*; nothing in the platform stops it for
  * a canvas that has merely been scrolled past, which is what this is for.
  *
- * Pausing is safe to do bluntly here because both simulations are fixed-step —
- * they advance by a constant per frame (`t += 0.003`) rather than by elapsed
- * time. A paused loop therefore freezes and resumes exactly where it stopped,
- * with no jump and no catch-up burst. Do not convert these sims to delta-time
- * without revisiting this: under delta-time, resuming after a long scroll-away
- * would integrate one enormous step.
+ * `frame` receives a delta expressed in 60fps frames: 1 on a 60Hz display, ~0.5
+ * on a 120Hz one, ~2 if the browser is dropping to 30. Callers multiply their
+ * per-frame increments by it. The sims were previously fixed-step — a constant
+ * added per frame regardless of how long the frame took — which meant they ran
+ * at literally double speed on a 120Hz display and faster still on 144Hz.
+ *
+ * Two guards keep delta-time from reintroducing the hazard that made fixed-step
+ * safe to pause:
+ *
+ *   MAX_DELTA caps a single step at 3 frames. A tab that stalls, or a machine
+ *   that sleeps, otherwise hands the sim one enormous dt and teleports every
+ *   particle. Absorbing a dropped frame or two is the legitimate case; anything
+ *   beyond that is not animation, it is a gap.
+ *
+ *   `last` is re-baselined to 0 on every start(), so the very first frame after
+ *   an off-screen pause is charged as one nominal frame rather than the entire
+ *   time spent scrolled away. This is what preserves the freeze-and-resume
+ *   behaviour the IntersectionObserver gating depends on.
  *
  * Returns a teardown that stops the loop and disconnects the observer.
  */
-export function visibleRafLoop(el: Element, frame: () => void): () => void {
+const FRAME_MS = 1000 / 60
+const MAX_DELTA = 3
+
+export function visibleRafLoop(el: Element, frame: (delta: number) => void): () => void {
   let raf = 0
   let running = false
+  let last = 0
 
-  function tick() {
+  function tick(now: number) {
     raf = requestAnimationFrame(tick)
-    frame()
+    const delta = last === 0 ? 1 : Math.min((now - last) / FRAME_MS, MAX_DELTA)
+    last = now
+    frame(delta)
   }
 
   function start() {
     if (running) return
     running = true
+    // Not a resume of elapsed time — see the MAX_DELTA / re-baseline note above.
+    last = 0
     raf = requestAnimationFrame(tick)
   }
 

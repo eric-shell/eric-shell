@@ -112,12 +112,14 @@ export default function ParticlesLarge({
 
     let t = 0
 
-    function tickAcross() {
-      t += 0.003
+    // `d` is the frame delta in 60fps units — every increment below is scaled
+    // by it so the sim runs at wall-clock speed rather than at refresh rate.
+    function tickAcross(d: number) {
+      t += 0.003 * d
 
       for (let i = 0; i < COUNT; i++) {
-        py[i] += velY[i]
-        px[i] += Math.sin(t + phase[i]) * 0.04 + velX[i]
+        py[i] += velY[i] * d
+        px[i] += (Math.sin(t + phase[i]) * 0.04 + velX[i]) * d
 
         if (py[i] < -H / 2 - sizes[i]) {
           py[i] = H / 2 + sizes[i]
@@ -126,11 +128,11 @@ export default function ParticlesLarge({
       }
     }
 
-    function tickToward() {
-      t += 0.0007
+    function tickToward(d: number) {
+      t += 0.0007 * d
 
       for (let i = 0; i < COUNT; i++) {
-        life[i] += speed[i]
+        life[i] += speed[i] * d
         if (life[i] >= 1) {
           life[i] = 0
           rerollToward(i)
@@ -171,9 +173,9 @@ export default function ParticlesLarge({
 
     // Only runs while the canvas is actually on screen — see visibleRafLoop
     // for why pausing is safe for a fixed-step sim.
-    const stopLoop = visibleRafLoop(canvas, () => {
-      if (mode === 'fall-toward') tickToward()
-      else tickAcross()
+    const stopLoop = visibleRafLoop(canvas, d => {
+      if (mode === 'fall-toward') tickToward(d)
+      else tickAcross(d)
       draw()
     })
 
