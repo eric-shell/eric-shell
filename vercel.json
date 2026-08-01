@@ -11,10 +11,22 @@
     { "source": "/dashboard", "destination": "/dashboard.html" },
     { "source": "/login", "destination": "/dashboard.html" },
     { "source": "/403", "destination": "/403.html" },
-    { "source": "/resume", "destination": "/index.html" },
-    { "source": "/privacy", "destination": "/index.html" }
+    { "source": "/resume", "destination": "/resume.html" },
+    { "source": "/privacy", "destination": "/privacy.html" }
   ],
   "headers": [
+    {
+      "source": "/fonts/(.*)",
+      "headers": [
+        { "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }
+      ]
+    },
+    {
+      "source": "/(hero|posts|contact)/(.*)",
+      "headers": [
+        { "key": "Cache-Control", "value": "public, max-age=2592000, stale-while-revalidate=604800" }
+      ]
+    },
     {
       "source": "/(.*)",
       "headers": [

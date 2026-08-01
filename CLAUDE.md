@@ -97,6 +97,7 @@ Path alias: `@/*` → `src/*` is configured in `vite.config.ts` and `tsconfig.ap
 - `Pill` is a tag/filter chip. Set `active` for filled state, `onClick` for interactive use (adds `aria-pressed`), `onDismiss` for a dismissible badge with X icon. Handles `e.preventDefault()` + `e.stopPropagation()` internally — safe inside card links.
 - `CascadeGroup` wraps a group of elements and fires when it enters the viewport (`react-intersection-observer`, `triggerOnce: true`). Use `mountOnly` for above-the-fold content (Header, Hero) — animates on mount instead of scroll. Accepts `threshold` (default `0.1`) and `stagger` (default `75ms`). Use `as` to render as any HTML element (e.g. `as="ul"`).
 - `CascadeItem` wraps a single item inside a `CascadeGroup`. Reads `inView` from context and fades up (`opacity-0 translate-y-[6px]` → visible) with a delay of `Math.min(index, 7) * stagger`. Use `as="li"` inside `<ul>` grids to preserve semantic HTML. The stagger index caps at 7 so long lists don't wait seconds.
+- `Markdown` is the **only** place react-markdown may be imported as a value. It carries micromark + hast (~35KB gzipped) and used to sit in the shared `ui` chunk that every homepage visit downloads before first paint; splitting it took that chunk from 61KB gzipped to 28KB. A plain `import ReactMarkdown from 'react-markdown'` anywhere else puts it straight back. Render with `<Markdown components={…}>{rawText}</Markdown>` — it applies `linkifyEmail` itself, so callers must not pre-apply it. `prefetchMarkdown()` (in `lib/markdown.tsx`) warms the chunk on idle; `Chat` already calls it.
 - Import from the barrel: `import { Button, H2, Eyebrow, Pill, CascadeGroup, CascadeItem } from '../ui'`
 
 ### CSS Utilities
@@ -153,6 +154,12 @@ Routing is handled by `App.tsx` reading `window.location.pathname`:
 
 `Header` and `Footer` (from `components/layout/`) wrap every route.
 
+- **Each public route is its own HTML entry** — `index.html`, `resume.html`, `privacy.html`, all three registered in `vite.config.ts` and all three loading the same `/src/main.tsx`. They exist purely so each route can serve its own `<title>`, description, canonical, OG/Twitter tags, and JSON-LD. **Don't collapse them back into a rewrite onto `index.html`**: that made `/resume` and `/privacy` canonicalize themselves to the homepage, telling Google not to index them while `sitemap.xml` asked it to, and made every social share of `/resume` render the homepage card.
+- Head tags are therefore duplicated across the three files by hand, the same deliberate tradeoff as `public/404.html` / `public/403.html`. Change one, check all three. The Google Sans preload comment lives in `index.html`; the others point at it.
+- `getRoute()` matches both `/resume` and `/resume.html` (same for privacy). The bare path is what `vercel.json` rewrites to and what visitors see; the `.html` path is served directly as a static file, and without the second case it would render the *home* sections under the resume's title and canonical.
+- **A new public route means a new HTML entry, a `vite.config.ts` input, a `vercel.json` rewrite, a `getRoute()` case, and a `sitemap.xml` entry.** Missing any one of them fails silently in a different way.
+- **`useTitleCycle` runs on the homepage only, and holds the static `<title>` for 15s first.** It used to run everywhere and start at 500ms by blanking the title — which meant JS-rendering crawlers could snapshot a half-typed title, and `/resume` never showed a resume title at all. `PHRASES[0]` must stay byte-identical to `index.html`'s `<title>`; the cycle opens by *erasing* it, so a mismatch makes the first frame jump.
+
 Home section order in `App.tsx`:
 1. `Hero` — name, title, brief tagline, CTAs, Canvas 2D particle effects (`ParticlesSmall`/`ParticlesLarge`, no WebGL/Three.js) ✓
 2. `Work` — filterable/sortable grid of work and projects ✓
@@ -188,9 +195,20 @@ A password-gated admin page at `/dashboard` (sign-in at `/login`, both served fr
 - **The contact notification email links to the visitor's CRM row**, which is why `contact.ts` resolves `upsertVisitor()` before the Resend send. Don't upsert twice, and keep the link's try/catch — a DB outage must cost the link, not the email.
 - **Every close path for the visitor drawer is guarded against unsaved Notes** (`handleSelect` in VisitorList, fed by `onDirtyChange`). Escape closes it and inherits the same guard. New close paths must route through `handleSelect`.
 
+## Images
+
+`npm run images` regenerates every variant from `assets-source/` per `scripts/responsive-images.config.mjs`.
+
+- **A manifest entry may override quality** via an optional `quality: { avif, webp, jpg, png }` merged over the defaults (`{ avif: 55, webp: 78, jpg: 80, png: 90 }`). Only override where the image's job doesn't need the default fidelity — currently just the Contact background, which is `aria-hidden` under a 75%-black gradient and a grain layer.
+- **`quality` on PNG is what enables palette quantisation at all.** Without it sharp encodes fully lossless and ignores the number: that is how `subject-1024.png` came to be 2.5MB for a file that only exists as the `<picture>` fallback behind AVIF and WebP. It is 438KB now, at 42.6dB PSNR over the opaque pixels.
+- **A requested width above the source's is skipped with a warning, not clamped** (2% tolerance, so `subject.png`'s 1023-vs-1024 still emits). Clamping produced files whose *name* overstated their width — and the name is what the srcSet advertises, so browsers picked a 2048px `EJS01845-2560` believing it had 2560px. Dropping a width means editing the `srcSet` at the call site too.
+- Run `npm run lqip` after adding Instagram posts.
+
 ## Deployment
 
-Static site + serverless functions on Vercel. `npm run build` produces `dist/` (with both `index.html` and `dashboard.html` entries) plus the `api/` functions. Final target: **eric.sh**.
+Static site + serverless functions on Vercel. `npm run build` produces `dist/` (with `index.html`, `resume.html`, `privacy.html`, and `dashboard.html` entries) plus the `api/` functions. Final target: **eric.sh**.
+
+- **`public/` assets are cached by explicit `headers` rules in `vercel.json`** — Vercel's default for them is `max-age=0, must-revalidate`, so every repeat visit was revalidating ~8MB of photography. `/fonts/*` is a year + `immutable`; `/hero`, `/posts`, `/contact` get 30 days + `stale-while-revalidate` rather than `immutable`, because those filenames are stable across regeneration and `immutable` would pin a stale image until the name changed. Hashed `/assets/*` is handled by Vercel already.
 
 ## Claude Commands
 

@@ -4,27 +4,31 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Eric Shell | AI Design System Engineer and Software Developer</title>
-    <meta name="description" content="Eric Shell is an AI Design System Engineer and Software Developer building thoughtful, scalable design systems and AI-powered products." />
+    <title>Eric Shell | AI Design Systems Engineer and Software Developer</title>
+    <meta name="description" content="Eric Shell is an AI Design Systems Engineer and Software Developer building thoughtful, scalable design systems and AI-powered products." />
     <meta name="author" content="Eric Shell" />
     <link rel="canonical" href="https://eric.sh/" />
 
     <!-- Open Graph -->
     <meta property="og:type" content="website" />
     <meta property="og:url" content="https://eric.sh/" />
-    <meta property="og:title" content="Eric Shell | AI Design System Engineer and Software Developer" />
-    <meta property="og:description" content="Eric Shell is an AI Design System Engineer and Software Developer building thoughtful, scalable design systems and AI-powered products." />
+    <meta property="og:title" content="Eric Shell | AI Design Systems Engineer and Software Developer" />
+    <meta property="og:description" content="Eric Shell is an AI Design Systems Engineer and Software Developer building thoughtful, scalable design systems and AI-powered products." />
     <meta property="og:image" content="https://eric.sh/social.jpg" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="Eric Shell — AI Design Systems Engineer" />
     <meta property="og:site_name" content="Eric Shell" />
 
     <!-- Twitter Card -->
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:url" content="https://eric.sh/" />
-    <meta name="twitter:title" content="Eric Shell | AI Design System Engineer and Software Developer" />
-    <meta name="twitter:description" content="Eric Shell is an AI Design System Engineer and Software Developer building thoughtful, scalable design systems and AI-powered products." />
+    <meta name="twitter:title" content="Eric Shell | AI Design Systems Engineer and Software Developer" />
+    <meta name="twitter:description" content="Eric Shell is an AI Design Systems Engineer and Software Developer building thoughtful, scalable design systems and AI-powered products." />
     <meta name="twitter:image" content="https://eric.sh/social.jpg" />
+    <meta name="twitter:image:alt" content="Eric Shell — AI Design Systems Engineer" />
+
+    <meta name="theme-color" content="#111a2e" />
 
     <!-- Structured data -->
     <script type="application/ld+json">
@@ -61,6 +65,32 @@
 
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <!--
+      Google Sans is fetched, not self-hosted, and deliberately so: it is
+      Google's proprietary brand face. It is served through the Fonts API but
+      does not exist in the open-source google/fonts repo and reports no license
+      in the Fonts metadata, so copying the woff2 onto this origin would be
+      redistributing it without one.
+
+      The preload below buys most of what self-hosting would have. Unlinked, the
+      font sits three hops deep in the critical path — parse this document,
+      fetch the API stylesheet, parse THAT, only then discover the file URL.
+      Preloading starts the font fetch in parallel with the stylesheet instead
+      of after it, which is the round trip that was actually costing LCP.
+
+      Two things to know before touching it:
+        - The URL is version-pinned (v70) and Google does rotate these. A stale
+          one is not a breakage: the stylesheet still resolves the current file
+          on its own, and the only cost is one wasted request. Re-copy the latin
+          entry from the API when refreshing (send a browser User-Agent, or you
+          get the legacy ttf payload):
+          curl -A "Mozilla/5.0 ... Chrome/120.0" \
+            'https://fonts.googleapis.com/css2?family=Google+Sans:GRAD,wght@-25..150,400..700&display=swap'
+        - `&subset=latin` is ignored by the API — it returns all 25 unicode-range
+          faces regardless. Don't add it back thinking it trims anything.
+    -->
+    <link rel="preload" as="font" type="font/woff2" crossorigin
+          href="https://fonts.gstatic.com/s/googlesans/v70/4UaRrENHsxJlGDuGo1OIlJfC6mGS6vhAK1YobMu2vgCIhM907w.woff2" />
     <link href="https://fonts.googleapis.com/css2?family=Google+Sans:GRAD,wght@-25..150,400..700&display=swap" rel="stylesheet" />
     <link rel="preload" href="/fonts/display.woff2" as="font" type="font/woff2" crossorigin />
 

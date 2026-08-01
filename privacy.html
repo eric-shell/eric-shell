@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Privacy | Eric Shell</title>
+    <meta name="description" content="Plain-language summary of what eric.sh collects, why, how long it is kept, and how to ask for it to be removed." />
+    <meta name="author" content="Eric Shell" />
+    <link rel="canonical" href="https://eric.sh/privacy" />
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://eric.sh/privacy" />
+    <meta property="og:title" content="Privacy | Eric Shell" />
+    <meta property="og:description" content="Plain-language summary of what eric.sh collects, why, how long it is kept, and how to ask for it to be removed." />
+    <meta property="og:image" content="https://eric.sh/social.jpg" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="Eric Shell — AI Design Systems Engineer" />
+    <meta property="og:site_name" content="Eric Shell" />
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:url" content="https://eric.sh/privacy" />
+    <meta name="twitter:title" content="Privacy | Eric Shell" />
+    <meta name="twitter:description" content="Plain-language summary of what eric.sh collects, why, how long it is kept, and how to ask for it to be removed." />
+    <meta name="twitter:image" content="https://eric.sh/social.jpg" />
+    <meta name="twitter:image:alt" content="Eric Shell — AI Design Systems Engineer" />
+
+    <meta name="theme-color" content="#111a2e" />
+
+    <!-- See resume.html for why the Person node is referenced by @id, not redefined. -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@graph": [
+        {
+          "@type": "WebPage",
+          "@id": "https://eric.sh/privacy#page",
+          "url": "https://eric.sh/privacy",
+          "name": "Privacy | Eric Shell",
+          "description": "Plain-language summary of what eric.sh collects, why, how long it is kept, and how to ask for it to be removed.",
+          "isPartOf": { "@id": "https://eric.sh/#website" },
+          "about": { "@id": "https://eric.sh/#person" }
+        },
+        {
+          "@type": "BreadcrumbList",
+          "@id": "https://eric.sh/privacy#breadcrumb",
+          "itemListElement": [
+            { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://eric.sh/" },
+            { "@type": "ListItem", "position": 2, "name": "Privacy" }
+          ]
+        }
+      ]
+    }
+    </script>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <!-- Version-pinned latin subset. See index.html for why this is preloaded
+         rather than self-hosted, and how to refresh the URL. -->
+    <link rel="preload" as="font" type="font/woff2" crossorigin
+          href="https://fonts.gstatic.com/s/googlesans/v70/4UaRrENHsxJlGDuGo1OIlJfC6mGS6vhAK1YobMu2vgCIhM907w.woff2" />
+    <link href="https://fonts.googleapis.com/css2?family=Google+Sans:GRAD,wght@-25..150,400..700&display=swap" rel="stylesheet" />
+    <link rel="preload" href="/fonts/display.woff2" as="font" type="font/woff2" crossorigin />
+
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-KMKZH49FWX"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-KMKZH49FWX');
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

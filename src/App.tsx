@@ -25,17 +25,27 @@ function ContactFallback() {
 
 function getRoute(): Route {
   if (typeof window === 'undefined') return 'home'
+  // The `.html` forms are matched too. Each route is a real document now
+  // (resume.html / privacy.html), and Vercel will serve those paths directly
+  // as static files — so without this, /resume.html would render the HOME
+  // sections underneath the resume's title and canonical. The rewrite in
+  // vercel.json is what visitors follow; this is what makes the direct path
+  // agree with the document it was served from.
   switch (window.location.pathname) {
-    case '/resume':  return 'resume'
-    case '/privacy': return 'privacy'
-    default:         return 'home'
+    case '/resume':
+    case '/resume.html':  return 'resume'
+    case '/privacy':
+    case '/privacy.html': return 'privacy'
+    default:              return 'home'
   }
 }
 
 export default function App() {
-  useTitleCycle()
-
   const route = getRoute()
+
+  // Homepage only — the other routes are their own documents with their own
+  // <title>, and cycling would overwrite it. See useTitleCycle.
+  useTitleCycle(route === 'home')
 
   useEffect(() => {
     if (route !== 'home') return

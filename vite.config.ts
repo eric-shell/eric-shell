@@ -13,8 +13,16 @@ export default defineConfig({
   build: {
     chunkSizeWarningLimit: 600,
     rollupOptions: {
+      // /resume and /privacy are their own documents, not rewrites onto
+      // index.html. They render from the same main.tsx (App routes on pathname,
+      // as it always has) — the split exists so each route can serve its own
+      // <title>, description, canonical, and OG tags. Sharing index.html meant
+      // both routes canonicalized themselves to the homepage, which told Google
+      // not to index them while the sitemap asked it to.
       input: {
         main: resolve(__dirname, 'index.html'),
+        resume: resolve(__dirname, 'resume.html'),
+        privacy: resolve(__dirname, 'privacy.html'),
         dashboard: resolve(__dirname, 'dashboard.html'),
       },
       output: {
