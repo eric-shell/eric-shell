@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { Backdrop, Toaster } from '../components/ui'
 import Login from './components/Login'
 import Dashboard from './components/Dashboard'
+import { DashboardBoot, LoginBoot } from './components/BootSkeleton'
 
 export const LOGIN_PATH = '/login'
 export const DASHBOARD_PATH = '/dashboard'
@@ -62,8 +63,11 @@ export default function App() {
       <Backdrop tone="dark" className="fixed" />
       <div className="relative">
         <Toaster />
+        {/* Shaped by the route, which is known synchronously — the probe is a
+            cold serverless call, so the word "Loading…" used to be the whole
+            page for a second or more. See BootSkeleton. */}
         {!ready ? (
-          <div className="flex min-h-screen items-center justify-center text-white/65 text-sm">Loading…</div>
+          isLogin ? <LoginBoot /> : <DashboardBoot />
         ) : authed ? (
           <Dashboard onLogout={handleLogout} />
         ) : (
