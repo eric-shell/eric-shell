@@ -1,8 +1,7 @@
 import { useEffect, useRef } from 'react'
-import ReactMarkdown from 'react-markdown'
 import { twMerge } from 'tailwind-merge'
-import { Panel } from '../../components/ui'
-import { adminMdComponents, linkifyEmail } from '../../lib/markdown'
+import { Markdown, Panel } from '../../components/ui'
+import { adminMdComponents } from '../../lib/markdown'
 import { formatLong } from '../lib/dateFormat'
 import type { ChatMessage } from '@/../api/_lib/types'
 
@@ -87,7 +86,7 @@ export default function ConversationTimeline({ messages, clearEvents, scrollDep 
             >
               {item.data.role === 'user'
                 ? item.data.content
-                : <ReactMarkdown components={adminMdComponents}>{linkifyEmail(item.data.content)}</ReactMarkdown>}
+                : <Markdown components={adminMdComponents}>{item.data.content}</Markdown>}
             </Panel>
             <span className="mt-1.5 px-2 text-[10px] uppercase tracking-wide text-white/85">
               {formatLong(item.data.created_at)}

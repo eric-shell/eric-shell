@@ -2,14 +2,14 @@ import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { ArrowRight, MessagesSquare, Mic, Square, Trash2, X } from 'lucide-react'
 import { twMerge } from 'tailwind-merge'
-import ReactMarkdown from 'react-markdown'
 import Button from '../Button'
 import Panel from '../Panel'
 import { toast } from '../Toast'
 import type { ChatMessage } from '@/hooks/useChat'
 import { useSpeechInput, useTypedPlaceholder } from '@/hooks'
 import { sendEvent } from '@/lib/telemetry'
-import { chatMdComponents, linkifyEmail } from '@/lib/markdown'
+import Markdown from '../Markdown'
+import { chatMdComponents, prefetchMarkdown } from '@/lib/markdown'
 import { GENIE_OUT_MS } from './timings'
 
 interface ChatProps {
@@ -100,6 +100,11 @@ export default function Chat({
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const adaFirstMount = useRef(true)
   const wasClosedRef = useRef(false)
+
+  // Pull the markdown parser down on idle rather than at first paint. See
+  // prefetchMarkdown — it is kept out of the initial bundle, and this is what
+  // makes sure it has landed before there is anything worth parsing.
+  useEffect(() => { prefetchMarkdown() }, [])
 
   // Keyboard users shouldn't lose their place when the genie collapses:
   // closing hands focus to the floating reopen button, reopening hands it
@@ -298,7 +303,7 @@ export default function Chat({
         >
           {welcomeMessage && !hasMessages && (
             <div className={assistantBubbleClass} aria-label="Welcome message">
-              <ReactMarkdown components={mdComponents}>{linkifyEmail(typedWelcome)}</ReactMarkdown>
+              <Markdown components={mdComponents}>{typedWelcome}</Markdown>
             </div>
           )}
           {onPrompt && suggestions.length > 0 && !hasMessages && (
@@ -335,7 +340,7 @@ export default function Chat({
               }
             >
               {m.role === 'assistant'
-                ? <ReactMarkdown components={mdComponents}>{linkifyEmail(m.content)}</ReactMarkdown>
+                ? <Markdown components={mdComponents}>{m.content}</Markdown>
                 : m.content}
             </div>
           ))}

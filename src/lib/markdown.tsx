@@ -1,3 +1,7 @@
+// Type-only, so it is erased at build time and pulls no runtime with it. The
+// only value import of react-markdown in the app is the lazy() inside
+// components/ui/Markdown — keep it that way, or the parser lands back in the
+// initial bundle.
 import type { Components } from 'react-markdown'
 
 const EMAIL_RE = /(?<!\]\(mailto:)(?<!\[)([\w.+-]+@[\w-]+\.[\w.-]+)(?!\w)(?!\]\(mailto:)/g
@@ -52,4 +56,31 @@ export const adminMdComponents: Components = {
       {children}
     </a>
   ),
+}
+
+/**
+ * Warm the react-markdown chunk without blocking anything.
+ *
+ * The chat panel is open at first paint, so the welcome message renders through
+ * <Markdown> immediately — but pulling the parser in for that is exactly what
+ * the split avoids. Fetching it on idle instead means it downloads while the
+ * browser has nothing better to do, and is resident long before the first
+ * assistant reply (which is gated on a network round trip to Groq anyway).
+ *
+ * Lives here rather than beside the component so that file exports nothing but
+ * a component (react-refresh/only-export-components). Same module specifier, so
+ * it resolves to the same chunk.
+ *
+ * Safe to call repeatedly: the module registry dedupes, so extra calls are free.
+ */
+export function prefetchMarkdown() {
+  if (typeof window === 'undefined') return
+  const load = () => { void import('react-markdown') }
+  // Typed as possibly-undefined on purpose. lib.dom declares
+  // requestIdleCallback as always present, so an `in` check narrows the else
+  // branch to `never` and the Safari fallback stops compiling — while older
+  // Safari genuinely does not have it.
+  const idle: Window['requestIdleCallback'] | undefined = window.requestIdleCallback
+  if (idle) idle.call(window, load, { timeout: 3000 })
+  else window.setTimeout(load, 1000)
 }
