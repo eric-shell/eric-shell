@@ -97,13 +97,34 @@ function LocationValue({ location }: { location: ReturnType<typeof resolveLocati
 }
 
 /**
+ * "New since you last looked."
+ *
+ * `--color-accent` is admin-only and non-text-only, which is exactly what a 6px
+ * dot is. Never color alone: it carries a title and an sr-only label, because
+ * "this arrived while you were away" is not something a screen reader should
+ * have to infer from a decorative span.
+ *
+ * Rendered blank (`filled` false) to hold its own width open — see `reserveDot`.
+ */
+function NewDot({ filled }: { filled: boolean }) {
+  return (
+    <span
+      title={filled ? 'New activity since you last opened the dashboard' : undefined}
+      className={twMerge('h-1.5 w-1.5 shrink-0 rounded-full', filled && 'bg-accent')}
+    >
+      {filled && <span className="sr-only">New since your last visit. </span>}
+    </span>
+  )
+}
+
+/**
  * The visitor id, plus the two marks that ride with it.
  *
  * Both are deliberately quiet. This column is scanned, not read, and a row that
  * is merely *unread* or *annotated* is not an exception in the way `Spam?` is —
  * the Flags column next door already owns loud.
  */
-function VisitorIdValue({ v, isNew, reserveDot }: {
+function VisitorIdValue({ v, isNew, reserveDot, showDot = true }: {
   v: VisitorSummary
   isNew: boolean
   /**
@@ -114,21 +135,18 @@ function VisitorIdValue({ v, isNew, reserveDot }: {
    * gutter would be reserved for a mark that cannot appear.
    */
   reserveDot: boolean
+  /**
+   * Off on the phone cards, which show the dot beside the timestamp instead.
+   * The gutter argument above is a *table* argument — it buys alignment down a
+   * column of ids. A card has no such column, so all the reserved gutter did
+   * there was indent the id past the location and email stacked beneath it,
+   * which reads as a mistake rather than as a mark.
+   */
+  showDot?: boolean
 }) {
   return (
     <div className="flex items-center gap-1.5">
-      {/* `--color-accent` is admin-only and non-text-only, which is exactly what
-          a 6px dot is. Never color alone: it carries a title and an sr-only
-          label, because "this arrived while you were away" is not something a
-          screen reader should have to infer from a decorative span. */}
-      {(isNew || reserveDot) && (
-        <span
-          title={isNew ? 'New activity since you last opened the dashboard' : undefined}
-          className={twMerge('h-1.5 w-1.5 shrink-0 rounded-full', isNew && 'bg-accent')}
-        >
-          {isNew && <span className="sr-only">New since your last visit. </span>}
-        </span>
-      )}
+      {showDot && (isNew || reserveDot) && <NewDot filled={isNew} />}
       <span className="truncate font-mono text-xs font-semibold text-white/95">{shortId(v.id)}</span>
       {/* The note itself is in the drawer; this only says one exists. Without it
           a note was write-only — you had to already know which row you'd left it
@@ -335,7 +353,7 @@ function SortBar({ sort, onSort, className }: {
  * drift. Sorting comes from the shared SortBar above.
  */
 function MobileList({
-  rows, bursts, selectedId, closingId, onSelect, locationFor, isNew, reserveDot,
+  rows, bursts, selectedId, closingId, onSelect, locationFor, isNew,
   onVisitorDeleted, onSaved, onDirtyChange,
 }: {
   rows: VisitorSummary[]
@@ -347,8 +365,6 @@ function MobileList({
   /** Same resolver the table uses, so the "corrected" marker stays truthful. */
   locationFor: (v: VisitorSummary) => ReturnType<typeof resolveLocation>
   isNew: (v: VisitorSummary) => boolean
-  /** Hold the dot's gutter open on un-new rows — see `VisitorIdValue`. */
-  reserveDot: boolean
   onVisitorDeleted?: (id: string) => void
   onSaved: (id: string, edits: VisitorEdits) => void
   onDirtyChange: (dirty: boolean) => void
@@ -373,25 +389,45 @@ function MobileList({
                 )}
               >
                 <div className="flex items-start justify-between gap-3">
-                  <VisitorIdValue v={v} isNew={isNew(v)} reserveDot={reserveDot} />
-                  <span className="shrink-0 text-xs text-white/85">{formatLastSeen(v.last_activity_at)}</span>
+                  {/* No dot gutter here — it rides with the timestamp instead,
+                      so the id starts on the same left edge as everything
+                      stacked below it. */}
+                  <VisitorIdValue v={v} isNew={isNew(v)} reserveDot={false} showDot={false} />
+                  <span className="flex shrink-0 items-center gap-1.5 text-xs text-white/85">
+                    {isNew(v) && <NewDot filled />}
+                    {formatLastSeen(v.last_activity_at)}
+                  </span>
                 </div>
-                {tags.length > 0 && <VisitorTags tags={tags} className="mt-1" />}
 
-                <div className="mt-1.5 truncate text-sm text-white/90">
-                  <LocationValue location={location} />
-                </div>
+                {/* Identity down the left, flags down at the right — the card's
+                    only two-column band. Stacking the flags under the id instead
+                    piled every mark the card carries into its top-left corner
+                    and left the whole right half empty; hung off the bottom of
+                    the identity block they sit directly above the rule, which is
+                    where the eye is already headed for the counts. */}
+                <div className="mt-1.5 flex items-end justify-between gap-3">
+                  <div className="min-w-0 flex-1">
+                    <div className="truncate text-sm text-white/90">
+                      <LocationValue location={location} />
+                    </div>
 
-                {(v.contact_name || v.contact_email) && (
-                  <div className="mt-1.5 min-w-0">
-                    {v.contact_name && (
-                      <div className="truncate text-sm font-semibold text-white/95">{v.contact_name}</div>
-                    )}
-                    {v.contact_email && (
-                      <div className="truncate text-xs text-white/75">{v.contact_email}</div>
+                    {(v.contact_name || v.contact_email) && (
+                      <div className="mt-1.5 min-w-0">
+                        {v.contact_name && (
+                          <div className="truncate text-sm font-semibold text-white/95">{v.contact_name}</div>
+                        )}
+                        {v.contact_email && (
+                          <div className="truncate text-xs text-white/75">{v.contact_email}</div>
+                        )}
+                      </div>
                     )}
                   </div>
-                )}
+
+                  {/* Capped at half the card and allowed to wrap: three tags
+                      plus a long email would otherwise push the email's truncate
+                      down to a couple of characters. */}
+                  {tags.length > 0 && <VisitorTags tags={tags} className="max-w-[50%] shrink-0 justify-end" />}
+                </div>
 
                 <div className="mt-2 flex items-center gap-4 border-t border-white/5 pt-2 text-xs tabular-nums">
                   <span className="text-white/90"><EngagementValue v={v} align="left" /></span>
@@ -862,7 +898,6 @@ export default function VisitorList({ visitors, bursts, newSince, onVisitorDelet
         onSelect={handleSelect}
         locationFor={resolveLocation}
         isNew={isNew}
-        reserveDot={newSince != null}
         onVisitorDeleted={handleDeleted}
         onSaved={handleSaved}
         onDirtyChange={setDirty}
