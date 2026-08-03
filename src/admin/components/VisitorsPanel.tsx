@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { type LucideIcon, Cpu, Handshake, Search, X } from 'lucide-react'
 import { twMerge } from 'tailwind-merge'
 import { Eyebrow, Panel } from '../../components/ui'
@@ -243,6 +243,12 @@ export default function VisitorsPanel({
   onVisitorDeleted,
 }: VisitorsPanelProps) {
   const [query, setQuery] = useState('')
+  /**
+   * Where the pager scrolls back to. Owned here rather than in `VisitorList`
+   * because the thing worth returning to — the Visitors heading, the search
+   * field, the filter toggles — lives in this component, above the list.
+   */
+  const sectionRef = useRef<HTMLElement>(null)
 
   const q = fold(query.trim())
   const filteredVisitors = !q || !visitors ? visitors : visitors.filter(v =>
@@ -258,7 +264,12 @@ export default function VisitorsPanel({
   )
 
   return (
-    <section aria-labelledby="visitors-heading" className="flex flex-col gap-3">
+    // `scroll-mt-4` keeps the heading off the very top edge when the pager
+    // scrolls back here; the ref is what it scrolls to. The whole section is the
+    // target, not the table inside it — turning a page should put the Visitors
+    // heading, the search field and the filters back in view, so you can see
+    // which result set you are paging through.
+    <section ref={sectionRef} aria-labelledby="visitors-heading" className="flex scroll-mt-4 flex-col gap-3">
       <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
         <div className="flex items-baseline gap-2">
           <h2 id="visitors-heading">
@@ -452,6 +463,7 @@ export default function VisitorsPanel({
               bursts={bursts}
               newSince={newSince}
               onVisitorDeleted={onVisitorDeleted}
+              scrollTargetRef={sectionRef}
             />
           )}
         </div>

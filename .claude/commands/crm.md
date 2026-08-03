@@ -158,25 +158,55 @@ The direction toggle deliberately uses `ArrowUpNarrowWide` / `ArrowDownWideNarro
 | 2 | `LLM` | UA is a self-identified AI crawler or assistant — GPTBot, ClaudeBot, PerplexityBot, CCBot, YouBot, ChatGPT-User… | ✓ |
 | 3 | `Bot` | UA matches the curated crawler / HTTP-client list | ✓ |
 | 4 | `Proxy` | In a `Burst` **and** ≥4h of `VPN?` clock disagreement — see below | ✓ |
-| 5 | `Headless` | Page views recorded but no browser timezone *or* language — a real browser always sends both | ✓ |
-| 6 | `No dwell` | 3+ page views with under 2s engaged — fetched, not read | ✓ |
-| 7 | `Converted` | Submitted the contact form | |
-| 8 | `Chatted` | Used the assistant, never submitted | |
-| 9 | `Untracked` | No page view ever recorded — expected for a GPC/DNT opt-out, since telemetry exits client-side before sending | |
-| 10 | `Reader` | 45s+ engaged with deep scroll or 3+ pages | |
-| 11 | `Bounce` | A single view under 5s | |
-| 12 | `Skimmed` | Everything else with page views — the ordinary middle | |
+| 5 | `Spoofed` | UA claims Chrome 113+ *with* a build number, which no real Chrome emits — see below | ✓ |
+| 6 | `Headless` | Page views recorded but no browser timezone *or* language — a real browser always sends both | ✓ |
+| 7 | `No dwell` | 3+ page views with under 2s engaged — fetched, not read | ✓ |
+| 8 | `Converted` | Submitted the contact form | |
+| 9 | `Chatted` | Used the assistant, never submitted | |
+| 10 | `Untracked` | No page view ever recorded — expected for a GPC/DNT opt-out, since telemetry exits client-side before sending | |
+| 11 | `Reader` | 45s+ engaged with deep scroll or 3+ pages | |
+| 12 | `Bounce` | A single view under 5s | |
+| 13 | `Skimmed` | Everything else with page views — the ordinary middle | |
 
 Qualifiers stack on top:
 
 | Qualifier | Fires when | On machines |
 |---|---|---|
-| `Returning` | Sessions on 2+ **separate days** — two visits twenty minutes apart is one sitting | |
+| `Returning` | Recorded activity on 2+ **separate days** — two visits twenty minutes apart is one sitting | |
 | `Spam?` | A submission with a URL in the name or a malformed email, or two weaker signals together | |
 | `VPN?` | `client_timezone` and IP-derived `timezone` are ≥4h apart at the visit's own instant | ✓ |
 | `Burst` | 3+ **separate visitor rows** in 10 minutes sharing one `(client_timezone, user_agent)` across 2+ IP locations | ✓ |
 
 `Returning` and `Spam?` describe a person's behaviour and never fire on a machine. `VPN?` and `Burst` describe infrastructure, so they *do* — knowing a crawler came through rotating addresses is worth as much as knowing a person did. Both are suppressed under `Proxy`, whose own reason already says both things.
+
+### The `Spoofed` rule
+
+Chrome froze its UA version at `<major>.0.0.0` when UA reduction completed in **Chrome 113**. A UA claiming 113 or newer *with* a build number — `Chrome/149.0.7827.0` — is therefore not Chrome: Chromium, Chrome for Testing (what Puppeteer and Playwright ship), or a scraper reciting a copied version string.
+
+Added after a cold sales pitch came through the contact form from a Paris address, having spent **107s on the page at 95% scroll** — out-engaging most genuine traffic, and rated a model visitor by every behavioural test in the ladder. Its version string was the only thing that gave it away. This is the one rung inferred from the UA rather than read off it, and the only one that can catch a client trying *not* to be caught; the self-identified lists above only ever find the polite ones.
+
+Three guards keep it off real browsers, and removing any one puts real people behind the automated filter:
+
+- **Major 113+, never older.** Every pre-reduction Chrome sent a build number. Chrome's last Windows 7 release was 109, and a holdout pinned there is a person. This costs real recall — Chrome 96/99 scrapers in the table are let through — and that is the correct trade.
+- **Chromium forks are skipped** (`CHROMIUM_FORK`): Edge, Opera, Samsung Internet, WebView and friends embed `Chrome/…` and don't all follow the reduction on the same schedule.
+- **The UA must end exactly where plain Chrome's does**, at `[Mobile ]Safari/537.36`. Anything appended is a token the fork list didn't anticipate, and an unrecognised client must fail to a verdict of nothing. This is load-bearing: WeChat's in-app browser appends `MicroMessenger/…` and would otherwise be at risk, and Googlebot's smartphone UA — which appends `(compatible; Googlebot/2.1; …)` to a `Chrome/150.0.7871.186` — is left to the self-identified rung above where it belongs.
+
+Verified against the live table when written: 4 of 41 rows flagged, all datacenter addresses (Boardman, Boydton, Paris), none a person. `impossibleChromeVersion()` in [classify.ts](src/admin/lib/classify.ts) is a pure function over the UA string — no new data is collected for it.
+
+### "Returning" counts activity days, not session days
+
+Both the `Returning` tag and the **Return rate** radial ask the same question — did this visitor come back on a *different day* — and both now answer it from **distinct days with any recorded activity**: `visitor_sessions` ∪ `page_views` ∪ `chat_messages` ∪ `contact_submissions`. The `ad` join in [visitors.ts](api/admin/visitors.ts) feeds `active_days` on the row; the `activity` CTE in [insights.ts](api/admin/insights.ts) feeds the radial. **Change both together.**
+
+They used to count session days alone, and that was quietly broken end to end:
+
+- **The radial read 0%** — 38 visitors in the window, 0 returning — and the `Returning` tag had **never fired on a single real visitor** in the CRM's history.
+- **Sessions are the one source a real visitor can be entirely absent from.** Telemetry exits client-side under Do Not Track / GPC, so someone can chat across four separate days and submit the contact form while writing no session row at all. That is not hypothetical: it is the shape of the most engaged visitor in the table.
+- **`visitor_sessions` also postdates the earliest visitors outright**, so their first visit is invisible to it permanently — no backfill is possible.
+- **`session_count >= 2` on the tag looked like belt-and-braces and was the actual suppressor.** Two distinct active days cannot occur in fewer than two visits, so it added nothing — while being permanently false for anyone opted out of telemetry. Don't reintroduce it.
+
+After the change: 1 returning of 39 in the 30-day window, and the tag fires on the two visitors who genuinely came back (one who chatted across five days before converting, one who chatted in May and returned in July). Retention differs by source — `page_views` and `visitor_sessions` are pruned at 6 months, chats and submissions are not — so an all-time `active_days` can outlive the sessions behind it. Inside the radial's 30-day window nothing is pruned, so it doesn't apply there.
+
+**Never put a backtick in a SQL comment inside these tagged templates.** A backtick closes the template literal and the file stops parsing — `` `ad` `` in a `--` comment took `visitors.ts` down. Same family as the `split_part` backreference note in `insights.ts`.
 
 ### The proxy rules
 
@@ -192,7 +222,29 @@ These are the CRM's only **cross-row** signals. `classifyVisitor` takes an optio
 - **Rows are the unit, not page views.** A visitor id lives in localStorage, so one person reloading stays one row however many times they hit the page. Three rows means three storage contexts.
 - **A missing fingerprint is not a shared one.** Rows with no UA or no browser timezone are skipped, or they'd all pile into one group and burst together.
 
-**There is still deliberately no "Real" or "Authentic" tag.** Absence of bot signals is not evidence of a person. Full coverage is achieved by naming what was OBSERVED — `Skimmed`, `Untracked` — never by asserting humanity. The cost of tagging every row is that the column can't spot exceptions by being mostly empty, so **tone does that job instead**: ordinary states use the `neutral` tone (no fill, faintest ring) and recede; only `Spam?` is loud. Don't promote a baseline tag to a louder tone without re-thinking that.
+**There is still deliberately no "Real" or "Authentic" tag.** Absence of bot signals is not evidence of a person. Full coverage is achieved by naming what was OBSERVED — `Skimmed`, `Untracked` — never by asserting humanity. The cost of tagging every row is that the column can't spot exceptions by being mostly empty, so **tone does that job instead**: ordinary states use the `neutral` tone (no fill, faintest ring) and recede. Don't promote a baseline tag to a louder tone without re-thinking that.
+
+### Tone: green for people, red for traffic to discount
+
+Six tones, ordered by how loudly they argue for attention. `TagTone` in [classify.ts](src/admin/lib/classify.ts) is the authority; `TONE` in [VisitorTags.tsx](src/admin/components/VisitorTags.tsx) styles them and `TONE_RANK` in [sortVisitors.ts](src/admin/lib/sortVisitors.ts) sorts by them — **all three must move together.**
+
+| Tone | Colour | Tags | Reads as |
+|---|---|---|---|
+| `danger` | red | `Spam?` | Act on this — go read the message |
+| `reject` | red | `Bot` `Proxy` `Spoofed` `Headless` `No dwell` | Discount this — not a person, not wanted |
+| `warn` | **amber** | `VPN?` `Burst` | Corroborating evidence — suggestive, never decisive |
+| `muted` | grey | `Test` `LLM` | A machine, but an expected one |
+| `good` | green | `Converted` `Chatted` `Reader` `Returning` | A person did something worth seeing |
+| `neutral` | grey | `Skimmed` `Bounce` `Untracked` | The ordinary middle |
+
+- **`reject` vs `muted` is the load-bearing split.** Both are machines and only one is a problem: Googlebot indexing the site is the system working, and `Test` is our own synthetic traffic. Painting those red spends the loudest ink in the palette on the most expected rows. Measured on the live table: this split puts **37%** of rows in red, against **63%** if `Test` and `LLM` joined them — at which point the colour means "a row exists" rather than "look here".
+- **`danger` vs `reject` is one ring width** (`/25` vs `/15`) and nothing else, because a second red at 9px would read as the same colour anyway. That single step is the only visual separation, so don't merge them: `Spam?` asks you to go and read a message, the rejects ask for nothing. `TONE_RANK` keeps the same order, which is what stops fifteen machines floating above the one spam row in a Flags sort.
+- **Amber means "corroborates but cannot convict".** `VPN?` and `Burst` are the two halves of the `Proxy` rule, and that rule exists precisely because neither half is decisive alone — amber says "this is why the red row beside it is red". It is rare on purpose: three rows in the live table.
+- **`Bounce` is deliberately NOT amber.** It is a real person who left quickly, it is the most common honest outcome on the site, and it outnumbered the genuine warnings — amber on it would paint ordinary humans as suspects and drain the colour of meaning. It lives in `neutral` beside `Skimmed`, its actual neighbour: the two are adjacent points on one engagement scale, not different kinds of fact. **Moving it back into `warn` undoes the whole point of the amber tier.**
+- **Amber is not a new hue.** It is hue 75, the same as the existing `--color-warning`, which sits at L 0.546 — a button surface, too dark for ink on the dark canvas. `--color-amber-400` is the one ramp step added for that. Its L (0.750) sits above red-400 and green-400 (~0.69) on purpose: hue 75 is intrinsically lighter and matching their L reads brown.
+- **Amber beside red is the classic CVD confusion pair.** Survivable here only because every badge carries an icon *and* a word, so colour is never the sole channel — keep it that way. (In the live table they never share a cell anyway: `Bounce` was the only warn tag that could sit next to a red nature, and it no longer does.)
+- **Alpha goes on the fill, never the ink.** Full `red-400` over the `reject` fill is 5.70:1 against the composited background — AA for 9px text. Dropping the text to `red-400/85` lands at 4.47:1 and fails. `amber-400` is 8.00:1 on the canvas and 7.24:1 over its own fill.
+- Verified by screenshotting one row per tone through `check:crm-ui`'s stubbing approach; green and red coexist legibly on a `Converted` + `Spam?` row.
 
 **Tags are derived at render time, never stored.** Changing a rule relabels the whole history on the next paint — there is nothing to backfill, and nothing to migrate if a rule turns out wrong.
 
@@ -216,7 +268,7 @@ silent.
 
 | Toggle | Removes |
 |---|---|
-| `Hide automated` | Rows whose tags carry `automated` — Test, LLM, Bot, Proxy, Headless, No dwell |
+| `Hide automated` | Rows whose tags carry `automated` — Test, LLM, Bot, Proxy, Spoofed, Headless, No dwell |
 | `Engaged only` | Rows that neither chatted nor submitted the form |
 
 The label names the **predicate**, not the list. It was "Hide bots & tests" while it hid five things and had been inaccurate since `LLM` shipped; a label that enumerates has to be edited every time the classifier grows, and won't be. `VisitorTag.automated` is the contract — keep the label pointed at it.
@@ -250,6 +302,7 @@ enquiries appear. The question mark in `Spam?` is load-bearing.
 Rules that keep it honest, and that you should preserve when tuning:
 
 - **Never match `bot` mid-word.** `CUBOT` is a real Android phone brand, and `Abbott` appears in corporate user agents; a loose `[a-z]bot` pattern flags both. Use `\b` boundaries and the explicit `Bot/` version form.
+- **The corollary: crawlers whose name embeds `bot` need listing by hand.** `GoogleOther`, `AdsBot-Google` and `Storebot-Google` fail *both* generic tests — a letter rather than a boundary before "bot", and a hyphen rather than the slash `bot/` looks for — and most of Google's fleet never says "bot" at all. `GOOGLE_UA` in [classify.ts](src/admin/lib/classify.ts) enumerates them for that reason; a `GoogleOther` row sat in the table classified purely on behaviour until it was added. Any new crawler family is likely to need the same treatment: check the name against `\bbot\b` and `bot/` before assuming it's covered.
 - **Engagement outranks heuristics.** A visitor who chatted or submitted the form is never tagged `Bounce`, however brief the visit.
 - **`Spam?` separates strong signals from weak ones.** A URL in the name or a malformed email fires alone; a disposable domain or a missing page view needs a second signal before the tag appears. Keep new heuristics on the right side of that line.
 - **A disposable email alone is never spam** — plenty of real people use them. It only contributes alongside another signal.
@@ -366,7 +419,11 @@ If `/api/admin/visitors` returns 500, check `vercel dev` terminal output for the
 ## Things deliberately NOT built
 
 - **No in-app reply.** The admin is read-only by design. There's no email collected at chat time, so there's nothing to reply to. If you ever want a reply path, it requires durable visitor identity + a polling/SSE channel back to the visitor's browser.
-- **No pagination.** The visitor list query has `limit 500`. Add pagination when you actually have hundreds of visitors.
+- ~~No pagination~~ — built. `PAGE_SIZE = 25` in [VisitorList.tsx](src/admin/components/VisitorList.tsx); the query still has `limit 500`, so paging is client-side over one payload. Turning a page goes through `goToPage`, which does two things a bare `setPage` didn't:
+  - **Scrolls back to the Visitors heading.** The pager sits below 25 rows, so you reach it at the bottom of the document and the next page renders entirely above the viewport — you'd be left looking at the same two buttons with no evidence anything happened. The target is the whole `<section>` — heading, search field and filter toggles included — because seeing which result set you're paging through is the point; scrolling only to the table would land you in rows with no context. That section lives in [VisitorsPanel.tsx](src/admin/components/VisitorsPanel.tsx), *above* `VisitorList`, so the panel owns the ref (`scrollTargetRef`) and hands it down; `scroll-mt-4` on the section keeps the heading off the very top edge. No `behavior` is passed, deliberately — that defers to `html { scroll-behavior }`, which the `prefers-reduced-motion` block in [index.css](src/index.css) flips to `auto`, so the preference is honoured with no matchMedia at the call site.
+    - **The scroll MUST happen after the new rows are in the DOM** — it runs in a `useLayoutEffect` keyed on `page`, gated by `pendingScrollRef` so sort clicks and filter resets (which also `setPage(1)`) don't yank the viewport. Calling `scrollIntoView` inline in the click handler looks equivalent and is not: a partly-filled last page makes the document **shorter**, which lowers the maximum scroll offset, so a scroll aimed at the old taller layout is clamped the instant React commits the shorter one. The clamp is instant, so it both kills the smooth animation and parks you at the new maximum — the middle of the table. Measured with 41 visitors (page 2 holds 16 of 25): inline, the heading landed **461px above** the viewport in one jump; deferred, it lands at the intended 16px and animates. **A full second page hides this completely**, so test paging onto a partly-filled page or you will not see it.
+    - One residual jump is unavoidable and is not this bug: if you were near the bottom of the taller document, the browser clamps your *current* position the moment the shorter page commits, then the animation runs from there. Nothing can prevent that — the position you were at no longer exists.
+  - **Asks before discarding unsaved Notes.** A page turn unmounts the drawer, so it is a close path like the X, Escape, or clicking another row — and it was silently bypassing the guard. The check lives in `confirmDiscard`, shared with `handleSelect`, and `goToPage` clears `dirtyRef` afterwards so the next row you open doesn't inherit a stale flag and prompt about an edit that no longer exists.
 - ~~No retention/pruning job for `page_views`~~ — built; see the Retention section above.
 - **No section-impression or click tracking.** Deliberately scoped out: what someone scrolled past and what they clicked is a meaningfully bigger privacy footprint than "which pages, how long". `visitor_events` already has a `jsonb metadata` column if that changes — widen its `type` check constraint rather than adding tables.
 - **No GDPR delete-my-data endpoint.** Trivial to add (`delete from visitors where id = $1` cascades to chat_messages and nulls contact_submissions.visitor_id) — write it when you actually need it.

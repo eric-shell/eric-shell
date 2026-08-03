@@ -117,17 +117,52 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
         from visitor_sessions
         where started_at >= now() - make_interval(days => ${WINDOW_DAYS})
       `,
-      // Returning = sessions on 2+ separate days, matching the `Returning` tag
-      // in src/admin/lib/classify.ts. Two visits twenty minutes apart is one
-      // sitting, not a return. Days are UTC — see the caveat in the UI copy.
+      // Returning = ANY recorded activity on 2+ separate days, matching the
+      // `Returning` tag in src/admin/lib/classify.ts. Two visits twenty minutes
+      // apart is one sitting, not a return. Days are UTC — see the caveat in the
+      // UI copy.
+      //
+      // Counted across four tables rather than `visitor_sessions` alone, because
+      // sessions are the one source a real visitor can be completely missing
+      // from. Telemetry is suppressed client-side for anyone sending Do Not
+      // Track or Global Privacy Control, so a privacy-conscious visitor can chat
+      // on four separate days and submit the contact form while never writing a
+      // single session row. `visitor_sessions` also postdates the earliest
+      // visitors entirely, so their first visit is invisible to it forever.
+      //
+      // Measured on the live table when this was written: sessions-only reported
+      // 0 returning out of 38, and the tag had never fired on a real visitor in
+      // the CRM's history. The union finds the two people who genuinely came
+      // back — one who chatted across four days before converting, and one who
+      // chatted in May and returned in July.
+      //
+      // `union`, not `union all`: it dedupes (visitor_id, date) pairs, so a day
+      // with both a page view and a chat still counts once.
       db`
+        with activity as (
+          select visitor_id, (started_at at time zone 'UTC')::date as d
+            from visitor_sessions
+            where started_at >= now() - make_interval(days => ${WINDOW_DAYS})
+          union
+          select visitor_id, (created_at at time zone 'UTC')::date
+            from page_views
+            where created_at >= now() - make_interval(days => ${WINDOW_DAYS})
+          union
+          select visitor_id, (created_at at time zone 'UTC')::date
+            from chat_messages
+            where created_at >= now() - make_interval(days => ${WINDOW_DAYS})
+          union
+          select visitor_id, (created_at at time zone 'UTC')::date
+            from contact_submissions
+            where visitor_id is not null
+              and created_at >= now() - make_interval(days => ${WINDOW_DAYS})
+        )
         select
           count(*)::int                        as visitors,
           count(*) filter (where d >= 2)::int  as returning
         from (
-          select visitor_id, count(distinct (started_at at time zone 'UTC')::date) as d
-          from visitor_sessions
-          where started_at >= now() - make_interval(days => ${WINDOW_DAYS})
+          select visitor_id, count(distinct d) as d
+          from activity
           group by visitor_id
         ) per_visitor
       `,

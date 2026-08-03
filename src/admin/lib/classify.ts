@@ -1,6 +1,35 @@
 import type { VisitorSummary } from '@/../api/_lib/types'
 
-export type TagTone = 'danger' | 'warn' | 'muted' | 'good' | 'neutral'
+/**
+ * How loudly a tag argues for your attention.
+ *
+ *   danger   Act on this — a submission to read before replying.   (red)
+ *   reject   Discount this — not a person, and not wanted.        (red)
+ *   warn     Corroborating evidence — suggestive, never decisive.  (amber)
+ *   muted    A machine, but an expected and benign one.            (grey)
+ *   good     A person did something worth seeing.                  (green)
+ *   neutral  The ordinary middle.                                  (grey)
+ *
+ * `reject` and `muted` are the split that matters on the red side: both are
+ * machines, and only one of them is a problem. Googlebot indexing the site is
+ * the system working; our own synthetic test traffic is us. Neither deserves an
+ * alarm colour, and painting them red would spend the loudest ink in the palette
+ * on the most expected rows in the table.
+ *
+ * `warn` is amber and means one specific thing: **a signal that corroborates but
+ * cannot convict.** `VPN?` and `Burst` are exactly that — they are the two
+ * halves of the `Proxy` rule, and the whole design of that rule is that neither
+ * half is decisive alone. Amber says "this is why the red row next to it is
+ * red", or "keep an eye on this one".
+ *
+ * That is ALSO why `Bounce` is not amber. A bounce is a real person who left
+ * quickly; brief is not bogus, and it is the single most common honest outcome
+ * on the site. Amber on it would paint ordinary humans as suspects and, since
+ * bounces outnumber the genuine warnings, would drain the colour of meaning. It
+ * sits in `neutral` with `Skimmed`, which is its actual neighbour — the two are
+ * adjacent points on one engagement scale, not different kinds of fact.
+ */
+export type TagTone = 'danger' | 'reject' | 'warn' | 'muted' | 'good' | 'neutral'
 
 export interface VisitorTag {
   /** Short label rendered in the row. */
@@ -32,9 +61,9 @@ export interface VisitorTag {
  * that, what it did — and then **any number of qualifiers** on top. Nothing is
  * ever unlabelled, so a blank Flags cell now means a bug rather than a shrug.
  *
- *   nature (one, always)   Test · LLM · Bot · Proxy · Headless · No dwell ·
- *                          Converted · Chatted · Reader · Bounce · Skimmed ·
- *                          Untracked
+ *   nature (one, always)   Test · LLM · Bot · Proxy · Spoofed · Headless ·
+ *                          No dwell · Converted · Chatted · Reader · Bounce ·
+ *                          Skimmed · Untracked
  *   qualifiers (any)       Returning · Spam? · VPN? · Burst
  *
  * Most signals come off a single row. Two do not: `VPN?` compares the browser's
@@ -60,7 +89,11 @@ export interface VisitorTag {
  *
  * The cost of full coverage is that the column no longer spots exceptions by
  * being mostly empty, so tone does that job: the ordinary states are `neutral`
- * and recede, and only `Spam?` is loud.
+ * and recede, green marks a person worth seeing, and red marks traffic to
+ * discount. Red is deliberately not "every machine" — see `TagTone`. On the
+ * live table that split lands at roughly a third of rows red, against nearly
+ * two thirds if `Test` and `LLM` joined them, which would make the colour mean
+ * "a row exists" rather than "look here".
  *
  * Nothing is ever DELETED on the strength of a tag, and by default nothing is
  * hidden either. The one exception is opt-in: the "Hide bots & tests" toggle
@@ -79,13 +112,28 @@ export interface VisitorTag {
  * bodies or scroll depth belongs in the detail view, not here.
  */
 
+// Google's crawler fleet, listed out because most of it is invisible to the
+// generic patterns in BOT_UA below. `Googlebot` is the only member they catch:
+// `GoogleOther`, `AdsBot-Google` and `Storebot-Google` all have a letter rather
+// than a boundary before "bot", and their version follows a hyphen rather than
+// the slash `bot/` looks for, so they fail BOTH tests; the rest never say "bot"
+// at all. A `GoogleOther` row sat in the table classified purely on behaviour
+// until this was written. `Google-Extended` and `Google-CloudVertexBot` are
+// deliberately absent — they are in LLM_UA, which is checked first.
+const GOOGLE_UA = [
+  /googlebot/i, /googleother/i, /adsbot-google/i, /storebot-google/i,
+  /google-inspectiontool/i, /apis-google/i, /mediapartners-google/i,
+  /feedfetcher-google/i, /google-safety/i,
+]
+
 // Curated rather than a bare /bot/ test. "CUBOT" is a real Android phone brand,
 // so anything matching `bot` mid-word mislabels genuine mobile visitors — hence
 // \b word boundaries and an explicit `Bot/` version form, never a loose
 // `[a-z]bot` (which does match CUBOT NOTE 20; don't reintroduce it).
 const BOT_UA = [
   /\bbot\b/i, /bot\//i, /\bcrawler\b/i, /\bspider\b/i, /\bslurp\b/i,
-  /googlebot/i, /bingbot/i, /duckduckbot/i, /yandex(bot)?/i, /baiduspider/i,
+  ...GOOGLE_UA,
+  /bingbot/i, /duckduckbot/i, /yandex(bot)?/i, /baiduspider/i,
   /ahrefs/i, /semrush/i, /mj12bot/i, /dotbot/i, /petalbot/i, /applebot/i,
   /facebookexternalhit/i, /whatsapp/i, /telegrambot/i, /discordbot/i, /slackbot/i,
   /python-requests/i, /\bcurl\//i, /\bwget\b/i, /axios/i, /go-http-client/i,
@@ -137,6 +185,51 @@ const LLM_UA = [
   /youbot/i, /cohere-ai/i, /cohere-training-data-crawler/i, /ai2bot/i,
   /ccbot/i, /diffbot/i, /timpibot/i, /omgilibot/i, /firecrawl/i, /pangubot/i,
 ]
+
+/**
+ * Chrome froze the version in its user agent at `<major>.0.0.0` when the
+ * UA-reduction rollout completed in Chrome 113. Real Chrome has not emitted a
+ * build number since. So a UA claiming Chrome 113 or newer *with* one —
+ * `Chrome/149.0.7827.0` — is not Chrome: it is Chromium, Chrome for Testing (the
+ * build Puppeteer and Playwright ship), or a scraper pasting a version string it
+ * copied from somewhere. All of them are automation wearing a browser's name.
+ *
+ * This is the only rung inferred from the UA rather than read off it, and it is
+ * the one that catches the clients trying NOT to be caught — the self-identified
+ * lists above can only ever find the polite ones. Checked against the live table
+ * when it was written: thirteen rows carried a build number and every one was a
+ * datacenter address (Boardman, Boydton, Ashburn, Guangzhou) or the stock
+ * Nexus 5X scraper template. None was a person.
+ *
+ * Three guards keep it off real browsers, and all three matter:
+ *
+ *  - **Major 113 or newer, nothing older.** Before reduction every Chrome sent a
+ *    build number, so the rule cannot say anything about them. That is a real
+ *    cost — six of those thirteen rows were Chrome 96/99 and are let through —
+ *    but Chrome's final Windows 7 release was 109, and a holdout pinned there is
+ *    a genuine person whose traffic this would hide.
+ *  - **Chromium forks are skipped.** Edge, Opera, Samsung Internet, and every
+ *    Android WebView embed `Chrome/…` in their own UA and don't all follow the
+ *    reduction on the same schedule.
+ *  - **The UA must end exactly where plain Chrome's does.** Anything appended
+ *    after `Safari/537.36` is a brand token we didn't anticipate, and an
+ *    unrecognised fork must fail to a verdict of nothing.
+ */
+const CHROME_BUILD = /Chrome\/(\d+)\.(\d+\.\d+\.\d+)/
+const UA_REDUCTION_MAJOR = 113
+const CHROMIUM_FORK = /Edg[A-Z]?\/|OPR\/|SamsungBrowser\/|YaBrowser\/|Vivaldi|Brave\/|UCBrowser\/|CriOS\/|Whale\/|QQBrowser|MiuiBrowser|HuaweiBrowser|DuckDuckGo\/|Electron\/|\bwv\b/i
+
+/** The impossible version this UA claims, or null if it claims a possible one. */
+function impossibleChromeVersion(ua: string): string | null {
+  if (CHROMIUM_FORK.test(ua)) return null
+  // Plain Chrome, desktop and mobile alike, ends `[Mobile ]Safari/537.36`.
+  if (!/Safari\/537\.36\s*$/.test(ua)) return null
+  const m = CHROME_BUILD.exec(ua)
+  if (!m) return null
+  const [, major, rest] = m
+  if (Number(major) < UA_REDUCTION_MAJOR || rest === '0.0.0') return null
+  return `${major}.${rest}`
+}
 
 // Free/disposable providers are not inherently spam — plenty of real people use
 // them — so this only ever contributes alongside another signal.
@@ -347,7 +440,7 @@ function natureOf(v: VisitorSummary, burst: BurstInfo | undefined, gap: number |
     return {
       label: 'Bot',
       automated: true,
-      tone: 'muted',
+      tone: 'reject',
       reason: `User agent matches a known crawler or HTTP client: ${ua.slice(0, 80)}`,
     }
   }
@@ -366,11 +459,31 @@ function natureOf(v: VisitorSummary, burst: BurstInfo | undefined, gap: number |
     return {
       label: 'Proxy',
       automated: true,
-      tone: 'muted',
+      tone: 'reject',
       reason: `Arrived with ${burst.size - 1} other ${burst.size === 2 ? 'visitor' : 'visitors'} inside ` +
         `${Math.round(burst.spanMs / 1000)}s, sharing one browser fingerprint across ${burst.locations} ` +
         `different IP locations — while the browser's clock (${v.client_timezone}) sits ${hours(gap)} from ` +
         `the one its address implies (${v.timezone}). Rotating exit IPs behind a single automated client.`,
+    }
+  }
+
+  // Below Proxy, which is the better answer when both fire: this says a client
+  // isn't the browser it claims, Proxy says that *and* where it came through.
+  // Above everything after it, because a UA that cannot exist outranks anything
+  // inferred from what the visit did — and this row is the reason why. A cold
+  // sales pitch arrived through the contact form having spent 107s on the page
+  // at 95% scroll depth, out-engaging most genuine traffic. Every behavioural
+  // test below rated it a model visitor; its version string gave it away.
+  const impossible = ua !== '' ? impossibleChromeVersion(ua) : null
+  if (impossible !== null) {
+    return {
+      label: 'Spoofed',
+      automated: true,
+      tone: 'reject',
+      reason: `Claims Chrome ${impossible}, which no Chrome can be: since Chrome ${UA_REDUCTION_MAJOR} the ` +
+        'browser has sent a frozen <major>.0.0.0 version, never a real build number. Chromium, Chrome ' +
+        "for Testing, or a scraper reciting a version it copied — automation wearing a browser's name. " +
+        'Engagement and scroll depth from this row mean nothing.',
     }
   }
 
@@ -380,7 +493,7 @@ function natureOf(v: VisitorSummary, burst: BurstInfo | undefined, gap: number |
     return {
       label: 'Headless',
       automated: true,
-      tone: 'muted',
+      tone: 'reject',
       reason: 'Recorded page views but reported no browser timezone or language, which a real browser always sends.',
     }
   }
@@ -390,7 +503,7 @@ function natureOf(v: VisitorSummary, burst: BurstInfo | undefined, gap: number |
     return {
       label: 'No dwell',
       automated: true,
-      tone: 'muted',
+      tone: 'reject',
       reason: `${views} page views but under ${Math.round(NO_DWELL_MS / 1000)}s of engaged time — pages were fetched, not read.`,
     }
   }
@@ -439,7 +552,9 @@ function natureOf(v: VisitorSummary, burst: BurstInfo | undefined, gap: number |
   if (views <= 1 && engaged < BOUNCE_MS) {
     return {
       label: 'Bounce',
-      tone: 'warn',
+      // `neutral`, not `warn`: see the TagTone comment. A short visit is an
+      // ordinary human outcome, and amber is reserved for evidence.
+      tone: 'neutral',
       reason: `A single page view with under ${Math.round(BOUNCE_MS / 1000)}s of engaged time.`,
     }
   }
@@ -531,11 +646,21 @@ export function classifyVisitor(v: VisitorSummary, bursts?: BurstMap): VisitorTa
   // minutes apart is one sitting. Worth surfacing because deliberate return is
   // the strongest interest signal here, and it is invisible everywhere else in
   // the table.
-  if (!isMachine && v.session_count >= 2 && v.active_days >= 2) {
+  //
+  // `active_days` counts days with ANY recorded activity (see the `ad` join in
+  // api/admin/visitors.ts), so this fires for someone who only ever chatted.
+  // There used to be an `&& v.session_count >= 2` here, which looked like a
+  // belt-and-braces check and was actually the thing suppressing the tag: two
+  // distinct active days cannot happen in fewer than two visits, so it added
+  // nothing — while a visitor sending Do Not Track records no sessions at all,
+  // making the condition permanently false for exactly the people most worth
+  // noticing. The tag had never fired on a real visitor before it was removed.
+  if (!isMachine && v.active_days >= 2) {
     tags.push({
       label: 'Returning',
       tone: 'good',
-      reason: `Visited on ${v.active_days} separate days across ${v.session_count} sessions.`,
+      reason: `Recorded activity on ${v.active_days} separate days` +
+        (v.session_count >= 2 ? ` across ${v.session_count} sessions.` : '.'),
     })
   }
 

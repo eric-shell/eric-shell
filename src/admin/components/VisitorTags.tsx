@@ -1,7 +1,7 @@
 import { twMerge } from 'tailwind-merge'
 import {
   AlertTriangle, BookOpen, Bot, EyeOff, FlaskConical, Footprints, Globe,
-  MailCheck, MessageSquare, MoonStar, RotateCcw, Sparkles, Waypoints,
+  MailCheck, MessageSquare, MoonStar, RotateCcw, Sparkles, VenetianMask, Waypoints,
 } from 'lucide-react'
 import type { TagTone, VisitorTag } from '../lib/classify'
 
@@ -20,10 +20,42 @@ import type { TagTone, VisitorTag } from '../lib/classify'
 const TONE: Record<TagTone, string> = {
   // red-400 is 6.10:1 on the canvas — AA text.
   danger: 'text-red-400 bg-red-400/10 ring-red-400/25',
+  // Traffic to discount, given the same weight as `good` so the column reads
+  // symmetrically: green means a person did something, red means don't bother.
+  //
+  // Shares `danger`'s ink rather than a second red, because a second red at this
+  // size would read as the same colour anyway. The ring carries the difference —
+  // /15 against danger's /25 — and it is the ONLY separation, so the two must
+  // never be merged: `Spam?` asks you to go and read a message, while these ask
+  // for nothing at all. `TONE_RANK` in sortVisitors.ts encodes the same order.
+  //
+  // Full red-400 over this fill is 5.70:1 against the composited background,
+  // clearing AA for the 9px badge text. Dropping the ink to /85 lands at 4.47:1
+  // and fails it — keep the alpha on the fill, never on the text.
+  reject: 'text-red-400 bg-red-400/[0.07] ring-red-400/15',
   // green-400 is 7.04:1 on the canvas — AA text. Paired with an icon, never
   // colour alone.
   good:   'text-green-400 bg-green-400/10 ring-green-400/25',
-  warn:   'text-white/85 bg-white/[0.07] ring-white/15',
+  // Amber, at the same hue as `--color-warning`. Corroborating evidence: it
+  // explains a red row beside it, or asks you to keep an eye on this one.
+  //
+  // It was grey until the red tier arrived, which left three grey tiers doing
+  // semantic work that nobody can tell apart at 9px. Giving the middle one a hue
+  // is what makes the other two legible as "quiet".
+  //
+  // Rare on purpose — `VPN?` and `Burst` only, three rows in the live table.
+  // `Bounce` was moved out to `neutral` in the same change; it outnumbered them
+  // and is a real person, so leaving it here would have made amber mean
+  // "someone visited briefly". amber-400 is 8.00:1 on the canvas, 7.24:1 over
+  // this fill — AA at 9px.
+  //
+  // Amber next to red is the classic red/green-blind confusion pair, which is
+  // survivable here ONLY because every badge carries an icon and a word; colour
+  // is never the sole channel. Keep it that way.
+  warn:   'text-amber-400 bg-amber-400/[0.07] ring-amber-400/20',
+  // What's left after `reject` took the unwanted machines: the expected ones.
+  // Googlebot indexing the site is the system working, and `Test` is our own
+  // traffic — neither is a problem, so neither gets an alarm colour.
   muted:  'text-white/80 bg-white/[0.05] ring-white/10',
   // Every row carries a tag now, and most carry only an ordinary one. Neutral
   // is that ordinary case: legible (white/70 is 6.4:1 on the canvas) but with no
@@ -39,6 +71,9 @@ const ICON: Record<string, typeof Bot> = {
   // traffic we made ourselves, which reads differently at a glance.
   'Test': FlaskConical,
   'LLM': Sparkles,
+  // Not the Bot glyph: the others announced themselves, this one was caught
+  // claiming to be something it isn't.
+  'Spoofed': VenetianMask,
   'No dwell': MoonStar,
   'Bounce': MoonStar,
   // Both about where the traffic came through rather than what it did, so

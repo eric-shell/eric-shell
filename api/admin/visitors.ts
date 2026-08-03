@@ -31,9 +31,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
         coalesce(s.contact_count, 0)::int   as contact_count,
         coalesce(p.view_count, 0)::int      as page_view_count,
         coalesce(ss.session_count, 0)::int  as session_count,
-        -- Distinct days with a session, not just a session count: two visits
-        -- twenty minutes apart is one sitting, not a return.
-        coalesce(ss.active_days, 0)::int    as active_days,
+        -- Distinct days with activity, not just a count of visits: two sessions
+        -- twenty minutes apart is one sitting, not a return. See the ad join.
+        coalesce(ad.active_days, 0)::int    as active_days,
         coalesce(ss.max_scroll_pct, 0)::int as max_scroll_pct,
         -- float8, not bigint: the Neon driver returns int8 as a string, which
         -- would silently violate the numeric type on VisitorSummary.
@@ -77,7 +77,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
       left join (
         select visitor_id,
                count(*) as session_count,
-               count(distinct started_at::date) as active_days,
                max(max_scroll_pct) as max_scroll_pct,
                sum(engaged_ms) as engaged_ms,
                max(last_beat_at) as last_beat_at,
@@ -85,6 +84,37 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
         from visitor_sessions
         group by visitor_id
       ) ss on ss.visitor_id = v.id
+      -- Distinct days with ANY recorded activity, not just days with a session.
+      --
+      -- NOTE: no backticks anywhere in this comment, and none in any other
+      -- comment inside these tagged templates. A backtick closes the template
+      -- literal itself, so the file stops parsing — same family of trap as the
+      -- backreference note on split_part in api/admin/insights.ts.
+      --
+      -- Sessions are the one source a real visitor can be entirely missing from:
+      -- telemetry is suppressed client-side under Do Not Track / GPC, so someone
+      -- can chat across four days and submit the form without ever writing a
+      -- session row, and visitor_sessions postdates the earliest visitors
+      -- outright. Counting sessions alone meant the Returning tag had never once
+      -- fired on a real visitor. Kept in step with the return-rate query in
+      -- api/admin/insights.ts — change both together.
+      --
+      -- UTC to match that query. The union dedupes (visitor_id, date), so a day
+      -- with both a page view and a chat counts once.
+      left join (
+        select visitor_id, count(distinct d) as active_days
+        from (
+          select visitor_id, (started_at at time zone 'UTC')::date as d from visitor_sessions
+          union
+          select visitor_id, (created_at at time zone 'UTC')::date from page_views
+          union
+          select visitor_id, (created_at at time zone 'UTC')::date from chat_messages
+          union
+          select visitor_id, (created_at at time zone 'UTC')::date from contact_submissions
+            where visitor_id is not null
+        ) a
+        group by visitor_id
+      ) ad on ad.visitor_id = v.id
       order by last_activity_at desc
       limit 500
     ` as VisitorSummary[]

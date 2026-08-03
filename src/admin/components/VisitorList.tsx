@@ -1,4 +1,4 @@
-import { Fragment, type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { Fragment, type ReactNode, type RefObject, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import {
   ArrowDownWideNarrow, ArrowUpNarrowWide, ChevronDown, ChevronLeft,
   ChevronRight, ChevronUp, MailCheck, MessageSquare, Pencil, StickyNote,
@@ -9,7 +9,7 @@ import { detailStamp } from '../lib/detailCache'
 import { Button } from '../../components/ui'
 import { twMerge } from 'tailwind-merge'
 import type { VisitorSummary } from '@/../api/_lib/types'
-import { formatDuration, formatShort } from '../lib/dateFormat'
+import { formatDuration, formatLastSeen } from '../lib/dateFormat'
 import { resolveLocation } from '../lib/location'
 import { isNewSince } from '../lib/lastVisit'
 import { classifyVisitor, type BurstMap } from '../lib/classify'
@@ -67,6 +67,13 @@ interface VisitorListProps {
    */
   newSince?: number | null
   onVisitorDeleted?: (id: string) => void
+  /**
+   * What the pager scrolls back to. Points at the whole Visitors section — the
+   * heading, search field and filters included — which lives above this
+   * component, so the panel owns the ref and hands it down. Optional: without it
+   * paging simply doesn't scroll, which is the harmless direction to fail.
+   */
+  scrollTargetRef?: RefObject<HTMLElement | null>
 }
 
 function shortId(id: string) {
@@ -367,7 +374,7 @@ function MobileList({
               >
                 <div className="flex items-start justify-between gap-3">
                   <VisitorIdValue v={v} isNew={isNew(v)} reserveDot={reserveDot} />
-                  <span className="shrink-0 text-xs text-white/85">{formatShort(v.last_activity_at)}</span>
+                  <span className="shrink-0 text-xs text-white/85">{formatLastSeen(v.last_activity_at)}</span>
                 </div>
                 {tags.length > 0 && <VisitorTags tags={tags} className="mt-1" />}
 
@@ -457,7 +464,7 @@ function useColumnCount() {
   return count
 }
 
-export default function VisitorList({ visitors, bursts, newSince, onVisitorDeleted }: VisitorListProps) {
+export default function VisitorList({ visitors, bursts, newSince, onVisitorDeleted, scrollTargetRef }: VisitorListProps) {
   const [selectedId, setSelectedId] = useState<string | null>(
     () => new URLSearchParams(window.location.search).get('v')
   )
@@ -468,6 +475,8 @@ export default function VisitorList({ visitors, bursts, newSince, onVisitorDelet
   // instantly and there would be nothing left to animate.
   const [closingId, setClosingId] = useState<string | null>(null)
   const didRestore = useRef(false)
+  /** Set by `goToPage` so the layout effect below scrolls only for page turns. */
+  const pendingScrollRef = useRef(false)
   // Locally applied edits, so the Location cell and the notes marker update on
   // save without refetching the whole list.
   const [savedEdits, setSavedEdits] = useState<Record<string, VisitorEdits>>({})
@@ -531,15 +540,27 @@ export default function VisitorList({ visitors, bursts, newSince, onVisitorDelet
    * to let a background poll overwrite what you typed into Notes; this is the
    * other half, and the one that was actually costing work.
    */
+  /**
+   * True if it's safe to throw away whatever is in Notes — either nothing is
+   * unsaved, or you said so.
+   *
+   * Extracted from `handleSelect` because paging is a close path too: it
+   * unmounts the drawer without going anywhere near this component's selection
+   * logic, so before this it was a silent fourth way to lose a note.
+   */
+  const confirmDiscard = useCallback(
+    () => !dirtyRef.current || confirm('You have unsaved changes to this visitor. Discard them?'),
+    [],
+  )
+
   const handleSelect = useCallback((id: string | null) => {
     // Read `selectedId` directly rather than from a setState updater: updaters
     // must be pure, and React would run this one twice in StrictMode.
     const leaving = selectedId !== null && selectedId !== id
-    if (leaving && dirtyRef.current &&
-      !confirm('You have unsaved changes to this visitor. Discard them?')) return
+    if (leaving && !confirmDiscard()) return
     setClosingId(leaving ? selectedId : null)
     setSelectedId(id)
-  }, [selectedId])
+  }, [selectedId, confirmDiscard])
 
   // Escape closes the drawer — the first key anyone reaches for on a panel that
   // opened over a table. Routed through `handleSelect`, so it inherits the
@@ -623,6 +644,64 @@ export default function VisitorList({ visitors, bursts, newSince, onVisitorDelet
     history.replaceState(null, '', qs ? `?${qs}` : window.location.pathname)
   }, [selectedId])
 
+  /**
+   * Turn a page, and put the Visitors heading back under the reader.
+   *
+   * The pager sits below 25 rows, so by the time you reach it you are at the
+   * bottom of the document — and the next page then renders entirely ABOVE the
+   * viewport, leaving you looking at the same two buttons with no visible
+   * evidence anything happened.
+   *
+   * The target is the whole Visitors section, not the table: coming back to the
+   * heading, the search field and the filter toggles is what tells you which
+   * result set you are paging through. `scrollTargetRef` therefore points at an
+   * element this component doesn't own — see the prop.
+   *
+   * The scroll itself is deferred to a layout effect rather than run here, and
+   * that is NOT incidental — see `pendingScrollRef` below.
+   *
+   * No `behavior` on purpose. Omitting it defers to `html { scroll-behavior }`
+   * in index.css, which the reduced-motion block flips to `auto` — so the
+   * preference is honoured without a matchMedia check here.
+   */
+  const goToPage = useCallback((next: number) => {
+    // A page turn unmounts the drawer, taking any half-written note with it.
+    if (selectedId !== null && !confirmDiscard()) return
+    // The note is gone either way now. Without this the flag stays true and the
+    // NEXT row you open prompts about an edit that no longer exists.
+    dirtyRef.current = false
+    pendingScrollRef.current = true
+    setPage(next)
+  }, [selectedId, confirmDiscard])
+
+  /**
+   * Scroll only AFTER the new page's rows are in the DOM.
+   *
+   * Doing it inline in `goToPage` looks equivalent and is not. A partly-filled
+   * last page makes the document SHORTER, which lowers the maximum scroll
+   * offset — so a scroll aimed at the old, taller layout gets clamped by the
+   * browser the moment React commits the shorter one. The clamp is instant,
+   * which both kills the smooth animation and parks you at whatever the new
+   * maximum happens to be: the middle of the table.
+   *
+   * Measured with 41 visitors (page 2 holds 16 of 25): inline, the heading
+   * landed 461px ABOVE the viewport in a single jump. Deferred, it lands at the
+   * intended 16px and animates. A full second page hides the whole bug, which is
+   * why the 60-row case looked correct — don't "simplify" this back.
+   *
+   * `useLayoutEffect`, not `useEffect`: it runs after the DOM mutation but
+   * before paint, so the scroll is never a visible frame late.
+   *
+   * Keyed on `page` but gated behind a flag, because `setPage(1)` also fires for
+   * sort clicks and filter changes — and yanking the viewport when someone types
+   * in the search box would be its own bug.
+   */
+  useLayoutEffect(() => {
+    if (!pendingScrollRef.current) return
+    pendingScrollRef.current = false
+    scrollTargetRef?.current?.scrollIntoView({ block: 'start' })
+  }, [page, scrollTargetRef])
+
   const totalPages = Math.ceil(sorted.length / PAGE_SIZE)
   const pageVisitors = sorted.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
   const rangeStart = (page - 1) * PAGE_SIZE + 1
@@ -644,12 +723,29 @@ export default function VisitorList({ visitors, bursts, newSince, onVisitorDelet
           Nothing is dropped, only merged, and SortBar keeps the folded columns'
           sort keys reachable. */}
       <div className="hidden overflow-x-auto md:block">
-      <table className="w-full min-w-[42rem] table-fixed text-sm xl:min-w-[66rem]">
+      {/* Both min-widths went up 1rem with Flags' w-44 → w-48, deliberately.
+          Location is the only flexible column, so widening a fixed one takes its
+          width directly — and at the table's minimum that is the difference
+          between Location having a guaranteed 128px and having 112px. Raising
+          the floor by the same 16px keeps the balance the rest of these widths
+          were tuned against. */}
+      <table className="w-full min-w-[43rem] table-fixed text-sm xl:min-w-[67rem]">
         <thead>
           <tr className="border-b border-white/10 text-left text-xs uppercase tracking-wide text-white/85">
             <SortHeader label="Visitor"  sortKey="visitor"  sort={sort} onSort={handleSort} className="px-4 w-36 lg:w-32" />
             <SortHeader
-              label="Flags" sortKey="flags" sort={sort} onSort={handleSort} className="hidden w-44 lg:table-cell"
+              /* w-48, not w-44: `Converted` + `Returning` needs 164px on one
+                 line, and w-44 (176px) minus this column's pr-4 left exactly
+                 160px of content box — four pixels short, so the pair wrapped to
+                 two lines on every converted visitor who came back. That
+                 combination only started appearing when the Returning tag was
+                 fixed; before that it had never rendered once. w-48 gives 176px
+                 of content, 12px of slack.
+
+                 Three-tag rows still wrap by design — `Converted`+`Spam?`+
+                 `Returning` wants 223px — and buying that would cost Location
+                 another 48px. Wrapping is the right failure for the rare case. */
+              label="Flags" sortKey="flags" sort={sort} onSort={handleSort} className="hidden w-48 lg:table-cell"
               title="Heuristic traffic-quality flags. Sorts by severity — possible spam first, then automated, then bounces."
             />
             {/* 8.5rem, not 8: the widest realistic value ("May 28, 10:01 AM")
@@ -702,7 +798,7 @@ export default function VisitorList({ visitors, bursts, newSince, onVisitorDelet
                   <td className="hidden py-3 pr-4 lg:table-cell">
                     {tags.length > 0 ? <VisitorTags tags={tags} /> : <Dash />}
                   </td>
-                  <td className="truncate py-3 pr-4 text-white/85">{formatShort(v.last_activity_at)}</td>
+                  <td className="truncate py-3 pr-4 text-white/85">{formatLastSeen(v.last_activity_at)}</td>
                   <td className="py-3 pr-4 text-white/90 truncate">
                     <LocationValue location={location} />
                   </td>
@@ -779,13 +875,13 @@ export default function VisitorList({ visitors, bursts, newSince, onVisitorDelet
           </p>
           <div className="flex gap-1">
             <Button
-              variant="primary" size="sm" onClick={() => setPage(p => p - 1)} disabled={page === 1}
+              variant="primary" size="sm" onClick={() => goToPage(page - 1)} disabled={page === 1}
               leftIcon={<ChevronLeft aria-hidden="true" />}
             >
               Prev
             </Button>
             <Button
-              variant="primary" size="sm" onClick={() => setPage(p => p + 1)} disabled={page === totalPages}
+              variant="primary" size="sm" onClick={() => goToPage(page + 1)} disabled={page === totalPages}
               rightIcon={<ChevronRight aria-hidden="true" />}
             >
               Next

@@ -93,7 +93,12 @@ function cellFor(v: VisitorSummary, key: SortKey, locationLabel: string | null, 
 // turns 0 into a blank, so the ordinary rows — every row carries a tag now —
 // sink under the blanks-last rule instead of crowding a sort meant to surface
 // the exceptional ones.
-const TONE_RANK = { danger: 4, muted: 3, warn: 2, good: 1, neutral: 0 } as const
+// `reject` slots between danger and muted rather than joining danger, so the
+// comment above stays true: a possible spam submission — the one tag that wants
+// you to go and read something — still outranks a crawler. Merging them would
+// float fifteen machines to the top of a sort whose whole purpose is surfacing
+// the one row that needs a human.
+const TONE_RANK = { danger: 5, reject: 4, muted: 3, warn: 2, good: 1, neutral: 0 } as const
 
 function flagRank(v: VisitorSummary, bursts?: BurstMap): number {
   return classifyVisitor(v, bursts).reduce((max, t) => Math.max(max, TONE_RANK[t.tone] ?? 0), 0)

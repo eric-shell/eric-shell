@@ -111,7 +111,10 @@ export default function InsightsPanel({ data }: { data: InsightsPayload | null }
               value={data.visitors.returning}
               total={data.visitors.total}
               unit="visitors came back on another day"
-              caption="Visitors with sessions on two or more separate days."
+              // "Activity", not "sessions": a Do Not Track visitor records no
+              // session at all, so counting sessions understated this — see the
+              // returning query in api/admin/insights.ts.
+              caption="Visitors with recorded activity on two or more separate days."
             />
           </ChartFrame>
 

@@ -126,6 +126,21 @@
   --color-red-900: oklch(0.305 0.115 25.00);
   --color-red-950: oklch(0.215 0.080 25.00);
 
+  /**
+   * Hue 75 — the same hue as `--color-warning` above, given one ramp step light
+   * enough to be read as TEXT on the blue-950 canvas. `--color-warning` itself
+   * sits at L 0.546, which is a button surface, not ink on a dark panel.
+   *
+   * Deliberately only one step: the admin's CRM flag badges are the sole
+   * consumer, and red/green carry full ramps because the public site uses them.
+   *
+   * L 0.750 sits ABOVE red-400 (0.690) and green-400 (0.695) on purpose. Hue 75
+   * is intrinsically lighter, and matching their L reads brown rather than amber
+   * on a dark background — 8.00:1 against the canvas here, keeping it in family
+   * with red-400's 6.10:1 and green-400's 7.06:1.
+   */
+  --color-amber-400: oklch(0.750 0.150 75.00);
+
   --color-green-50:  oklch(0.962 0.020 145.00);
   --color-green-100: oklch(0.918 0.045 145.00);
   --color-green-200: oklch(0.855 0.080 145.00);
@@ -973,6 +988,17 @@
   }
 
   @media (prefers-reduced-motion: reduce) {
+    /* `html { scroll-behavior: smooth }` above applies to programmatic scrolls
+       too — anchor links, and the CRM pager's jump back to the top of the list.
+       A scroll animation is exactly what "reduce motion" is asking us not to
+       run, and it is the one kind that moves the ENTIRE viewport. Callers use
+       `scrollIntoView({ block: 'start' })` with no `behavior`, which defers to
+       this property, so overriding it here is what makes them honour the
+       preference — no matchMedia needed at any call site. */
+    html {
+      scroll-behavior: auto !important;
+    }
+
     .animate-ambient-a,
     .animate-ambient-b,
     .animate-ambient-c,
