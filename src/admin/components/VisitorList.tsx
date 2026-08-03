@@ -76,8 +76,60 @@ interface VisitorListProps {
   scrollTargetRef?: RefObject<HTMLElement | null>
 }
 
-function shortId(id: string) {
-  return id.slice(0, 8)
+/**
+ * Truncate from the middle, in CSS.
+ *
+ * A v4 UUID is 36 characters and the Visitor column is 128–144px wide, so
+ * something has to give. Cutting to the first 8 — what this column used to do —
+ * throws the id's tail away in JS, and the cut is silent: nothing on screen says
+ * the value continues.
+ *
+ * Here the whole id is in the DOM and the browser decides how much of it fits:
+ * `head` shrinks and ellipsises, `tail` never shrinks. Two consequences worth
+ * keeping:
+ *  - Selecting the cell copies the entire id, middle included. A `.slice()`
+ *    copies the stump, which is no use for pasting into a SQL `where`.
+ *  - It is width-reactive for free. The phone card has more room than the table
+ *    cell and simply shows more of the id, with no second breakpoint anywhere.
+ *
+ * The ellipsis still lands in the same column on every row, because the font is
+ * monospace and the table is `table-fixed` — so the ids read as one clean block
+ * when the column is scanned, which is the whole reason it's monospace.
+ *
+ * One artifact, and it is not a bug: the head's shrunk box is a fractional
+ * number of characters wide, so up to one character of slack can sit between the
+ * ellipsis and the tail (measured 4.3px of a 7.4px character at `md`, 0 at `lg`).
+ * It is identical on all 25 rows at a given width, which is why it reads as
+ * spacing rather than as damage. `round(down, calc(100% - 4ch), 1ch)` looks like
+ * the fix and isn't — the percentage resolves against a flex container that is
+ * itself sized by this span, and the circularity puts the slack straight back.
+ * Pinning the head to a fixed `ch` count removes it, at the cost of hardcoding a
+ * character budget per breakpoint — which is the rigidity this replaced.
+ *
+ * Technique: https://wesbos.com/tip/css-truncate-text-from-middle
+ */
+function MiddleTruncate({ text, tail = 4, className }: {
+  text: string
+  /** Trailing characters held back from the truncation. */
+  tail?: number
+  className?: string
+}) {
+  return (
+    <span className={twMerge('flex min-w-0', className)} title={text}>
+      {/* Screen readers get it whole. The two visible halves read as one
+          contiguous string and the ellipsis is generated content, which is never
+          announced — so heard aloud, the truncated form isn't a shortened id,
+          it's a different one. `sr-only` is absolutely positioned and costs the
+          flex row nothing. */}
+      <span className="sr-only">{text}</span>
+      <span aria-hidden="true" className="overflow-hidden text-ellipsis whitespace-nowrap">
+        {text.slice(0, -tail)}
+      </span>
+      {/* Neither span may grow. Let the head grow and any id short enough to fit
+          gets shoved apart, with the tail parked against the far edge. */}
+      <span aria-hidden="true" className="shrink-0">{text.slice(-tail)}</span>
+    </span>
+  )
 }
 
 /** Location cell content, shared by the table and the phone cards. */
@@ -145,9 +197,12 @@ function VisitorIdValue({ v, isNew, reserveDot, showDot = true }: {
   showDot?: boolean
 }) {
   return (
-    <div className="flex items-center gap-1.5">
+    // `min-w-0` so the id is what gives when the row runs out of room — on the
+    // phone card this sits opposite a timestamp, and without it the id would
+    // push rather than truncate.
+    <div className="flex min-w-0 items-center gap-1.5">
       {showDot && (isNew || reserveDot) && <NewDot filled={isNew} />}
-      <span className="truncate font-mono text-xs font-semibold text-white/95">{shortId(v.id)}</span>
+      <MiddleTruncate text={v.id} className="font-mono text-xs font-semibold text-white/95" />
       {/* The note itself is in the drawer; this only says one exists. Without it
           a note was write-only — you had to already know which row you'd left it
           on to ever find it again. */}
