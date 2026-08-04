@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { ArrowRight, ArrowUpRight, CalendarArrowDown, CalendarArrowUp, ArrowDownAZ, ArrowUpZA, FileText, RotateCcw } from 'lucide-react'
 import { notes, repoUrl } from '@/data/notes'
+import { useFilterTelemetry } from '@/hooks'
 import { Backdrop, Button, CascadeGroup, CascadeItem, Container, Dropdown, Eyebrow, H1, MultiSelect, Panel, Pill } from '../../ui'
 import { formatNoteDate } from './formatDate'
 
@@ -38,6 +39,8 @@ const TAG_OPTIONS = [...new Set(notes.flatMap(note => note.tags))]
 export default function Notes() {
   const [sort, setSort] = useState<SortOrder>('newest')
   const [activeTags, setActiveTags] = useState<string[]>([])
+
+  useFilterTelemetry({ section: 'notes', tags: activeTags, sort, defaultSort: 'newest' })
 
   function toggleTag(tag: string) {
     setActiveTags(prev => prev.includes(tag) ? prev.filter(t => t !== tag) : [...prev, tag])

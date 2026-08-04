@@ -1,6 +1,7 @@
 import { useLayoutEffect, useRef, useState } from 'react'
 import { ArrowDownAZ, ArrowUpRight, ArrowUpZA, CalendarDays, Plus, RotateCcw } from 'lucide-react'
 import { WORK_IMAGE_SIZES, workImageSrc, workImageSrcSet, workItems } from '@/data'
+import { useFilterTelemetry } from '@/hooks'
 import { Backdrop, Button, Card, CascadeGroup, CascadeItem, Container, Dropdown, MultiSelect, SectionHeader } from '../../ui'
 
 type SortOrder = 'chronological' | 'asc' | 'desc'
@@ -29,6 +30,8 @@ export default function Work() {
   const [activeTags, setActiveTags] = useState<string[]>([])
   const [showAll, setShowAll] = useState(false)
   const scrollYBeforeReveal = useRef<number | null>(null)
+
+  useFilterTelemetry({ section: 'work', tags: activeTags, sort, defaultSort: 'chronological' })
 
   function revealAll() {
     scrollYBeforeReveal.current = window.scrollY

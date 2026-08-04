@@ -21,6 +21,7 @@ const WINDOW_DAYS = 30
 const SOURCE_LIMIT = 8
 const PATH_LIMIT = 8
 const CLICK_LIMIT = 8
+const FILTER_LIMIT = 8
 
 const num = (v: unknown): number => (typeof v === 'number' && Number.isFinite(v) ? v : 0)
 
@@ -59,7 +60,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
   try {
     const db = sql()
 
-    const [sessionRows, returnRows, sourceRows, clickRows, pathRows, hourRows, dayRows] = (await db.transaction([
+    const [sessionRows, returnRows, sourceRows, clickRows, filterRows, pathRows, hourRows, dayRows] = (await db.transaction([
       // Sessions: totals, viewport mix, and scroll reach in one pass.
       //
       // SCROLL DEPTH IS GATED ON A DERIVED CUTOFF. Every session written before
@@ -217,6 +218,36 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
         order by clicks desc, host
         limit ${CLICK_LIMIT}
       `,
+      // Tags visitors narrowed the work grid or the notes list to. One row per
+      // (section, tag): the two indexes share a tag vocabulary, so summing them
+      // would answer a question nobody asked and hide which index the interest
+      // was in.
+      //
+      // The lateral unnest is guarded on jsonb_typeof because metadata is a
+      // client-supplied blob on a public endpoint — anything that is not an
+      // array contributes no rows rather than erroring the whole transaction and
+      // blanking every panel on the dashboard. An event carrying an empty tag
+      // list (a sort-only change) drops out here for the same reason, which is
+      // correct: it names no tag to rank.
+      db`
+        select
+          coalesce(nullif(metadata->>'section', ''), '?') as section,
+          tag,
+          count(*)::int                                   as uses,
+          count(distinct visitor_id)::int                 as visitors
+        from visitor_events
+        cross join lateral jsonb_array_elements_text(
+          case when jsonb_typeof(metadata->'tags') = 'array'
+            then metadata->'tags'
+            else '[]'::jsonb
+          end
+        ) as tag
+        where type = 'filter_apply'
+          and created_at >= now() - make_interval(days => ${WINDOW_DAYS})
+        group by 1, 2
+        order by uses desc, tag
+        limit ${FILTER_LIMIT}
+      `,
       db`
         select
           path,
@@ -261,6 +292,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
         order by gs
       `,
     ])) as [
+      Record<string, unknown>[],
       Record<string, unknown>[],
       Record<string, unknown>[],
       Record<string, unknown>[],
@@ -313,6 +345,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
         host: typeof row.host === 'string' ? row.host : '?',
         label: typeof row.label === 'string' && row.label !== '' ? row.label : null,
         clicks: num(row.clicks),
+        visitors: num(row.visitors),
+      })),
+      filters: filterRows.map(row => ({
+        section: typeof row.section === 'string' ? row.section : '?',
+        tag: typeof row.tag === 'string' ? row.tag : '',
+        uses: num(row.uses),
         visitors: num(row.visitors),
       })),
       paths: pathRows.map(row => ({

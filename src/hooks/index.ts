@@ -1,6 +1,7 @@
 export { useCarousel } from './useCarousel'
 export { useChat } from './useChat'
 export type { ChatMessage } from './useChat'
+export { useFilterTelemetry } from './useFilterTelemetry'
 export { useIntersectionObserver } from './useIntersectionObserver'
 export { useParallax } from './useParallax'
 export { useSpeechInput } from './useSpeechInput'

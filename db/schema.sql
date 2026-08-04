@@ -149,10 +149,17 @@ create index if not exists page_views_visitor_idx
 -- it already lands in page_views, and duplicating it here would double-count
 -- every route change. The metadata carries `{ href, host, label, context }`,
 -- all of it describing the site's own markup rather than the visitor.
+--
+-- `filter_apply` records a settled tag/sort selection on a filterable index —
+-- the work grid or the notes list. Metadata carries
+-- `{ section, tags: [...], sort }`. Both indexes keep their filter state out of
+-- the URL, so page_views cannot distinguish a narrowed list from a whole one;
+-- this is the only record of it. One row per settled selection, not per toggle
+-- (src/hooks/useFilterTelemetry.ts), and the default state is never reported.
 create table if not exists visitor_events (
   id          bigserial primary key,
   visitor_id  uuid not null references visitors(id) on delete cascade,
-  type        text not null check (type in ('ada_toggle', 'chat_cleared', 'speech_input', 'outbound_click', 'chat_error', 'section_error')),
+  type        text not null check (type in ('ada_toggle', 'chat_cleared', 'speech_input', 'outbound_click', 'filter_apply', 'chat_error', 'section_error')),
   metadata    jsonb,
   created_at  timestamptz not null default now()
 );
@@ -168,4 +175,4 @@ create index if not exists visitor_events_type_created_idx
 -- silently drops any type the constraint rejects:
 -- alter table visitor_events drop constraint if exists visitor_events_type_check;
 -- alter table visitor_events add constraint visitor_events_type_check
---   check (type in ('ada_toggle', 'chat_cleared', 'speech_input', 'outbound_click', 'chat_error', 'section_error'));
+--   check (type in ('ada_toggle', 'chat_cleared', 'speech_input', 'outbound_click', 'filter_apply', 'chat_error', 'section_error'));

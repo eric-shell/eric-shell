@@ -128,6 +128,18 @@ function buildInsights() {
       { host: 'linkedin.com', label: 'LinkedIn', clicks: 9, visitors: 8 },
       { host: 'instagram.com', label: 'Instagram', clicks: 4, visitors: 4 },
     ],
+    // Deliberately includes one tag that appears in BOTH sections — that is the
+    // case the section prefix on the label exists for, and the case where a
+    // missing prefix would look like a duplicated row rather than two answers.
+    // Also a long tag, since these labels sit in the same 38% column as the
+    // click list's.
+    filters: [
+      { section: 'work', tag: 'react', uses: 18, visitors: 12 },
+      { section: 'notes', tag: 'performance', uses: 14, visitors: 9 },
+      { section: 'work', tag: 'design systems', uses: 11, visitors: 8 },
+      { section: 'notes', tag: 'react', uses: 7, visitors: 6 },
+      { section: 'work', tag: 'accessibility', uses: 3, visitors: 3 },
+    ],
     paths: [...pathCounts].map(([path, views]) => ({
       path,
       views,

@@ -12,6 +12,7 @@ const VALID_TYPES = [
   'chat_cleared',
   'speech_input',
   'outbound_click',
+  'filter_apply',
   'chat_error',
   'section_error',
 ]

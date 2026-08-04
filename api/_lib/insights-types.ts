@@ -93,6 +93,27 @@ export interface ClickRow {
   visitors: number
 }
 
+/**
+ * A tag visitors narrowed one of the filterable indexes to.
+ *
+ * One row per (section, tag): the work grid and the notes list share a tag
+ * vocabulary, and "react on the work grid" is a different question from "react
+ * in the notes", so they are never summed together.
+ *
+ * Counted from settled selections rather than individual toggles, so `uses` is
+ * decisions and not clicks — see `useFilterTelemetry`. A selection that only
+ * changed the sort order contributes no row here, since it names no tag.
+ */
+export interface FilterRow {
+  /** `work` or `notes`. `?` if an event somehow arrived without one. */
+  section: string
+  tag: string
+  /** Settled selections this tag appeared in. */
+  uses: number
+  /** Distinct visitors behind them — one person refining a filter is not several. */
+  visitors: number
+}
+
 export interface PathRow {
   path: string
   views: number
@@ -121,6 +142,7 @@ export interface InsightsPayload {
   }
   sources: SourceRow[]
   clicks: ClickRow[]
+  filters: FilterRow[]
   paths: PathRow[]
   /** Always 24 rows, 0–23, zero-filled. */
   hourly: HourRow[]

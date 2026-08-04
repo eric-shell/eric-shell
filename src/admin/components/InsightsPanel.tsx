@@ -10,7 +10,7 @@ import { formatHour, labelSource, localHourOffset } from '../lib/chartTheme'
 import type { InsightsPayload } from '@/../api/_lib/insights-types'
 
 /**
- * The insight grid: seven single-series charts over one server-side aggregate.
+ * The insight grid: eight single-series charts over one server-side aggregate.
  *
  * It is fed by props from the dashboard's existing poll — it deliberately owns
  * no fetch and no interval of its own. Neon bills compute-hours, so a second
@@ -29,14 +29,22 @@ const SPANS = [
   'xl:col-span-2',
   'xl:col-span-2',
   'xl:col-span-2',
-  'sm:col-span-2 xl:col-span-6',
+  'sm:col-span-2 xl:col-span-2',
+  'sm:col-span-2 xl:col-span-4',
 ]
 
 /**
- * Three ratio cards, then three rank lists, then the hour-of-day band full
- * width. Six columns rather than three so the band can span cleanly; the six
- * cards above it are thirds either way, and six of them divides evenly into the
- * two-column layout with no hole to fill.
+ * Three ratio cards, then three rank lists, then a fourth rank list beside the
+ * hour-of-day band. Six columns rather than three so the band can span cleanly;
+ * the six cards above it are thirds either way, and six of them divides evenly
+ * into the two-column layout with no hole to fill.
+ *
+ * The band gives up two of its six columns to the filter list rather than
+ * dropping to a third of a row like the other rank lists: it is the one chart
+ * here with a continuous axis, and 24 buckets across a third of a row gave each
+ * column ~10px, below the width where an hour-of-day shape is legible. Two
+ * thirds keeps it readable. Both cards take the full width at `sm`, where one
+ * of them alongside a half-width neighbour would leave a hole in the grid.
  */
 const GRID = 'grid gap-3 sm:grid-cols-2 xl:grid-cols-6'
 
@@ -186,15 +194,35 @@ export default function InsightsPanel({ data }: { data: InsightsPayload | null }
             />
           </ChartFrame>
 
-          {/* Row three, full width. The only chart here with a continuous axis:
-              24 buckets in a third of a row gave each column ~10px, which is
-              below the width where an hour-of-day shape is readable at all. */}
+          {/* Row three. Neither index puts its filter state in the URL, so this
+              is the only place the interest behind a visit shows up at all — a
+              page view of /notes reads the same whether the list was taken whole
+              or narrowed to two tags.
+
+              Labelled by section because the work grid and the notes list share
+              a tag vocabulary: two bars reading "react" with no way to tell them
+              apart would look like a duplicate rather than two answers. */}
+          <ChartFrame title="Top filters" meta="selections" className={SPANS[6]}>
+            <BarList
+              unit="selections"
+              empty="No tag filters applied in this window."
+              items={data.filters.map(f => ({
+                label: `${f.section} · ${f.tag}`,
+                value: f.uses,
+                detail: `${f.visitors} ${f.visitors === 1 ? 'visitor' : 'visitors'}`,
+              }))}
+            />
+          </ChartFrame>
+
+          {/* The only chart here with a continuous axis: 24 buckets in a third
+              of a row gave each column ~10px, which is below the width where an
+              hour-of-day shape is readable at all. */}
           <ChartFrame
             title="Views by hour"
             meta={peakHour && peakHour.views > 0
               ? `peak ${formatHour(peakHour.displayHour)}`
               : undefined}
-            className={SPANS[6]}
+            className={SPANS[7]}
           >
             <HourlyActivity hourly={data.hourly} />
           </ChartFrame>

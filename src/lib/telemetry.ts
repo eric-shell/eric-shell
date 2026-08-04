@@ -77,6 +77,13 @@ export function identityHeaders(): Record<string, string> {
  * the endpoint silently drops any type the constraint rejects, so a new member
  * here is inert until the ALTER in db/schema.sql has been run against Neon.
  *
+ * `filter_apply` is the one member describing on-page behaviour rather than a
+ * discrete action. Both filterable indexes keep their state out of the URL, so
+ * `page_views` records `/notes` identically whether it was read whole or
+ * narrowed to two tags; without this there is no signal at all for which topics
+ * people look for. It is debounced to one row per settled selection — see
+ * `useFilterTelemetry`, which is the only thing that should send it.
+ *
  * `chat_error` and `section_error` arrived when Google Analytics was removed.
  * They were the only two of its events carrying signal nothing else records —
  * a chat that fails never reaches chat.ts's insert, and a section that throws
@@ -90,6 +97,7 @@ export type VisitorEventType =
   | 'chat_cleared'
   | 'speech_input'
   | 'outbound_click'
+  | 'filter_apply'
   | 'chat_error'
   | 'section_error'
 
