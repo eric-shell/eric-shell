@@ -1,4 +1,4 @@
-import type { AnchorHTMLAttributes, ButtonHTMLAttributes } from 'react'
+import type { AnchorHTMLAttributes, ButtonHTMLAttributes, HTMLAttributes } from 'react'
 import { twMerge } from 'tailwind-merge'
 import {
   SURFACE,
@@ -96,6 +96,21 @@ type SharedProps = {
   rightIcon?: React.ReactNode
   /** Set false to render icons inline with no tinted slab. */
   iconSlab?: boolean
+  /**
+   * Render the button's appearance on a non-interactive `<span>`.
+   *
+   * For the case where the button sits inside something that is *already* a
+   * link — a whole-card `<a>`, where a nested `<button>` or `<a>` is invalid
+   * HTML and a second tab stop to the same destination. The span inherits the
+   * card's click, so the affordance is real even though the element isn't.
+   *
+   * This exists so a call site in that position can still say
+   * `variant="primary"` instead of hand-rolling the surface classes, which is
+   * the rule everything else in `variants.ts` is built to hold. `Pill` renders
+   * a `<span>` for the same reason. Do not use it for anything clickable in
+   * its own right — it has no role, no focus, and no keyboard behaviour.
+   */
+  as?: 'span'
 }
 
 type ButtonAsButton = SharedProps & ButtonHTMLAttributes<HTMLButtonElement> & { href?: undefined }
@@ -112,6 +127,7 @@ export default function Button({
   rightIcon,
   iconSlab = true,
   href,
+  as,
   ...props
 }: ButtonProps) {
   const square = shape === 'square'
@@ -163,6 +179,14 @@ export default function Button({
       )}
     </>
   )
+
+  if (as === 'span') {
+    return (
+      <span className={classes} {...(props as HTMLAttributes<HTMLSpanElement>)}>
+        {inner}
+      </span>
+    )
+  }
 
   if (href !== undefined) {
     return (

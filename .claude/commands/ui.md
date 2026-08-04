@@ -89,6 +89,8 @@ Grain utilities (also in `index.css`, sharing the `--noise-img` data-URI):
 ### Button — [src/components/ui/Button/Button.tsx](src/components/ui/Button/Button.tsx)
 Polymorphic (renders `<a>` when `href` is passed, else `<button>`). Props: `variant` (default `secondary`), `size` (`sm|md|lg`, default `md`), `shape` (`pill|square`, default `pill`). Applies `SURFACE[variant]` + `SURFACE_HOVER[variant]` + size/shape padding. `shape="square"` is the icon-only form.
 
+`as="span"` renders the same appearance on a non-interactive `<span>` — for a button sitting inside something that is *already* a link, such as a whole-card `<a>`, where a nested `<button>`/`<a>` is invalid HTML and a second tab stop to the same destination. The wrapper's click is the real affordance. It exists so those call sites can still say `variant="primary"` rather than hand-rolling surface classes; `Pill` renders a `<span>` for the same reason. Never use it for something clickable in its own right — no role, no focus, no keyboard behaviour. Used by the notes index cards.
+
 ### Pill — [src/components/ui/Pill/Pill.tsx](src/components/ui/Pill/Pill.tsx)
 Tag/filter chip. Active state uses `SURFACE.primary`, inactive uses `SURFACE.white`. Handles `e.preventDefault()` + `e.stopPropagation()` internally — safe to nest inside a parent link. `onDismiss` renders a trailing X.
 

@@ -27,6 +27,12 @@ pnpm-debug.log*
 # Vite
 vite.config.*.timestamp-*
 
+# Generated from src/data/notes.ts by notesEntries() in vite.config.ts — one
+# document per note, plus the sitemap. Derived, not authored: committing them
+# would create a second source of truth that drifts from the first.
+/notes/*.html
+public/sitemap.xml
+
 # Vercel
 .vercel/
 

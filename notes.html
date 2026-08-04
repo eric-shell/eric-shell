@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Notes | Eric Shell</title>
+    <meta name="description" content="A changelog of engineering decisions made on eric.sh. What changed, what it cost, and what went wrong on the way. Every entry links its commit." />
+    <meta name="author" content="Eric Shell" />
+    <link rel="canonical" href="https://eric.sh/notes" />
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://eric.sh/notes" />
+    <meta property="og:title" content="Notes | Eric Shell" />
+    <meta property="og:description" content="A changelog of engineering decisions made on eric.sh. What changed, what it cost, and what went wrong on the way. Every entry links its commit." />
+    <meta property="og:image" content="https://eric.sh/social.jpg" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="Eric Shell, AI Design Systems Engineer" />
+    <meta property="og:site_name" content="Eric Shell" />
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:url" content="https://eric.sh/notes" />
+    <meta name="twitter:title" content="Notes | Eric Shell" />
+    <meta name="twitter:description" content="A changelog of engineering decisions made on eric.sh. What changed, what it cost, and what went wrong on the way. Every entry links its commit." />
+    <meta name="twitter:image" content="https://eric.sh/social.jpg" />
+    <meta name="twitter:image:alt" content="Eric Shell, AI Design Systems Engineer" />
+
+    <!-- blue-950, the dark canvas every route opens on (hero / resume masthead
+         / privacy masthead). Resolved from oklch(0.198 0.025 269.84). -->
+    <meta name="theme-color" content="#111521" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link rel="manifest" href="/site.webmanifest" />
+
+    <!--
+      The Blog + itemListElement JSON-LD for this page is INJECTED AT BUILD TIME
+      by the `notesSchema()` plugin in vite.config.ts, from src/data/notes.ts,
+      the same reason the work grid's ItemList is generated rather than pasted.
+      A hand-written copy would be stale the first time an entry was added, and
+      a blog index whose structured data lists posts that no longer match the
+      page is worse than one with none.
+
+      The per-entry documents under /notes/<slug> are generated wholesale by
+      `notesEntries()` in the same file. This document is the only hand-written
+      head in the notes route. See resume.html for why the Person node is
+      referenced by @id rather than redefined.
+    -->
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <!-- Version-pinned latin subset. See index.html for why this is preloaded
+         rather than self-hosted, and how to refresh the URL. -->
+    <link rel="preload" as="font" type="font/woff2" crossorigin
+          href="https://fonts.gstatic.com/s/googlesans/v70/4UaRrENHsxJlGDuGo1OIlJfC6mGS6vhAK1YobMu2vgCIhM907w.woff2" />
+    <link href="https://fonts.googleapis.com/css2?family=Google+Sans:GRAD,wght@-25..150,400..700&display=swap" rel="stylesheet" />
+    <link rel="preload" href="/fonts/display.woff2" as="font" type="font/woff2" crossorigin />
+
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

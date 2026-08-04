@@ -12,7 +12,9 @@
     { "source": "/login", "destination": "/dashboard.html" },
     { "source": "/403", "destination": "/403.html" },
     { "source": "/resume", "destination": "/resume.html" },
-    { "source": "/privacy", "destination": "/privacy.html" }
+    { "source": "/privacy", "destination": "/privacy.html" },
+    { "source": "/notes", "destination": "/notes.html" },
+    { "source": "/notes/:slug", "destination": "/notes/:slug.html" }
   ],
   "headers": [
     {

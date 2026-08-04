@@ -33,6 +33,7 @@ src/
 │   │   ├── Contact/       # Contact form
 │   │   ├── Resume/        # /resume route — full resume page
 │   │   ├── Privacy/       # /privacy route — data-handling disclosure
+│   │   ├── Notes/         # /notes index (Notes.tsx) + /notes/<slug> article (Note.tsx)
 │   │   └── index.ts       # Barrel export for all sections
 │   └── ui/                # Reusable primitives — import from 'components/ui'
 │       ├── Backdrop/      # Ambient section background — drifting hue-shifting gradient blobs + film grain (tone: light|dark|photo)
@@ -60,7 +61,7 @@ src/
 │   ├── components/        # Dashboard, Login, VisitorList, VisitorDetail (orchestrator), VisitorMetaGrid, ConversationTimeline, ActivityTimeline, VisitorsChart, ContactSubmissionList, TabBar, Skeleton
 │   ├── hooks/             # useVisitorDetail (fetch + notes/location save + delete + dirty flag)
 │   └── lib/               # api.ts (apiCall helper), dateFormat.ts, location.ts (resolveLocation), lastVisit.ts, userAgent.ts
-├── data/                  # Typed data files (work.ts, testimonials.ts, instagram.ts, navigation.ts, resume.ts, chat-context.ts)
+├── data/                  # Typed data files (work.ts, testimonials.ts, instagram.ts, navigation.ts, resume.ts, notes.ts, chat-context.ts)
 ├── hooks/                 # useChat, useCarousel, useIntersectionObserver, useParallax, useTitleCycle
 ├── lib/                   # Browser-side helpers (visitorId.ts, telemetry.ts, markdown.tsx)
 ├── App.tsx                # Root component — assembles sections, routes /resume and /privacy
@@ -90,6 +91,7 @@ Path alias: `@/*` → `src/*` is configured in `vite.config.ts` and `tsconfig.ap
 - `Button` defaults to `variant="secondary"`. Pass `href` to render as `<a>`. Two additional axes:
   - `size` (`sm` | `md` | `lg`, default `md`) — controls text scale and padding.
   - `shape` (`pill` | `square`, default `pill`) — `pill` for text buttons; `square` for icon-only buttons.
+  - `as="span"` renders the button's appearance on a non-interactive `<span>`, for a button inside something already clickable (a whole-card `<a>`, where nesting a button or link is invalid HTML). It exists so those call sites can still use a variant instead of hand-rolling surface classes. Never for something clickable in its own right.
 - `Panel` is a div-only wrapping surface (default `variant="secondary"`). For clickable cards, wrap `<Panel>` in an `<a>` — it is not polymorphic. `Card` (in `components/ui`) already packages this pattern for image/title/description/tag-pill cards — prefer it over hand-rolling a new one.
 - `Dropdown` is light-theme by default; swap border/bg classes via `className` if needed in a dark section.
 - `Pill` is a tag/filter chip. Set `active` for filled state, `onClick` for interactive use (adds `aria-pressed`), `onDismiss` for a dismissible badge with X icon. Handles `e.preventDefault()` + `e.stopPropagation()` internally — safe inside card links.
@@ -149,13 +151,14 @@ Routing is handled by `App.tsx` reading `window.location.pathname`:
 - `/` (home) renders the section stack below
 - `/resume` renders the full `Resume` page
 - `/privacy` renders the `Privacy` data-handling page
+- `/notes` renders the `Notes` index; `/notes/<slug>` renders a single `Note`
 
 `Header` and `Footer` (from `components/layout/`) wrap every route.
 
 - **Each public route is its own HTML entry** — `index.html`, `resume.html`, `privacy.html`, all three registered in `vite.config.ts` and all three loading the same `/src/main.tsx`. They exist purely so each route can serve its own `<title>`, description, canonical, OG/Twitter tags, and JSON-LD. **Don't collapse them back into a rewrite onto `index.html`**: that made `/resume` and `/privacy` canonicalize themselves to the homepage, telling Google not to index them while `sitemap.xml` asked it to, and made every social share of `/resume` render the homepage card.
 - Head tags are therefore duplicated across the three files by hand, the same deliberate tradeoff as `public/404.html` / `public/403.html`. Change one, check all three. The Google Sans preload comment lives in `index.html`; the others point at it.
 - `getRoute()` matches both `/resume` and `/resume.html` (same for privacy). The bare path is what `vercel.json` rewrites to and what visitors see; the `.html` path is served directly as a static file, and without the second case it would render the *home* sections under the resume's title and canonical.
-- **A new public route means a new HTML entry, a `vite.config.ts` input, a `vercel.json` rewrite, a `getRoute()` case, and a `sitemap.xml` entry.** Missing any one of them fails silently in a different way.
+- **A new public route means a new HTML entry, a `vite.config.ts` input, a `vercel.json` rewrite, a `getRoute()` case, and a `sitemap.xml` entry.** Missing any one of them fails silently in a different way. The `/notes` route is the exception that proves it — all five are generated, see below.
 - **`useTitleCycle` runs on the homepage only, and holds the static `<title>` for 15s first.** It used to run everywhere and start at 500ms by blanking the title — which meant JS-rendering crawlers could snapshot a half-typed title, and `/resume` never showed a resume title at all. `PHRASES[0]` must stay byte-identical to `index.html`'s `<title>`; the cycle opens by *erasing* it, so a mismatch makes the first frame jump.
 
 Home section order in `App.tsx`:
@@ -177,6 +180,22 @@ Home section order in `App.tsx`:
 - `script-src` still needs `'unsafe-inline'` even with GA gone: the JSON-LD blocks are inline `<script>` elements and CSP applies `script-src` to them. Removing it silently kills every structured-data block on the site.
 - **Adding a `VisitorEventType` is a three-file change plus a manual migration.** `src/lib/telemetry.ts` (the union), `api/events.ts` (`VALID_TYPES`), and the `type` check constraint on `visitor_events` in [db/schema.sql](db/schema.sql) — and the constraint has to be widened by hand in the Neon SQL editor, because `create table if not exists` will not alter a table that already exists. Until that ALTER runs, `/api/events` accepts the event and the insert is swallowed by its best-effort catch: **the event silently vanishes.** The ALTER is kept ready to paste at the bottom of schema.sql.
 - **The logo easter-egg sound is constructed on first play, not on import.** It was a module-scope `new Audio()` pointing at a 750KB WAV — the largest asset on the page, downloaded on every route, for a joke that fires on clicking an already-active nav item. Now 16KB AAC, fetched on first trigger. Don't move the construction back to module scope.
+
+## Notes (`/notes`)
+
+A changelog of engineering decisions made on this site. Entries live in [src/data/notes.ts](src/data/notes.ts); `/notes` is the index, `/notes/<slug>` is a single entry.
+
+- **Adding an entry to `notes.ts` is the entire workflow.** Everything the five-item route checklist above demands is derived from that array by `notesEntries()` in `vite.config.ts`: the HTML document, the Vite input, and the `sitemap.xml` line. The `vercel.json` rewrite (`/notes/:slug`) and the `getRoute()` case are written once and cover every slug. **Don't hand-write a document under `notes/`** — it is gitignored and will be overwritten.
+- **`notes/*.html` and `public/sitemap.xml` are generated and gitignored.** They are derived from `notes.ts`; a committed copy is a second source of truth waiting to disagree with the first. `sitemap.xml` therefore no longer exists in the repo — it is written at config-evaluation time, which is why both `vite dev` and `vite build` see it. Static routes carry a hand-declared `lastmod` in `STATIC_ROUTES`; `/notes` derives its own from the newest entry.
+- **Generation runs while the config is evaluated, not in a plugin hook** — `rollupOptions.input` resolves real paths from disk before any hook fires. `writeIfChanged` exists because rewriting identical bytes on every dev restart bumps mtimes and produces a full-reload loop.
+- **A slug is a live URL.** Renaming one breaks every link and the sitemap entry that pointed at it. Add a new entry rather than rewriting an old slug.
+- **Append new entries to `entries`; don't hand-slot them by date.** `notes` is `entries` sorted date-descending, and `Array.prototype.sort` is stable, so order *within* a shared date stays hand-controlled while order *across* dates is derived. Everything reads from `notes`: the index, both sort directions, the prev/next pager, the sitemap, and the Blog JSON-LD. This exists because an entry dated `2026-08-01` was once appended after two July entries, and with nothing sorting, "Newest first" put it below a July 19 post while the pager offered it a "Newer" link pointing backwards in time.
+- **Every entry must be checkable.** `commit` links a real SHA in the public repo, and the numbers in a body are measurements, not estimates — that verifiability is the whole reason the section exists. An entry that can't be checked doesn't belong.
+- **No em dashes in note content.** Not in `title`, `summary`, or `body`, and not in the meta description a summary becomes. Heavy em-dash use is one of the most recognisable tells of machine-written prose, and a section whose entire value rests on the entries being genuinely Eric's cannot afford to read as generated. Use a comma, a colon, parentheses, or two sentences. The rule covers reader-facing copy on the notes route (including `notes.html`'s meta tags and the strings `noteDocument()` bakes into every generated document); code comments are not content and are exempt. The full house style lives at the top of [src/data/notes.ts](src/data/notes.ts) — anything writing a new entry should read it first.
+- The index's `Blog` JSON-LD is injected into `notes.html` by the `notesSchema()` plugin, same reasoning as `workSchema()`. Each entry document carries its own `BlogPosting` + `BreadcrumbList`, generated in `noteDocument()`.
+- Bodies render through `noteMdComponents` ([src/lib/markdown.tsx](src/lib/markdown.tsx)) — the site's only long-form markdown, and the only place headings, code blocks, and blockquotes come out of markdown. `Note.tsx` calls `prefetchMarkdown()` at **module scope**, not in an effect: the body *is* the page, and `<Markdown>`'s fallback is a single raw-text paragraph.
+- The tag filter on the index is client-side and deliberately does not touch the URL — a filtered view has no distinct title or content, and giving it a crawlable address puts near-duplicate URLs in front of a crawler that already has the canonical list.
+- `Notes/index.ts` exports **only** the index page. `App.tsx` imports `Notes/Note` past the barrel so the list and the article stay in separate chunks.
 
 ## Admin CRM
 

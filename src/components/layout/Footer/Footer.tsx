@@ -50,7 +50,7 @@ export default function Footer() {
 
         <nav aria-label="Footer navigation" className="flex gap-12 order-2 md:order-1">
           <CascadeGroup as="ul" className="flex flex-col gap-4" threshold={0.2}>
-            {navLinks.slice(0, 4).map(({ label, href, Icon }, i) => (
+            {navLinks.map(({ label, href, Icon }, i) => (
               <CascadeItem key={label} as="li" index={i}>
                 <a href={href} className="grad-hover flex items-center gap-2 font-sans text-sm font-semibold text-white/70 hover:text-white transition-[color,font-variation-settings]">
                   <Icon size={14} />

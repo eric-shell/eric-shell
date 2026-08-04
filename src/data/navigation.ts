@@ -1,5 +1,5 @@
 import type { LucideIcon } from 'lucide-react'
-import { Briefcase, Quote, Palette, Form, House, MessagesSquare, Mail, FileText, Shield } from 'lucide-react'
+import { Briefcase, Quote, Palette, Form, House, MessagesSquare, Mail, FileText, NotebookPen, Shield } from 'lucide-react'
 
 export interface NavLink {
   label: string
@@ -26,9 +26,10 @@ export interface SocialLink {
 }
 
 /**
- * Prepended to the header nav on non-home routes (/resume, /privacy) so those
- * pages have a way back. Deliberately not part of `navLinks` — the Footer takes
- * a positional `slice(0, 4)` of that array, which prepending would shift.
+ * Prepended to the header nav on non-home routes (/resume, /privacy, /notes) so
+ * those pages have a way back. Deliberately not part of `navLinks`: the Footer
+ * renders that array in full, and the footer already carries the logo as its
+ * way home, so a Home row there would just be a second one.
  */
 export const homeLink: NavLink = {
   label: 'Home',
@@ -80,10 +81,14 @@ export const connectLinks: ConnectLink[] = [
     href: '/resume',
     Icon: FileText,
   },
+  // The footer renders on every route, so this is what gives /notes a sitewide
+  // internal link — including from the homepage, which is the page with the
+  // authority to pass. Without it the notes are reachable only from the
+  // sitemap, which is a much weaker signal than a link.
   {
-    label: 'Contact',
-    href: '/#contact',
-    Icon: Form,
+    label: 'Notes',
+    href: '/notes',
+    Icon: NotebookPen,
   },
   {
     label: 'Privacy',

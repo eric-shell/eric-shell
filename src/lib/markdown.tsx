@@ -49,6 +49,72 @@ export function chatMdComponents(onAnchorNavigate?: () => void): Components {
   }
 }
 
+/**
+ * Long-form components for a note body — the only place on the site that
+ * renders headings, code blocks, and blockquotes out of markdown.
+ *
+ * Kept separate from `baseComponents` rather than extending it: the chat and
+ * admin renderers are tuned for short messages inside a narrow panel (tight
+ * margins, `text-xs` code) and a note is a full editorial column. Sharing a
+ * spacing scale between the two makes both worse.
+ *
+ * `pre` carries the block-code surface and resets the `code` inside it,
+ * because a fenced block with no language tag reaches `code` with no className
+ * to distinguish it from an inline span — so the wrapper is the only reliable
+ * signal of which one it is.
+ */
+export const noteMdComponents: Components = {
+  h2: ({ children }) => (
+    <h2 className="font-display font-bold uppercase leading-none tracking-tight text-2xl md:text-3xl mt-12 mb-4 first:mt-0">
+      {children}
+    </h2>
+  ),
+  h3: ({ children }) => (
+    <h3 className="font-sans font-semibold text-lg md:text-xl mt-8 mb-3">{children}</h3>
+  ),
+  p: ({ children }) => <p className="font-sans text-base md:text-lg leading-relaxed mb-5 last:mb-0">{children}</p>,
+  ul: ({ children }) => (
+    <ul className="list-disc pl-6 mb-5 last:mb-0 font-sans text-base md:text-lg leading-relaxed [&_li>p]:mb-0">
+      {children}
+    </ul>
+  ),
+  ol: ({ children }) => (
+    <ol className="list-decimal pl-6 mb-5 last:mb-0 font-sans text-base md:text-lg leading-relaxed [&_li>p]:mb-0">
+      {children}
+    </ol>
+  ),
+  li: ({ children }) => <li className="mb-2 last:mb-0 pl-1">{children}</li>,
+  blockquote: ({ children }) => (
+    <blockquote className="border-l-2 border-blue-950/20 pl-5 my-6 text-blue-950/70 [&_p]:mb-3 [&_p]:last:mb-0">
+      {children}
+    </blockquote>
+  ),
+  pre: ({ children }) => (
+    <pre className="mb-6 overflow-x-auto rounded-lg bg-blue-950 text-white p-4 font-mono text-xs md:text-sm leading-relaxed [&_code]:bg-transparent [&_code]:p-0 [&_code]:text-inherit [&_code]:text-[length:inherit]">
+      {children}
+    </pre>
+  ),
+  code: ({ children }) => (
+    <code className="px-1.5 py-0.5 rounded bg-blue-100 font-mono text-[0.85em]">{children}</code>
+  ),
+  strong: ({ children }) => <strong className="font-semibold">{children}</strong>,
+  hr: () => <hr className="my-10 border-blue-950/10" />,
+  a: ({ href, children, ...props }) => {
+    const isExternal = /^(https?|mailto):/.test(href ?? '')
+    return (
+      <a
+        href={href}
+        target={isExternal ? '_blank' : undefined}
+        rel={isExternal ? 'noopener noreferrer' : undefined}
+        className={linkClass}
+        {...props}
+      >
+        {children}
+      </a>
+    )
+  },
+}
+
 export const adminMdComponents: Components = {
   ...baseComponents,
   a: ({ href, children, ...props }) => (
