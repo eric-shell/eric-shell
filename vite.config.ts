@@ -208,7 +208,7 @@ ${JSON.stringify(ld, null, 2).replace(/</g, '\\u003c')}
  * `/notes` is derived from the newest entry and needs no maintenance.
  */
 const STATIC_ROUTES = [
-  { path: '/', lastmod: '2026-08-01', changefreq: 'monthly', priority: '1.0' },
+  { path: '/', lastmod: '2026-08-03', changefreq: 'monthly', priority: '1.0' },
   { path: '/resume', lastmod: '2026-08-01', changefreq: 'monthly', priority: '0.8' },
   { path: '/privacy', lastmod: '2026-08-01', changefreq: 'yearly', priority: '0.2' },
 ]
