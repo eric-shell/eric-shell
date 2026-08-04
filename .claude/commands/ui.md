@@ -94,6 +94,22 @@ Polymorphic (renders `<a>` when `href` is passed, else `<button>`). Props: `vari
 ### Pill — [src/components/ui/Pill/Pill.tsx](src/components/ui/Pill/Pill.tsx)
 Tag/filter chip. Active state uses `SURFACE.primary`, inactive uses `SURFACE.white`. Handles `e.preventDefault()` + `e.stopPropagation()` internally — safe to nest inside a parent link. `onDismiss` renders a trailing X.
 
+### Dropdown — [src/components/ui/Dropdown/Dropdown.tsx](src/components/ui/Dropdown/Dropdown.tsx)
+Single-select listbox: `Button` trigger + portalled `<ul role="listbox">`, full keyboard nav (arrows, Home/End, Enter, Escape). Props: `options: DropdownOption[]`, `value`, `onChange(value)`, `placeholder`. Light-theme panel; selecting closes it.
+
+### MultiSelect — [src/components/ui/MultiSelect/MultiSelect.tsx](src/components/ui/MultiSelect/MultiSelect.tsx)
+`Dropdown`'s trigger/portal/keyboard model with a set-valued selection. Props: `options: DropdownOption[]` (shared type), `values: string[]`, `onChange(values)`, `placeholder` (also the accessible name), `searchable`, `searchPlaceholder`, `variant` (default `primary`). Choosing an option does **not** close the panel; the trigger summarises as `First +N`, and a Clear row appears once anything is on.
+
+Reach for it wherever a filter can hold several values at once — it replaced the row of one dismissible `Button` per active tag in `Work` and the notes index, which grew a control per selection and wrapped the control bar. Things it does that `Dropdown` deliberately does not, all load-bearing:
+
+- **Opens upward when there is more room above.** A 37-option list pinned below a trigger near the fold is unreachable.
+- **Re-measures on scroll and resize.** `position: fixed` coordinates taken once go stale as soon as the page moves, and this panel stays open long enough for that.
+- **`role="option"` sits on the `<li>`,** not on a `<button>` inside it. Focus never leaves the trigger (or the filter field), so an inner button only contributes a second, wrong accessibility tree.
+- **`searchable` moves focus into the filter field,** which is why Space types a space there instead of toggling, and why Home/End are left to the caret. Pass it past ~15 options.
+- **The Clear row refuses focus on mousedown.** It unmounts when it fires, and a focused element disappearing resets focus to `<body>` — outside the tree the key handler listens on, which kills Escape and the arrows.
+
+Option lists should be derived from the data (`[...new Set(items.flatMap(i => i.tags))].sort(...)`), never hand-listed: a hand-listed tag that no item carries filters to an empty grid.
+
 ### Toast — [src/components/ui/Toast/](src/components/ui/Toast/)
 Imperative toast queue, not variant-driven. Call `toast.success(message)` / `toast.error(message)` / `toast.info(message)` / `toast.dismiss(id)` from anywhere (`toastStore.ts`); mount `<Toaster />` once near the app root (already done in `App.tsx`) to render the queue. Max 3 visible at once, identical messages within 1s are deduped, error toasts linger longer (7s vs 4s). Error/success visuals map to the `error-glass`/`success-glass` variants above.
 

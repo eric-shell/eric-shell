@@ -49,6 +49,7 @@ src/
 │       ├── Eyebrow/       # Small uppercase label above headings (font-sans, GRAD 150)
 │       ├── Heading/       # H1, H2, H3 display headings
 │       ├── Input/         # Text input primitive
+│       ├── MultiSelect/   # Multi-value listbox dropdown — set selection, optional filter field, drop-up placement
 │       ├── Panel/         # Div-only wrapping surface — consumes variants.ts
 │       ├── Pill/          # Tag/filter chip — active state, optional dismiss X
 │       ├── Post/          # Instagram-grid tile — responsive <picture> + LQIP blur-up
@@ -94,6 +95,7 @@ Path alias: `@/*` → `src/*` is configured in `vite.config.ts` and `tsconfig.ap
   - `as="span"` renders the button's appearance on a non-interactive `<span>`, for a button inside something already clickable (a whole-card `<a>`, where nesting a button or link is invalid HTML). It exists so those call sites can still use a variant instead of hand-rolling surface classes. Never for something clickable in its own right.
 - `Panel` is a div-only wrapping surface (default `variant="secondary"`). For clickable cards, wrap `<Panel>` in an `<a>` — it is not polymorphic. `Card` (in `components/ui`) already packages this pattern for image/title/description/tag-pill cards — prefer it over hand-rolling a new one.
 - `Dropdown` is light-theme by default; swap border/bg classes via `className` if needed in a dark section.
+- `MultiSelect` is the multi-value form of `Dropdown` — same trigger, portal, and keyboard model, but selection is a set and choosing an option keeps the panel open. Used by the `Work` grid and the notes index for tag filtering. Its option list is **derived** from the data in both places, never hand-listed. Run `/ui` before changing its focus handling, drop-up placement, or scroll re-measurement — each of those fixes a specific bug and the reasons are recorded there.
 - `Pill` is a tag/filter chip. Set `active` for filled state, `onClick` for interactive use (adds `aria-pressed`), `onDismiss` for a dismissible badge with X icon. Handles `e.preventDefault()` + `e.stopPropagation()` internally — safe inside card links.
 - `CascadeGroup` wraps a group of elements and fires when it enters the viewport (`react-intersection-observer`, `triggerOnce: true`). Use `mountOnly` for above-the-fold content (Header, Hero) — animates on mount instead of scroll. Accepts `threshold` (default `0.1`) and `stagger` (default `75ms`). Use `as` to render as any HTML element (e.g. `as="ul"`).
 - `CascadeItem` wraps a single item inside a `CascadeGroup`. Reads `inView` from context and fades up (`opacity-0 translate-y-[6px]` → visible) with a delay of `Math.min(index, 7) * stagger`. Use `as="li"` inside `<ul>` grids to preserve semantic HTML. The stagger index caps at 7 so long lists don't wait seconds.

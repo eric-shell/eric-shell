@@ -1,7 +1,7 @@
 import { useLayoutEffect, useRef, useState } from 'react'
-import { ArrowDownAZ, ArrowUpRight, ArrowUpZA, CalendarDays, Plus, RotateCcw, X } from 'lucide-react'
+import { ArrowDownAZ, ArrowUpRight, ArrowUpZA, CalendarDays, Plus, RotateCcw } from 'lucide-react'
 import { WORK_IMAGE_SIZES, workImageSrc, workImageSrcSet, workItems } from '@/data'
-import { Backdrop, Button, Card, CascadeGroup, CascadeItem, Container, Dropdown, SectionHeader } from '../../ui'
+import { Backdrop, Button, Card, CascadeGroup, CascadeItem, Container, Dropdown, MultiSelect, SectionHeader } from '../../ui'
 
 type SortOrder = 'chronological' | 'asc' | 'desc'
 
@@ -10,6 +10,17 @@ const SORT_OPTIONS = [
   { value: 'asc',           label: 'Ascending',     icon: <ArrowDownAZ size={12} strokeWidth={2.5} /> },
   { value: 'desc',          label: 'Descending',    icon: <ArrowUpZA size={12} strokeWidth={2.5} /> },
 ]
+
+/**
+ * Derived from the items rather than hand-listed, so a tag added to `work.ts` is
+ * filterable without a second edit here — and a tag that no item carries can
+ * never appear and filter to nothing. Alphabetical because there is no
+ * meaningful ranking among them and a stable order is what makes a 24-item list
+ * scannable twice.
+ */
+const TAG_OPTIONS = [...new Set(workItems.flatMap(item => item.tags))]
+  .sort((a, b) => a.localeCompare(b))
+  .map(tag => ({ value: tag, label: tag }))
 
 const INITIAL_COUNT = 8
 
@@ -112,17 +123,23 @@ export default function Work() {
                   value={sort}
                   onChange={(v) => setSort(v as SortOrder)}
                 />
-                {activeTags.map(tag => (
-                  <Button
-                    key={tag}
-                    variant="primary"
-                    size="md"
-                    onClick={() => toggleTag(tag)}
-                    rightIcon={<X size={16} strokeWidth={2.5} aria-hidden="true" />}
-                  >
-                    {tag}
-                  </Button>
-                ))}
+                {/*
+                  Selected tags live in the trigger rather than as a row of
+                  dismissible Buttons beside it. That row grew one control per
+                  tag: at four tags it wrapped onto a second line and pushed the
+                  grid down, and the sort control it sat next to drifted further
+                  from the grid it sorts with every addition. This is also the
+                  only place the full tag vocabulary is visible — clicking tags
+                  on the cards can only ever surface the tags already on screen.
+                */}
+                <MultiSelect
+                  options={TAG_OPTIONS}
+                  values={activeTags}
+                  onChange={setActiveTags}
+                  placeholder="Filter by tag"
+                  searchPlaceholder="Filter tags…"
+                  searchable
+                />
               </div>
 
               {canReset && (

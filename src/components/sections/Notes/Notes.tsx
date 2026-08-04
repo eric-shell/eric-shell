@@ -1,7 +1,7 @@
 import { useState } from 'react'
-import { ArrowRight, ArrowUpRight, CalendarArrowDown, CalendarArrowUp, ArrowDownAZ, ArrowUpZA, FileText, RotateCcw, X } from 'lucide-react'
+import { ArrowRight, ArrowUpRight, CalendarArrowDown, CalendarArrowUp, ArrowDownAZ, ArrowUpZA, FileText, RotateCcw } from 'lucide-react'
 import { notes, repoUrl } from '@/data/notes'
-import { Backdrop, Button, CascadeGroup, CascadeItem, Container, Dropdown, Eyebrow, H1, Panel, Pill } from '../../ui'
+import { Backdrop, Button, CascadeGroup, CascadeItem, Container, Dropdown, Eyebrow, H1, MultiSelect, Panel, Pill } from '../../ui'
 import { formatNoteDate } from './formatDate'
 
 type SortOrder = 'newest' | 'oldest' | 'asc' | 'desc'
@@ -13,15 +13,21 @@ const SORT_OPTIONS = [
   { value: 'desc',   label: 'Descending',   icon: <ArrowUpZA size={12} strokeWidth={2.5} /> },
 ]
 
+/** Derived from the entries, alphabetical — same reasoning as Work's. */
+const TAG_OPTIONS = [...new Set(notes.flatMap(note => note.tags))]
+  .sort((a, b) => a.localeCompare(b))
+  .map(tag => ({ value: tag, label: tag }))
+
 /**
  * The notes index, every entry with the same filter controls as the Work grid.
  *
- * Tags are selected by clicking them on a card rather than from a standing list
- * of every tag. That is the Work section's model and it is the right one here
- * for the same reason: the tag vocabulary grows with the content, and a row of
- * every tag on the site is a wall of chips before the reader has seen a single
- * entry. Selected tags surface as dismissible buttons in the control bar, so
- * what is filtered is always visible even when the card that set it scrolls off.
+ * Tags are selected either by clicking them on a card or from the standing list
+ * in the `MultiSelect`. The card click alone was the original model, and it left
+ * the tag vocabulary undiscoverable: a reader could only filter by a tag that
+ * happened to be on an entry already in view, and with 37 tags across the
+ * entries most were never on screen at once. The dropdown carries the whole
+ * list without spending any layout on it, which is what a standing row of every
+ * tag as chips would have cost.
  *
  * Filtering is client-side and deliberately does not touch the URL. A filtered
  * view is not a page: it has no distinct title, no distinct content, and giving
@@ -115,17 +121,14 @@ export default function Notes() {
                     value={sort}
                     onChange={(v) => setSort(v as SortOrder)}
                   />
-                  {activeTags.map(tag => (
-                    <Button
-                      key={tag}
-                      variant="primary"
-                      size="md"
-                      onClick={() => toggleTag(tag)}
-                      rightIcon={<X size={16} strokeWidth={2.5} aria-hidden="true" />}
-                    >
-                      {tag}
-                    </Button>
-                  ))}
+                  <MultiSelect
+                    options={TAG_OPTIONS}
+                    values={activeTags}
+                    onChange={setActiveTags}
+                    placeholder="Filter by tag"
+                    searchPlaceholder="Filter tags…"
+                    searchable
+                  />
                 </div>
 
                 <div className="flex items-center gap-3">

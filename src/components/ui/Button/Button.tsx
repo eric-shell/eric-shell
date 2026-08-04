@@ -1,4 +1,4 @@
-import type { AnchorHTMLAttributes, ButtonHTMLAttributes, HTMLAttributes } from 'react'
+import type { ComponentPropsWithRef, HTMLAttributes } from 'react'
 import { twMerge } from 'tailwind-merge'
 import {
   SURFACE,
@@ -113,8 +113,12 @@ type SharedProps = {
   as?: 'span'
 }
 
-type ButtonAsButton = SharedProps & ButtonHTMLAttributes<HTMLButtonElement> & { href?: undefined }
-type ButtonAsAnchor = SharedProps & AnchorHTMLAttributes<HTMLAnchorElement> & { href: string }
+// `ComponentPropsWithRef` rather than `*HTMLAttributes` so a caller can hold the
+// underlying element — `MultiSelect` needs its trigger to return focus when the
+// panel closes on Escape. React 19 passes `ref` as an ordinary prop, so it rides
+// through `...props` onto the element with no `forwardRef` wrapper.
+type ButtonAsButton = SharedProps & ComponentPropsWithRef<'button'> & { href?: undefined }
+type ButtonAsAnchor = SharedProps & ComponentPropsWithRef<'a'> & { href: string }
 type ButtonProps = ButtonAsButton | ButtonAsAnchor
 
 export default function Button({
@@ -190,14 +194,14 @@ export default function Button({
 
   if (href !== undefined) {
     return (
-      <a href={href} className={classes} {...(props as AnchorHTMLAttributes<HTMLAnchorElement>)}>
+      <a href={href} className={classes} {...(props as ComponentPropsWithRef<'a'>)}>
         {inner}
       </a>
     )
   }
 
   return (
-    <button className={classes} {...(props as ButtonHTMLAttributes<HTMLButtonElement>)}>
+    <button className={classes} {...(props as ComponentPropsWithRef<'button'>)}>
       {inner}
     </button>
   )
