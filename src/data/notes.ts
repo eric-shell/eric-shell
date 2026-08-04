@@ -980,14 +980,14 @@ Worth writing down as a known gap rather than filed as done. A CSP with \`'unsaf
     title: 'The returning-visitor metric had never fired on a real person',
     date: '2026-08-03',
     summary:
-      'It counted days with a session. Sessions are the one source a real visitor can be entirely missing from, so it reported 0 returning out of 38.',
+      'It counted days with a session. Sessions are the one source a real visitor can be entirely missing from, so it reported a 0% return rate.',
     tags: ['Telemetry', 'Data modelling', 'CRM'],
     commit: '1385ef0',
     body: `The CRM has a `+"`Returning`"+` tag and a return-rate dial. Both answer the same question: did this visitor come back on a different day? Two visits twenty minutes apart is one sitting, not a return.
 
 Both counted distinct days on which the visitor had a **session**.
 
-Measured against the live table, that reported **0 returning out of 38**, and the tag had never once fired on a real visitor in the CRM's entire history. A metric reading zero forever is easy to accept, because "nobody comes back to a personal site" is a completely plausible thing for a number to be telling you.
+Measured against the live table, that reported a **0% return rate**, and the tag had never once fired on a real visitor in the CRM's entire history. A metric reading zero forever is easy to accept, because "nobody comes back to a personal site" is a completely plausible thing for a number to be telling you.
 
 ## Why sessions were the wrong source
 
@@ -1001,9 +1001,9 @@ So the query asked "on how many days did this person have a session" when the qu
 
 Both now resolve over the union of four tables: \`visitor_sessions\`, \`page_views\`, \`chat_messages\` and \`contact_submissions\`. Distinct UTC days with any recorded activity.
 
-After the change: **1 returning of 39** in the 30-day window, and the tag fires on the two people who genuinely came back. One chatted across four days before converting. One chatted in May and returned in July.
+After the change the 30-day dial reads **2.6%**, and the tag fires on the visitors who genuinely came back. One chatted across four days before converting. Another chatted in May and returned in July.
 
-Two is not a big number. It is the true number, and it was worth finding, because the previous answer was not a smaller version of the truth. It was a different question.
+It is not a large rate. It is the true one, and it was worth finding, because the previous answer was not a smaller version of the truth. It was a different question.
 
 ## The part that will bite later
 
@@ -1089,6 +1089,88 @@ So it stays. It is identical on all 25 rows at a given width, which is why it re
 To be clear about the boundary: the flex mechanism is Wes Bos's and I would not have arrived at it. What I added on top is the screen-reader handling, a configurable tail length, and the decision to live with the sub-character slack rather than trade it for a hardcoded budget. That is roughly the right split for a good tip. It hands you the mechanism, and the work left is deciding what it has to survive in your own context.
 
 Worth writing down mainly for the first point. Truncation is presentation, and doing it to the data instead of to the pixels takes something away from the user that the design never intended to remove.`,
+  },
+  {
+    slug: 'clearing-a-filter-killed-the-keyboard',
+    title: 'Clearing a filter killed the keyboard, because the focused button stopped existing',
+    date: '2026-08-03',
+    summary:
+      'The Clear row unmounted while holding focus. The browser handed focus to body, outside the subtree listening for keys, and Escape and the arrows died.',
+    tags: ['Accessibility', 'React', 'UX'],
+    commit: '05edb4e',
+    body: `The Work grid and the notes index used to show one dismissible button per active tag, inline beside the sort control. That row grows a control per selection. At four tags it wrapped onto a second line and pushed the grid down, and every addition shoved the sort dropdown further from the grid it sorts.
+
+It was also the only view of the tag vocabulary, and it could only ever show tags that were already picked. The notes index has 37 tags and the work grid 24. A reader could filter by a tag they happened to see on a card, and the rest may as well not have existed.
+
+So: a \`MultiSelect\`, reusing \`Dropdown\`'s trigger, portal and keyboard model with a set-valued selection. One fixed-width control however many tags are on, and the panel carries the whole vocabulary without spending any layout on it.
+
+## The bug worth writing down
+
+The panel has a Clear row at the top, which appears only when something is selected. Clear it with the keyboard and the whole control went dead: Escape did nothing, the arrow keys did nothing, and it stayed that way until you clicked back into the panel.
+
+The row you just activated is the row that unmounts. The browser answers a focused element disappearing by moving focus to \`<body>\`, and \`<body>\` is outside the React subtree whose wrapper holds the key handler. Nothing was broken. Every listener was still attached to a subtree that no longer contained the focus.
+
+This is a general shape and I had not run into it before: **an element that removes itself is an element that hands your focus somewhere you did not choose.** It does not throw, nothing logs, and it only reproduces if you drive the control the way a keyboard user does. Clicking Clear with a mouse hides it completely, because you are about to click again anyway.
+
+The fix is two-sided. Refusing the focus on \`mousedown\` keeps it where it already was, and an explicit refocus covers a click that lands some other way. Both, because either alone leaves a path uncovered.
+
+## Two more that only show up at real size
+
+**The panel opens upward when there is more room above.** \`Dropdown\` never needed this because its lists are three or four items. A 37-tag list pinned below a trigger sitting near the fold is simply unreachable, and it was, at the exact viewport heights a phone has.
+
+**Position is recomputed on scroll and resize, listening with \`capture\`.** \`position: fixed\` coordinates measured once go stale the moment the page moves underneath them, and unlike a select-one dropdown this panel stays open long enough for that to happen: choosing an option keeps it open, which is the entire point of it. Capture rather than bubble so it tracks any scrolling ancestor, not only the window.
+
+## One deliberate difference from Dropdown
+
+\`role="option"\` sits on the \`<li>\` itself rather than on a \`<button>\` inside it. A listbox option's contents are meant to be presentational, and since focus never leaves the trigger or the filter field, an inner button contributes nothing except a second and wrong accessibility tree.
+
+The option lists themselves are derived from the data at both call sites rather than hand-listed, so a tag added to \`work.ts\` or \`notes.ts\` is filterable with no second edit, and a tag no item carries can never be offered and then filter to an empty grid.`,
+  },
+  {
+    slug: 'filters-that-left-no-trace',
+    title: 'Keeping filters out of the URL made them invisible to my own analytics',
+    date: '2026-08-03',
+    summary:
+      'A filtered list has no distinct content, so it gets no address. That also left page views unable to tell a narrowed list from a whole one.',
+    tags: ['Telemetry', 'CRM', 'Privacy'],
+    commit: '026aa11',
+    body: `Both filterable indexes on this site keep their filter state in React and out of the URL. That was a deliberate SEO decision: a filtered view has no distinct title and no distinct content, and giving it a crawlable address puts a pile of near-duplicate URLs in front of a crawler that already has the canonical list.
+
+I still think that is right. What I had not noticed is what it costs on the other side. \`page_views\` records \`/notes\` identically whether the list was read whole or narrowed to two tags, so I had no signal at all for which topics people come here looking for. The decision that keeps the URLs clean is the same decision that makes the behaviour unmeasurable, and nothing about the first one announces the second.
+
+## One event type, not two
+
+\`visitor_events\` already had a \`jsonb metadata\` column, so this is a new \`type\` value carrying \`{ section, tags, sort }\` rather than a new table, and rather than one type per surface. Two reasons, both practical.
+
+Every new type costs a hand-run \`ALTER\` against Neon, because \`create table if not exists\` will not widen a check constraint on a table that already exists. Until that migration runs the endpoint accepts the event and the insert is swallowed by its own best-effort catch, so the event silently vanishes. That is a good reason to spend the type budget carefully.
+
+The other is that \`api/\` sits one function below the Hobby plan's cap of 12, and a deploy that exceeds it fails *after* a green build with the reason visible only in the REST API. Reusing an endpoint that already exists is free. Adding one is not.
+
+## The debounce is not cosmetic
+
+The tag control keeps its panel open across picks, so choosing four tags is four state changes describing one decision. Sending per change writes four rows for that decision, and \`/api/events\` allows **10 requests a minute**, a bucket it shares with outbound click tracking. Undebounced, a visitor idly exploring the filters would blow the window and silently lose the outbound click that followed, which is the single most valuable event on the site.
+
+So it waits **800ms** for the controls to settle and sends the resulting selection rather than the change. Three rules fall out of that, and each one is there to stop a row that says nothing:
+
+- **The default state is never reported.** Every visitor lands on it. A row for it would record that the page rendered.
+- **Tags are sorted before they go.** The same two tags picked in either order are one filter, not two, so the aggregate can group on them.
+- **A state this page load already reported is not reported again.** Toggling a tag off and back on is one decision, revisited.
+
+Clearing the filters is silent for the same reason as the first rule.
+
+## The path the debounce would have eaten
+
+Filter the list, then immediately open a result. That is the most interesting single path through the whole feature, and it is exactly the one an 800ms timer loses, because the document unloads first.
+
+So a settle still pending is flushed on \`pagehide\`, and the request carries \`keepalive\` so it survives the navigation. Verified in Chromium: filter, navigate 100ms later, event still lands.
+
+## What it deliberately does not record
+
+Not the individual toggles, only the selection they arrived at. Not anything typed into the tag search field. Nothing changes for visitors sending Global Privacy Control or Do Not Track, who are still never recorded at all, because the telemetry exits before it reaches any of this. The privacy page names the new category in the same commit, which is a rule here rather than a courtesy.
+
+## The honest gap
+
+A selection that only changed the sort order is recorded and then never surfaced, because the chart ranks tags and a sort-only change names none. It is a row that currently answers no question. I would rather write that down than quietly drop the field and discover in six months that I wanted it.`,
   },
 ]
 
