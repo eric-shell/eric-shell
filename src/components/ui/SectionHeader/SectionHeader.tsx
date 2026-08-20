@@ -31,8 +31,22 @@ export default function SectionHeader({
     return <div className={className}>{titlePair}</div>
   }
 
+  /*
+   * The action stacks under the title pair below `md` rather than sitting
+   * beside it. It used to be hidden here and re-rendered by the call site at
+   * the foot of the section's body copy — which put a primary pill directly on
+   * top of the Work grid's sort and tag controls, three pill-shaped controls in
+   * a vertical run. Stacking it here is the same hierarchy the desktop row
+   * states (section, then its offsite destination), and it means the CTA exists
+   * once in the DOM instead of twice.
+   */
   return (
-    <div className={twMerge('flex items-start justify-between gap-4 pb-10', className)}>
+    <div
+      className={twMerge(
+        'flex flex-col items-start gap-6 pb-10 md:flex-row md:justify-between md:gap-4',
+        className,
+      )}
+    >
       {titlePair}
       {action}
     </div>

@@ -87,7 +87,7 @@ export default function Work() {
                   rel="noopener noreferrer"
                   variant="primary"
                   size="md"
-                  className="hidden md:inline-flex shrink-0"
+                  className="shrink-0"
                   rightIcon={<ArrowUpRight size={15} strokeWidth={2.5} aria-hidden="true" />}
                 >
                   View Work History
@@ -104,17 +104,6 @@ export default function Work() {
               <p>
                 What follows is a historical record of my contributions and completed projects. Each piece reflects the same standard of precision and accountability I bring to every engagement, regardless of its discipline, size or scope.
               </p>
-              <Button
-                href="https://www.linkedin.com/in/ericshell/details/experience/"
-                target="_blank"
-                rel="noopener noreferrer"
-                variant="primary"
-                size="md"
-                className="md:hidden self-start"
-                rightIcon={<ArrowUpRight size={15} strokeWidth={2.5} aria-hidden="true" />}
-              >
-                View Work History
-              </Button>
             </div>
           </CascadeItem>
 

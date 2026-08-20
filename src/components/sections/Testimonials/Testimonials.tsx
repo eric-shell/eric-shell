@@ -17,26 +17,26 @@ export default function Testimonials() {
       <Backdrop tone="dark" />
       <Container className="unskew-inner">
 
-        <CascadeGroup className="flex items-start justify-between gap-4 pb-10">
+        <CascadeGroup threshold={0.15}>
           <CascadeItem index={0}>
             <SectionHeader
               eyebrow="Feedback from the Team"
               title="Testimonials"
               eyebrowClassName="text-blue-50"
+              action={
+                <Button
+                  href="https://www.linkedin.com/in/ericshell/details/recommendations/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  variant="primary"
+                  size="md"
+                  className="shrink-0"
+                  rightIcon={<ArrowUpRight size={15} strokeWidth={2.5} aria-hidden="true" />}
+                >
+                  View Full Endorsements
+                </Button>
+              }
             />
-          </CascadeItem>
-          <CascadeItem index={1} className="hidden md:block">
-            <Button
-              href="https://www.linkedin.com/in/ericshell/details/recommendations/"
-              target="_blank"
-              rel="noopener noreferrer"
-              variant="primary"
-              size="md"
-              className="shrink-0"
-              rightIcon={<ArrowUpRight size={15} strokeWidth={2.5} aria-hidden="true" />}
-            >
-              View Full Endorsements
-            </Button>
           </CascadeItem>
         </CascadeGroup>
 
@@ -53,17 +53,6 @@ export default function Testimonials() {
             <p>
               I take deep pride in every project that I put my name on, and I hold myself accountable to the people depending on me to get it right. These statements reflect that standard as seen from the outside and how I intend to contribute as a member of any future team.
             </p>
-            <Button
-              href="https://www.linkedin.com/in/ericshell/details/recommendations/"
-              target="_blank"
-              rel="noopener noreferrer"
-              variant="primary"
-              size="md"
-              className="md:hidden self-start"
-              rightIcon={<ArrowUpRight size={15} strokeWidth={2.5} aria-hidden="true" />}
-            >
-              View Full Endorsements
-            </Button>
           </CascadeItem>
 
           {/* Right: carousel */}
