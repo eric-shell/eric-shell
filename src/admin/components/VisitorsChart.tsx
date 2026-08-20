@@ -7,6 +7,7 @@ import { scaleLinear, scaleTime } from '@visx/scale'
 import { ParentSize } from '@visx/responsive'
 import { localPoint } from '@visx/event'
 import { useTooltip, useTooltipInPortal, defaultStyles } from '@visx/tooltip'
+import { TOOLTIP_STYLE } from '../lib/chartTheme'
 import { formatMonthDay } from '../lib/dateFormat'
 import type { StatDay } from '@/../api/_lib/types'
 
@@ -161,16 +162,7 @@ function Chart({ days, width, height }: { days: StatDay[]; width: number; height
           // Lift clear of the marker so the pointer never covers the value.
           top={tooltipTop - 12}
           left={tooltipLeft}
-          style={{
-            ...defaultStyles,
-            background: 'color-mix(in oklch, var(--color-blue-950) 92%, transparent)',
-            border: '1px solid rgba(255,255,255,0.14)',
-            borderRadius: 8,
-            color: '#fff',
-            padding: '6px 10px',
-            fontSize: 11,
-            boxShadow: '0 8px 24px rgba(0,0,0,0.45)',
-          }}
+          style={{ ...defaultStyles, ...TOOLTIP_STYLE }}
         >
           {/* Text wears an ink token; the colored mark beside it carries identity. */}
           <span className="font-semibold">{tooltipData.visitors}</span>

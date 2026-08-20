@@ -1,3 +1,5 @@
+import type { CSSProperties } from 'react'
+
 /**
  * Shared paint + helpers for the admin's charts.
  *
@@ -42,6 +44,28 @@ export function ordinalStep(t: number): string {
 
 /** Soft glow for a data mark. Paint-only — it never changes layout. */
 export const GLOW = `drop-shadow(0 0 6px color-mix(in oklch, ${ACCENT} 45%, transparent))`
+
+/**
+ * Tooltip chrome, shared by every chart that has one.
+ *
+ * Spread over `defaultStyles` from @visx/tooltip at the call site, which is
+ * where the positioning comes from. Lives here because two charts draw one and
+ * a third will: a readout that is 11px on one card and 12px on another is the
+ * same disconnect the hourly strip's paint used to have.
+ */
+export const TOOLTIP_STYLE: CSSProperties = {
+  background: `color-mix(in oklch, ${SURFACE} 92%, transparent)`,
+  border: '1px solid rgba(255,255,255,0.14)',
+  borderRadius: 8,
+  color: '#fff',
+  padding: '6px 10px',
+  fontSize: 11,
+  lineHeight: 1.3,
+  boxShadow: '0 8px 24px rgba(0,0,0,0.45)',
+  // The pointer must never be able to land on the readout it just summoned —
+  // that flickers the tooltip it is standing on.
+  pointerEvents: 'none',
+}
 
 /**
  * Read once at module scope rather than per render: these charts only need it
