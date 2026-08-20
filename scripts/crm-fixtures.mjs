@@ -100,6 +100,18 @@ const PATHS = [
   '/notes/the-browser-helpfully-scrolled-away-from-the-button',
   '/notes/splitting-react-markdown-out-of-first-paint',
 ]
+/**
+ * Where an outbound click went. Hosts match the hand-written `clicks` rows in
+ * crm-ui-check.mjs so the gauge's breakdown and the Clicks out list read as one
+ * population rather than two unrelated sets of numbers.
+ */
+const CLICK_TARGETS = [
+  ['github.com', 'View the source on GitHub'],
+  ['read.cv', 'Read the full case study'],
+  ['linkedin.com', 'LinkedIn'],
+  ['mailto', null],
+]
+
 const VIEWPORTS = [
   [1512, 856, 3024, 1964], [1440, 900, 2560, 1440], [1280, 720, 1920, 1080],
   [390, 844, 390, 844], [430, 932, 430, 932], [820, 1180, 1024, 1366],
@@ -253,6 +265,24 @@ export function buildFixtures({ count = 28, seed = 20260729, now = Date.now() } 
         id: contactId++, visitor_id: id, name, email,
         message: spam ? pick(r, SPAM_CONTACTS)[2] : pick(r, MESSAGES),
         created_at: new Date(lastSeen - 30_000).toISOString(),
+      })
+    }
+    // Outbound clicks — one of the three numerators behind the Action rate
+    // gauge, and the only one with no counterpart column on the visitor row, so
+    // without these the gauge renders a part that is permanently zero.
+    //
+    // A reader can click a project link without staying long, so this is not
+    // gated on `isEngaged` the way chat and contact are — only ~3 of 28 land
+    // there, which would leave the part empty most seeds. `isBlank` rows are
+    // excluded for the same reason they record no session: they stand in for a
+    // Global Privacy Control opt-out, which sends no events at all.
+    const clickChance = isBot || isBlank ? 0 : isEngaged ? 0.7 : isReader ? 0.3 : 0
+    if (r() < clickChance) {
+      const [host, label] = pick(r, CLICK_TARGETS)
+      events.push({
+        visitor_id: id,
+        type: 'outbound_click',
+        metadata: { host, label, href: `https://${host}/` },
       })
     }
     if (r() < 0.2) {

@@ -247,18 +247,32 @@ Three guards keep it off real browsers, and removing any one puts real people be
 
 Verified against the live table when written: 4 of 41 rows flagged, all datacenter addresses (Boardman, Boydton, Paris), none a person. `impossibleChromeVersion()` in [classify.ts](src/admin/lib/classify.ts) is a pure function over the UA string — no new data is collected for it.
 
+### The radial gauge measures ACTION, not return
+
+The insight grid's first card is **Action rate**: visitors who did at least one of the three things that mean a visit *went somewhere* — an `outbound_click`, a chat message, or a contact submission — over every visitor with any recorded activity in the window. Fed by the `active` / `clicked` / `chatted` / `contacted` CTEs in [insights.ts](api/admin/insights.ts), rendered by [RadialGauge](src/admin/components/RadialGauge.tsx).
+
+It used to be **Return rate**, and that was the wrong question for this site rather than a wrong answer to a right one. A portfolio is mostly a one-visit destination reached from an application, a resume link or a DM; a return rate there is structurally near zero and describes the format more than the site. The last measurement before the swap was 1 returning of 39 in 30 days. Whether a visit ended in a click through to the work is the thing the page exists to move, and it is a number that can actually go up.
+
+The `Returning` tag on the visitor table still carries the return question, at the row level where a one-in-thirty-nine signal is legible. **It is now the only place that asks it** — the "change both together" rule below no longer has a second half.
+
+Three rules hold the gauge honest, and each one fixes something:
+
+- **The denominator unions five tables, one more than the numerators need** (`visitor_sessions` ∪ `page_views` ∪ `chat_messages` ∪ `visitor_events` ∪ `contact_submissions`, all on the identical window predicate). That is what makes `acted <= visitors` true by construction, so the arc can never overrun its own track however the sources drift. It also decides *who is counted at all*: telemetry exits client-side under Do Not Track / GPC, so a visitor can chat and submit the form while writing no session and no page view, and a sessions-only denominator would drop them from the bottom while still counting them on top.
+- **The three parts are not a partition.** One visitor who clicked out, chatted and wrote in is counted in all three and once in the arc, so the parts routinely sum past the value. They are rendered as a text breakdown under the ring — never as segments of it — and the caption says so out loud. `RadialGauge`'s `parts` prop exists for exactly this and is documented not to be stacked.
+- **`role = 'user'` on the chat count.** `api/chat.ts` only ever inserts a user and an assistant row as a pair, so it is equivalent today; it says the thing that is meant, which is that a person typed something.
+
 ### "Returning" counts activity days, not session days
 
-Both the `Returning` tag and the **Return rate** radial ask the same question — did this visitor come back on a *different day* — and both now answer it from **distinct days with any recorded activity**: `visitor_sessions` ∪ `page_views` ∪ `chat_messages` ∪ `contact_submissions`. The `ad` join in [visitors.ts](api/admin/visitors.ts) feeds `active_days` on the row; the `activity` CTE in [insights.ts](api/admin/insights.ts) feeds the radial. **Change both together.**
+The `Returning` tag asks whether a visitor came back on a *different day*, and answers it from **distinct days with any recorded activity**: `visitor_sessions` ∪ `page_views` ∪ `chat_messages` ∪ `contact_submissions`, via the `ad` join in [visitors.ts](api/admin/visitors.ts) feeding `active_days` on the row.
 
-They used to count session days alone, and that was quietly broken end to end:
+It used to count session days alone, and that was quietly broken:
 
-- **The radial read 0%** — 38 visitors in the window, 0 returning — and the `Returning` tag had **never fired on a single real visitor** in the CRM's history.
+- **The radial then charting it read 0%** — 38 visitors in the window, 0 returning — and the tag had **never fired on a single real visitor** in the CRM's history.
 - **Sessions are the one source a real visitor can be entirely absent from.** Telemetry exits client-side under Do Not Track / GPC, so someone can chat across four separate days and submit the contact form while writing no session row at all. That is not hypothetical: it is the shape of the most engaged visitor in the table.
 - **`visitor_sessions` also postdates the earliest visitors outright**, so their first visit is invisible to it permanently — no backfill is possible.
 - **`session_count >= 2` on the tag looked like belt-and-braces and was the actual suppressor.** Two distinct active days cannot occur in fewer than two visits, so it added nothing — while being permanently false for anyone opted out of telemetry. Don't reintroduce it.
 
-After the change: 1 returning of 39 in the 30-day window, and the tag fires on the two visitors who genuinely came back (one who chatted across five days before converting, one who chatted in May and returned in July). Retention differs by source — `page_views` and `visitor_sessions` are pruned at 6 months, chats and submissions are not — so an all-time `active_days` can outlive the sessions behind it. Inside the radial's 30-day window nothing is pruned, so it doesn't apply there.
+After the change the tag fires on the two visitors who genuinely came back (one who chatted across five days before converting, one who chatted in May and returned in July) — 1 of 39 inside the 30-day window at the time. Retention differs by source — `page_views` and `visitor_sessions` are pruned at 6 months, chats and submissions are not — so an all-time `active_days` can outlive the sessions behind it.
 
 **Never put a backtick in a SQL comment inside these tagged templates.** A backtick closes the template literal and the file stops parsing — `` `ad` `` in a `--` comment took `visitors.ts` down. Same family as the `split_part` backreference note in `insights.ts`.
 
@@ -407,6 +421,7 @@ There is **no local Postgres** in this project — `POSTGRES_URL` points at the 
 - **The stubs hold their answers for `HOLD_MS` before fulfilling**, so the loading skeleton is on screen long enough to measure and screenshot (`crm-<width>-skeleton.png`). They used to answer instantly, which meant every check ran against the loaded page — the skeleton was never rendered once, and drifted for months without a single failure. Don't take the delay out.
 - **`PATHS` in the fixtures includes the two longest real note slugs, on purpose.** Every path used to be short (`/`, `/resume`, `/privacy`), so Top pages never rendered a label that needed truncating — and the insights grid's `min-w-0` bug was invisible to the harness for exactly that reason. A fixture that never stresses a label is not testing the thing most likely to break.
 - The fixture population is deliberately shaped like real traffic: ~38% single-view bounces, a slice with no geo/UA at all (mimicking pre-telemetry rows and GPC opt-outs), and only the most engaged tail having chats or contact submissions. If you make the UI look good only on rich rows, you have tested the wrong thing.
+- **`outbound_click` fixtures are NOT gated on `isEngaged`.** Chats and submissions are, and only ~3 of 28 fixture visitors land in that tail — gating clicks the same way left the Action rate gauge's `clicked` part reading 0 on most seeds, which is a part of the card the harness then never rendered. Readers click a project link without staying long, so the chance is tiered (`isEngaged` 0.7, `isReader` 0.3) and `isBlank` rows are excluded for the same reason they record no session: they stand in for a GPC opt-out, which sends no events at all. Note that adding an `r()` call inside the generation loop reshuffles every draw after it, so the whole fixture population shifts — expected, and why nothing asserts on specific counts.
 
 ## Adding a new admin endpoint
 

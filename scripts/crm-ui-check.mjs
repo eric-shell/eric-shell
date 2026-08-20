@@ -89,12 +89,20 @@ function buildInsights() {
     hourCounts.set(h, (hourCounts.get(h) ?? 0) + 1)
   }
 
-  const activeDays = new Map()
-  for (const s of f.sessions) {
-    const set = activeDays.get(s.visitor_id) ?? new Set()
-    set.add(s.started_at.slice(0, 10))
-    activeDays.set(s.visitor_id, set)
-  }
+  // The action-rate denominator: every visitor with any recorded activity,
+  // unioned across the same tables the real query reads. The numerators below
+  // are all subsets of it, which is what keeps the gauge's arc inside its track.
+  const active = new Set([
+    ...f.sessions.map(s => s.visitor_id),
+    ...f.pageViews.map(p => p.visitor_id),
+    ...f.chats.map(c => c.visitor_id),
+    ...f.events.map(e => e.visitor_id),
+    ...f.contacts.map(c => c.visitor_id),
+  ])
+  const clicked = new Set(f.events.filter(e => e.type === 'outbound_click').map(e => e.visitor_id))
+  const chatted = new Set(f.chats.filter(c => c.role === 'user').map(c => c.visitor_id))
+  const contacted = new Set(f.contacts.map(c => c.visitor_id))
+  const acted = new Set([...clicked, ...chatted, ...contacted])
 
   return {
     windowDays: 30,
@@ -114,8 +122,11 @@ function buildInsights() {
       },
     },
     visitors: {
-      total: activeDays.size,
-      returning: [...activeDays.values()].filter(set => set.size >= 2).length,
+      total: active.size,
+      acted: acted.size,
+      clicked: clicked.size,
+      chatted: chatted.size,
+      contacted: contacted.size,
     },
     sources: [...sourceCounts].map(([h, n], i) => ({ host: h, sessions: n, tagged: i % 3 === 0 }))
       .sort((a, b) => b.sessions - a.sessions).slice(0, 8),

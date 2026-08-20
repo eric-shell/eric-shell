@@ -60,7 +60,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
   try {
     const db = sql()
 
-    const [sessionRows, returnRows, sourceRows, clickRows, filterRows, pathRows, hourRows, dayRows] = (await db.transaction([
+    const [sessionRows, actionRows, sourceRows, clickRows, filterRows, pathRows, hourRows, dayRows] = (await db.transaction([
       // Sessions: totals, viewport mix, and scroll reach in one pass.
       //
       // SCROLL DEPTH IS GATED ON A DERIVED CUTOFF. Every session written before
@@ -118,54 +118,79 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
         from visitor_sessions
         where started_at >= now() - make_interval(days => ${WINDOW_DAYS})
       `,
-      // Returning = ANY recorded activity on 2+ separate days, matching the
-      // `Returning` tag in src/admin/lib/classify.ts. Two visits twenty minutes
-      // apart is one sitting, not a return. Days are UTC — see the caveat in the
-      // UI copy.
+      // ACTION RATE: visitors who did something over visitors who showed up.
       //
-      // Counted across four tables rather than `visitor_sessions` alone, because
-      // sessions are the one source a real visitor can be completely missing
-      // from. Telemetry is suppressed client-side for anyone sending Do Not
-      // Track or Global Privacy Control, so a privacy-conscious visitor can chat
-      // on four separate days and submit the contact form while never writing a
-      // single session row. `visitor_sessions` also postdates the earliest
-      // visitors entirely, so their first visit is invisible to it forever.
+      // The three numerators are the only acts on this site that mean a visit
+      // went somewhere — a click that leaves for a project, a repo or the mail
+      // client, a question put to the chat, or a contact submission. Everything
+      // else the dashboard measures says a visit *happened*.
       //
-      // Measured on the live table when this was written: sessions-only reported
-      // 0 returning out of 38, and the tag had never fired on a real visitor in
-      // the CRM's history. The union finds the two people who genuinely came
-      // back — one who chatted across four days before converting, and one who
-      // chatted in May and returned in July.
+      // `active` is the denominator and unions FIVE tables, one more than the
+      // numerators need. That is what guarantees `acted <= visitors`: every
+      // table a numerator reads from is in the union under the identical window
+      // predicate, so the gauge can never draw an arc past its own track no
+      // matter how the sources drift apart. It also matters for who gets
+      // counted at all — telemetry is suppressed client-side for anyone sending
+      // Do Not Track or Global Privacy Control, so a privacy-conscious visitor
+      // can chat and submit the form while writing no session and no page view,
+      // and `visitor_sessions` postdates the earliest visitors outright.
       //
-      // `union`, not `union all`: it dedupes (visitor_id, date) pairs, so a day
-      // with both a page view and a chat still counts once.
+      // `union`, not `union all`, in all four places: these are sets of
+      // visitors, and a person with forty page views is one visitor.
+      //
+      // `role = 'user'` on the chat: api/chat.ts only ever inserts user and
+      // assistant rows as a pair, so this is equivalent today — but it says the
+      // thing that is actually meant, which is that a PERSON typed something.
+      //
+      // The three parts are NOT a partition. One visitor who clicked out, then
+      // chatted, then wrote in is counted in all three and once in `acted`, so
+      // the parts routinely sum past it. The UI reports them as a breakdown
+      // beside the ratio, never as segments of it.
       db`
-        with activity as (
-          select visitor_id, (started_at at time zone 'UTC')::date as d
-            from visitor_sessions
+        with active as (
+          select visitor_id from visitor_sessions
             where started_at >= now() - make_interval(days => ${WINDOW_DAYS})
           union
-          select visitor_id, (created_at at time zone 'UTC')::date
-            from page_views
+          select visitor_id from page_views
             where created_at >= now() - make_interval(days => ${WINDOW_DAYS})
           union
-          select visitor_id, (created_at at time zone 'UTC')::date
-            from chat_messages
+          select visitor_id from chat_messages
             where created_at >= now() - make_interval(days => ${WINDOW_DAYS})
           union
-          select visitor_id, (created_at at time zone 'UTC')::date
-            from contact_submissions
+          select visitor_id from visitor_events
+            where created_at >= now() - make_interval(days => ${WINDOW_DAYS})
+          union
+          select visitor_id from contact_submissions
+            where visitor_id is not null
+              and created_at >= now() - make_interval(days => ${WINDOW_DAYS})
+        ),
+        clicked as (
+          select distinct visitor_id from visitor_events
+            where type = 'outbound_click'
+              and created_at >= now() - make_interval(days => ${WINDOW_DAYS})
+        ),
+        chatted as (
+          select distinct visitor_id from chat_messages
+            where role = 'user'
+              and created_at >= now() - make_interval(days => ${WINDOW_DAYS})
+        ),
+        contacted as (
+          select distinct visitor_id from contact_submissions
             where visitor_id is not null
               and created_at >= now() - make_interval(days => ${WINDOW_DAYS})
         )
         select
-          count(*)::int                        as visitors,
-          count(*) filter (where d >= 2)::int  as returning
-        from (
-          select visitor_id, count(distinct d) as d
-          from activity
-          group by visitor_id
-        ) per_visitor
+          (select count(*) from active)::int    as visitors,
+          (select count(*) from (
+            select visitor_id from clicked
+            union
+            select visitor_id from chatted
+            union
+            select visitor_id from contacted
+          ) any_action)::int                    as acted,
+          (select count(*) from clicked)::int   as clicked,
+          (select count(*) from chatted)::int   as chatted,
+          (select count(*) from contacted)::int as contacted
       `,
       // Entry referrer per session, reduced to a bare host.
       //
@@ -303,7 +328,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
     ]
 
     const s = sessionRows[0] ?? {}
-    const r = returnRows[0] ?? {}
+    const a = actionRows[0] ?? {}
 
     // Zero-fill so the chart always has 24 columns — a sparse array would make
     // a quiet hour indistinguishable from a missing one.
@@ -333,8 +358,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
         },
       },
       visitors: {
-        total: num(r.visitors),
-        returning: num(r.returning),
+        total: num(a.visitors),
+        acted: num(a.acted),
+        clicked: num(a.clicked),
+        chatted: num(a.chatted),
+        contacted: num(a.contacted),
       },
       sources: sourceRows.map(row => ({
         host: typeof row.host === 'string' ? row.host : '',

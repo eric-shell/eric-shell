@@ -16,13 +16,23 @@ const CIRCUMFERENCE = 2 * Math.PI * R
  * The number in the middle is the real answer; the arc is the glanceable
  * version of it. Nothing is gated behind the graphic.
  */
-export default function RadialGauge({ value, total, unit, caption }: {
+export default function RadialGauge({ value, total, unit, parts, caption }: {
   /** Numerator. */
   value: number
   /** Denominator. Zero renders the empty state, never a divide-by-zero arc. */
   total: number
-  /** What the numerator counts, e.g. "returned". */
+  /** What the numerator counts, e.g. "acted on the work". */
   unit: string
+  /**
+   * Optional breakdown of what went into the numerator, rendered as a plain
+   * count row under the ring.
+   *
+   * Deliberately NOT drawn as segments of the arc: the parts a caller has here
+   * may overlap (one visitor can click out *and* chat *and* write in), so they
+   * routinely sum past the value and cannot be stacked without lying. They are
+   * text for that reason, and the caption is expected to say so.
+   */
+  parts?: { label: string; value: number }[]
   /** One line of context under the ring. */
   caption: string
 }) {
@@ -91,6 +101,23 @@ export default function RadialGauge({ value, total, unit, caption }: {
           <span className="mt-1 text-[10px] text-white/70">{value} of {total}</span>
         </div>
       </div>
+
+      {parts && parts.length > 0 && (
+        <ul className="flex flex-wrap items-baseline justify-center gap-x-2 text-[10px] text-white/70">
+          {parts.map(part => (
+            <li
+              key={part.label}
+              // The separator is a pseudo-element rather than a real node so it
+              // is never read out, never selectable, and never a list item of
+              // its own to a screen reader walking the counts.
+              className="after:ml-2 after:text-white/30 after:content-['·'] last:after:hidden"
+            >
+              <span className="font-sans font-semibold tabular-nums text-white/85">{part.value}</span>{' '}
+              {part.label}
+            </li>
+          ))}
+        </ul>
+      )}
 
       <p className="text-[10px] leading-snug text-white/55 text-center">{caption}</p>
     </div>

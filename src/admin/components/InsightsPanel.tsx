@@ -115,16 +115,36 @@ export default function InsightsPanel({ data }: { data: InsightsPayload | null }
 
           {/* A single ratio against its own track — the one form the owner
               specifically wanted, and the one the palette can carry without a
-              categorical hue in sight. */}
-          <ChartFrame title="Return rate" meta={`${data.windowDays}d`} className={SPANS[0]}>
+              categorical hue in sight.
+
+              It measures ACTING rather than returning. A portfolio is mostly a
+              one-visit destination reached from an application or a resume
+              link, so a return rate here is structurally near zero and says
+              more about the format than about the site; whether a visit ended
+              in a click through to the work, a question, or a message is the
+              thing this page exists to move. The `Returning` tag on the visitor
+              table still carries the other question, at the row level where a
+              two-in-thirty-eight signal is actually readable. */}
+          <ChartFrame title="Action rate" meta={`${data.windowDays}d`} className={SPANS[0]}>
             <RadialGauge
-              value={data.visitors.returning}
+              value={data.visitors.acted}
               total={data.visitors.total}
-              unit="visitors came back on another day"
+              unit="visitors acted on the work"
+              // Overlapping by construction — one visitor who did all three is
+              // counted in all three and once in the arc — so the caption says
+              // so rather than leaving a reader to wonder why the parts sum
+              // past the value.
+              parts={[
+                { label: 'clicked out', value: data.visitors.clicked },
+                { label: 'chatted', value: data.visitors.chatted },
+                { label: 'wrote in', value: data.visitors.contacted },
+              ]}
               // "Activity", not "sessions": a Do Not Track visitor records no
-              // session at all, so counting sessions understated this — see the
-              // returning query in api/admin/insights.ts.
-              caption="Visitors with recorded activity on two or more separate days."
+              // session at all, so a session denominator would leave out the
+              // most privacy-conscious visitors while still counting their
+              // chats in the numerator — see the action query in
+              // api/admin/insights.ts.
+              caption="Visitors who clicked through to the work, chatted, or sent the contact form, over everyone with recorded activity. A visitor can appear in more than one part."
             />
           </ChartFrame>
 

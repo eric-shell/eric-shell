@@ -114,6 +114,37 @@ export interface FilterRow {
   visitors: number
 }
 
+/**
+ * What visitors DID, against everyone who showed up.
+ *
+ * The three numerators are the only things on this site that constitute acting
+ * on the work rather than looking at it: following a link off-site to a
+ * project, a repo, or the mail client; asking the chat something; or writing in
+ * through the contact form. Scroll depth and dwell say a visit happened, and
+ * the two charts beside this one already say it better; this says the visit
+ * went somewhere.
+ *
+ * `total` counts visitors with ANY recorded activity in the window, across all
+ * five tables that can carry it — the same union the numerators come from, so
+ * `acted` can never exceed it and the gauge can never draw past its own track.
+ *
+ * `clicked` / `chatted` / `contacted` are **not a partition of `acted`**. One
+ * person can do all three and is counted in each, which is why they are
+ * reported as a breakdown beside the ratio rather than as a stacked bar.
+ */
+export interface ActionMix {
+  /** Visitors with any recorded activity in the window — the denominator. */
+  total: number
+  /** Of those, how many did at least one of the three below. */
+  acted: number
+  /** Clicked a link that left the site. */
+  clicked: number
+  /** Sent at least one message to the chat. */
+  chatted: number
+  /** Submitted the contact form. */
+  contacted: number
+}
+
 export interface PathRow {
   path: string
   views: number
@@ -134,12 +165,8 @@ export interface InsightsPayload {
     scroll: ScrollDepth
     viewport: ViewportMix
   }
-  visitors: {
-    /** Visitors with at least one session in the window. */
-    total: number
-    /** Of those, how many had sessions on two or more separate UTC days. */
-    returning: number
-  }
+  visitors: ActionMix
+
   sources: SourceRow[]
   clicks: ClickRow[]
   filters: FilterRow[]
