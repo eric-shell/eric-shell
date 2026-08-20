@@ -18,6 +18,7 @@ import {
   DEFAULT_SORT, SORT_LABEL, nextSort, sortVisitors,
   type SortKey, type SortState,
 } from '../lib/sortVisitors'
+import { VISITOR_COLUMNS, visibleColumns } from '../lib/visitorColumns'
 
 export type { VisitorSummary }
 
@@ -136,13 +137,22 @@ function MiddleTruncate({ text, tail = 4, className }: {
 function LocationValue({ location }: { location: ReturnType<typeof resolveLocation> }) {
   if (!location.label) return <Dash />
   return (
-    <span title={location.approximate ? 'Approximate — from IP geolocation' : 'Manually corrected'}>
-      {location.label}
+    // A flex row, not an inline run, so the label is what truncates and the
+    // pencil is what survives. Both call sites clip this with `truncate`, and
+    // inline the icon was simply the last thing in the line box: a corrected
+    // location long enough to need truncating lost the very mark saying it had
+    // been corrected — on a phone card, where a hand-typed label is most likely
+    // to overrun, that was most locations.
+    <span
+      className="flex min-w-0 items-center"
+      title={location.approximate ? 'Approximate — from IP geolocation' : 'Manually corrected'}
+    >
+      <span className="truncate">{location.label}</span>
       {/* Nearly every location is IP-derived, so marking the exception reads far
           quieter than marking the rule. A pencil, not a check: the mark says
           "a human typed this", not "this has been verified as correct". */}
       {!location.approximate && (
-        <Pencil size={11} className="ml-1 inline-block align-[-1px] text-white/80" aria-label="manually corrected" />
+        <Pencil size={11} className="ml-1 shrink-0 text-white/80" aria-label="manually corrected" />
       )}
     </span>
   )
@@ -531,14 +541,18 @@ function MobileList({
  * 22px at 768). Too small is no better: the panel would stop short of the right
  * edge. Hence matchMedia — the folded column sets are a layout fact the CSS
  * knows and `colSpan` can't read.
+ *
+ * The count itself is derived from VISITOR_COLUMNS rather than written down
+ * again: these queries say *where* the sets change, the column list says *what*
+ * is in each one, and only the breakpoints belong here.
  */
 const LG = '(min-width: 1024px)'
 const XL = '(min-width: 1280px)'
 
 function readColumnCount() {
-  if (typeof window === 'undefined') return 8
-  if (window.matchMedia(XL).matches) return 8
-  return window.matchMedia(LG).matches ? 6 : 5
+  if (typeof window === 'undefined') return visibleColumns('xl').length
+  if (window.matchMedia(XL).matches) return visibleColumns('xl').length
+  return visibleColumns(window.matchMedia(LG).matches ? 'lg' : 'md').length
 }
 
 function useColumnCount() {
@@ -822,48 +836,22 @@ export default function VisitorList({ visitors, bursts, newSince, onVisitorDelet
           were tuned against. */}
       <table className="w-full min-w-[43rem] table-fixed text-sm xl:min-w-[67rem]">
         <thead>
+          {/* Every column, its width and its fold point come from
+              VISITOR_COLUMNS — the same list the skeleton and `colSpan` read,
+              so a new column can't land in one of the three and not the others. */}
           <tr className="border-b border-white/10 text-left text-xs uppercase tracking-wide text-white/85">
-            <SortHeader label="Visitor"  sortKey="visitor"  sort={sort} onSort={handleSort} className="px-4 w-36 lg:w-32" />
-            <SortHeader
-              /* w-48, not w-44: `Converted` + `Returning` needs 164px on one
-                 line, and w-44 (176px) minus this column's pr-4 left exactly
-                 160px of content box — four pixels short, so the pair wrapped to
-                 two lines on every converted visitor who came back. That
-                 combination only started appearing when the Returning tag was
-                 fixed; before that it had never rendered once. w-48 gives 176px
-                 of content, 12px of slack.
-
-                 Three-tag rows still wrap by design — `Converted`+`Spam?`+
-                 `Returning` wants 223px — and buying that would cost Location
-                 another 48px. Wrapping is the right failure for the rare case. */
-              label="Flags" sortKey="flags" sort={sort} onSort={handleSort} className="hidden w-48 lg:table-cell"
-              title="Heuristic traffic-quality flags. Sorts by severity — possible spam first, then automated, then bounces."
-            />
-            {/* 8.5rem, not 8: the widest realistic value ("May 28, 10:01 AM")
-                measures 114px, and w-32 left 112px inside the gutter — so the
-                one row a month with a two-digit hour wrapped to two lines. */}
-            <SortHeader label="Last seen" sortKey="lastSeen" sort={sort} onSort={handleSort} className="w-34 xl:w-36" />
-            {/* Location takes the spare width, not Contact: most visitors are
-                anonymous, so a flexible Contact column just grew whitespace,
-                while a corrected location can be a long hand-typed string. */}
-            <SortHeader label="Location" sortKey="location" sort={sort} onSort={handleSort} />
-            <SortHeader label="Contact"  sortKey="contact"  sort={sort} onSort={handleSort} className="w-40 lg:w-48 xl:w-56" />
-            {/* Merged below xl, split above it. Both carry the engagement sort
-                key — it is the column's primary value either way. */}
-            <SortHeader
-              label="Activity" sortKey="engagement" sort={sort} onSort={handleSort}
-              className="text-right w-36 xl:hidden" align="right"
-              title="Page views and engaged time, with chat messages and submissions. Sorts by views, then engaged time."
-            />
-            <SortHeader
-              label="Engagement" sortKey="engagement" sort={sort} onSort={handleSort}
-              className="hidden text-right w-28 xl:table-cell" align="right"
-              title="Page views and engaged time across all sessions. Sorts by views, then engaged time."
-            />
-            <SortHeader label="Chat" sortKey="chat" sort={sort} onSort={handleSort}
-              className="hidden text-right w-16 xl:table-cell" align="right" title="Chat messages" />
-            <SortHeader label="Sent" sortKey="sent" sort={sort} onSort={handleSort}
-              className="hidden text-right w-20 xl:table-cell" align="right" title="Contact form submissions" />
+            {VISITOR_COLUMNS.map(col => (
+              <SortHeader
+                key={col.id}
+                label={col.label}
+                sortKey={col.sortKey}
+                sort={sort}
+                onSort={handleSort}
+                className={col.className}
+                align={col.align}
+                title={col.title}
+              />
+            ))}
           </tr>
         </thead>
         <tbody>
