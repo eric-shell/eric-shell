@@ -114,6 +114,28 @@ The admin deliberately reuses the public site's design vocabulary rather than in
 - **Type**: `Eyebrow` + `H2` pairing in the header and login, matching the site's section headers. Stat-tile labels stay **uppercase micro-type** to match the `Eyebrow` idiom — a deliberate departure from the dataviz skill's sentence-case stat-tile default, since casing is a design-system parameter.
 - **Semantic color is reserved for one thing**: a contact submission. Used on the "Converted" tile and the table's `Sent` column, always with a `MailCheck` icon so it is never color-alone. `green-700` is 5.96:1 on white (AA text).
 
+### The insight cards need `min-w-0`, and it is load-bearing
+
+[ChartFrame.tsx](src/admin/components/ChartFrame.tsx) carries `min-w-0` on its
+`Panel`, and [InsightsPanel](src/admin/components/InsightsPanel.tsx)'s skeleton
+carries it too. **Don't tidy it away.**
+
+A grid item's default `min-width: auto` is its min-content width, and one chart
+can make that enormous. `BarList`'s label is `w-[38%] shrink-0 truncate`, and in
+intrinsic sizing a percentage width resolves to `auto` — so the flex base
+becomes the label's *max-content* (it is `nowrap`), which `shrink-0` then
+refuses to go below. The single-column track inflated to fit the longest label
+and **every** card in the grid stretched to match it.
+
+The failure is quiet in the worst way: with real note slugs in Top pages the
+cards ran to 399px on a 412px Pixel 7, eating the right gutter without making
+the document scroll at all — so an overflow check passes while the layout has
+visibly lost its margin. At 360 it did overflow, 39px off the screen.
+
+Bounding the track is also what lets `truncate` work at all: without it the
+label truncates into a box that was sized by the full string, so it never
+elides. The harness now asserts this directly — see the gutter check below.
+
 ### Chart colors — validated, not eyeballed
 
 [VisitorsChart.tsx](src/admin/components/VisitorsChart.tsx) is a single series, so **it has no legend** (the caption names it). Colors come from the brand ramp and were run through the dataviz skill's `validate_palette.js`:
@@ -143,6 +165,38 @@ That control is a plain `<select>` rather than the shared [Dropdown](src/compone
 Reconsider only if `Dropdown` picks up a dark variant for some other reason, or if a desktop sort control ever appears — sorting on desktop is the column headers.
 
 The direction toggle deliberately uses `ArrowUpNarrowWide` / `ArrowDownWideNarrow`, never a chevron: the native select draws its own chevron immediately to the left, and two side by side read as two dropdowns. It also carries the word Asc/Desc so it never depends on the glyph.
+
+### The column set lives in one file
+
+[visitorColumns.ts](src/admin/lib/visitorColumns.ts) holds every column's label,
+width classes, fold point and skeleton shape. Three things read it and none of
+them may restate it: the `<thead>` in [VisitorList.tsx](src/admin/components/VisitorList.tsx),
+the `colSpan` on the open-detail row (via `visibleColumns()`), and
+`VisitorTableSkeleton` in [Skeleton.tsx](src/admin/components/Skeleton.tsx).
+**Adding a column is an edit to that array and nothing else.**
+
+They used to state the same fact three times, and the skeleton had drifted
+furthest — it was still drawing a Name and an Email column that merged into
+`Contact` long ago, and had never heard of Flags, Location or Activity.
+
+- **`visible` is the fold point, not a class.** `belowXl` is the merged
+  `Activity` column that `xl` splits back into Engagement / Chat / Sent; `lg` is
+  Flags, which rides under the visitor id below that. `visibleColumns('md'|'lg'|
+  'xl')` returns 5 / 6 / 8, which is where `colSpan` comes from — see the note
+  on `readColumnCount` for why an inexact span silently halves the Location
+  column.
+- **`skeleton` is line boxes, not decoration.** Each bar names the height of the
+  text it stands in for (the table is `text-sm`, so 20px unless stated), because
+  a placeholder row that isn't the height of a real row moves the whole page
+  when the data lands. Verified equal at 1440 and within 6px at 900.
+- **The skeleton is not just the table.** It mirrors all three of VisitorList's
+  renderings: phone cards below `md`, the folding table above it inside
+  `overflow-x-auto`, and the `SortBar` over both up to `xl`. A bare
+  `table-fixed` skeleton is an overflow on a phone whatever the container does —
+  560px of fixed columns forced the *document* to 593px on a 412px screen, and
+  Android answers that by zooming the whole page out. `DashboardBoot` renders
+  this while the auth probe is in flight, so it was the first thing `/dashboard`
+  painted on mobile.
 
 ## Traffic quality tags
 
@@ -344,11 +398,14 @@ There is **no local Postgres** in this project — `POSTGRES_URL` points at the 
 | `npm run seed:crm [count]` | Insert `count` (default 28) fake visitors with sessions, page views, chats, contacts, events. Idempotent — reseeding replaces rather than duplicating. |
 | `npm run seed:crm:clean` | Remove every fixture row. |
 | `npm run seed:crm:status` | Print real vs. fake row counts. Read-only — run it before and after to prove nothing real moved. |
-| `npm run check:crm-ui -- <baseUrl> <outDir>` | Render the dashboard at 1440/1280/1024/768 against fixtures, screenshot each, and report page errors + horizontal-overflow offenders. **Stubs `/api/admin/*` in the browser, so it writes nothing and needs no admin password.** |
+| `npm run check:crm-ui -- <baseUrl> <outDir>` | Render the dashboard at 1440/1280/1024/768/412/360 against fixtures, screenshot each **loading and loaded**, and report page errors + horizontal-overflow offenders in both states. **Stubs `/api/admin/*` in the browser, so it writes nothing and needs no admin password.** |
 
 - **Fixture data is shared** between the seeder and the UI harness via [scripts/crm-fixtures.mjs](scripts/crm-fixtures.mjs), and is deterministic (seeded PRNG), so both show identical data and screenshots are diffable run to run.
 - **Cleanup contract**: every fixture visitor id is `5eedNNNN-…`. `clean` deletes `where id::text like '5eed%'` *and* re-checks each id against the full fixture shape, so a real UUID that happens to start with `5eed` is refused rather than deleted.
 - **Prefer the UI harness over seeding** when you only need to look at the UI — it never touches the database. Seed only when you need to click through the real app (saving notes, editing a location override, deleting a visitor).
+- **The harness checks the gutter, not just overflow.** They catch different failures: content can sit flush against the screen edge, or a few pixels past it, without the document ever scrolling — `bodyOverflows` stays clean while the page has visibly lost its margin. `measureGutter()` compares every rendered box against the `Container`'s own content box; anything inside an `overflow-x` scroller is exempt, since the visitor table is meant to extend inside its own.
+- **The stubs hold their answers for `HOLD_MS` before fulfilling**, so the loading skeleton is on screen long enough to measure and screenshot (`crm-<width>-skeleton.png`). They used to answer instantly, which meant every check ran against the loaded page — the skeleton was never rendered once, and drifted for months without a single failure. Don't take the delay out.
+- **`PATHS` in the fixtures includes the two longest real note slugs, on purpose.** Every path used to be short (`/`, `/resume`, `/privacy`), so Top pages never rendered a label that needed truncating — and the insights grid's `min-w-0` bug was invisible to the harness for exactly that reason. A fixture that never stresses a label is not testing the thing most likely to break.
 - The fixture population is deliberately shaped like real traffic: ~38% single-view bounces, a slice with no geo/UA at all (mimicking pre-telemetry rows and GPC opt-outs), and only the most engaged tail having chats or contact submissions. If you make the UI look good only on rich rows, you have tested the wrong thing.
 
 ## Adding a new admin endpoint

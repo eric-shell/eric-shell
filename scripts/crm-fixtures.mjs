@@ -84,7 +84,22 @@ const REFERRERS = [
 ]
 
 const LANGS = ['en-US', 'en-US', 'en-GB', 'de-DE', 'fr-CA', 'en-AU']
-const PATHS = ['/', '/', '/', '/resume', '/privacy']
+/**
+ * The note slugs are real ones — the longest in `src/data/notes.ts` — and they
+ * are here because they are LONG.
+ *
+ * Every path used to be short (`/`, `/resume`, `/privacy`), so Top pages never
+ * rendered a label that needed truncating, and the insights grid's worst bug
+ * was invisible to the harness: a long label inflated the grid track's
+ * min-content and pushed every card past the right gutter on a phone. Keep the
+ * longest real slug in here, so the check fails by a clear margin rather than
+ * by a pixel.
+ */
+const PATHS = [
+  '/', '/', '/', '/resume', '/privacy',
+  '/notes/the-browser-helpfully-scrolled-away-from-the-button',
+  '/notes/splitting-react-markdown-out-of-first-paint',
+]
 const VIEWPORTS = [
   [1512, 856, 3024, 1964], [1440, 900, 2560, 1440], [1280, 720, 1920, 1080],
   [390, 844, 390, 844], [430, 932, 430, 932], [820, 1180, 1024, 1366],
