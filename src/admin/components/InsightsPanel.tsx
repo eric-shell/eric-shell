@@ -55,7 +55,9 @@ function InsightsSkeleton() {
         <Panel
           key={i}
           variant="raised-dark"
-          className={`flex animate-pulse flex-col gap-3 rounded-2xl p-4 ${span}`}
+          // `min-w-0` for the same reason ChartFrame carries it — the
+          // placeholder must sit on exactly the track the real card will.
+          className={`flex min-w-0 animate-pulse flex-col gap-3 rounded-2xl p-4 ${span}`}
         >
           <Skeleton className="h-2 w-24" />
           <Skeleton className="h-24 w-full" />
