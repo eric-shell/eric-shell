@@ -42,6 +42,38 @@ export function ordinalStep(t: number): string {
   return `color-mix(in oklch, ${ACCENT} ${pct}%, ${ACCENT_DEEP})`
 }
 
+/**
+ * Where the smallest *non-zero* value in a series sits on the ramp, 0 being
+ * ACCENT_DEEP and 1 being ACCENT. See `magnitudeStep`.
+ */
+export const MAGNITUDE_FLOOR = 0.2
+
+/**
+ * A ramp step for one bar in a single series, keyed to its share of the
+ * largest bar: the peak is ACCENT, the tail runs deep. Zero returns
+ * ACCENT_DEEP — callers dim it separately, because "no data" is a state and
+ * not a small value.
+ *
+ * This deliberately re-encodes what bar length already says. The redundancy is
+ * the point: these charts are 8px-tall rows and 4px-wide columns in a third of
+ * a dashboard row, where a 3px bar and a 5px bar are the same bar. Colour is
+ * what separates them at a glance, and it keeps every chart in the panel
+ * drawing from one vocabulary instead of one flat cyan and one ramp.
+ *
+ * MAGNITUDE_FLOOR is load-bearing. A raw `value / max` puts a 1-of-40 row at
+ * t≈0.02, and the bottom of the ramp is 2.55:1 on the blue-950 canvas — under
+ * the 3:1 floor for a non-text mark, on exactly the marks that are hardest to
+ * find. Starting at 0.2 makes the dimmest bar #006da6 at 3.23:1; the peak is
+ * #00b6eb at 7.73:1. Lower the floor and the tail stops being locatable.
+ *
+ * Scaled to `max` rather than the total, so a series with one dominant row
+ * still shows shape in its tail.
+ */
+export function magnitudeStep(value: number, max: number): string {
+  if (value <= 0 || max <= 0) return ACCENT_DEEP
+  return ordinalStep(MAGNITUDE_FLOOR + (1 - MAGNITUDE_FLOOR) * Math.min(1, value / max))
+}
+
 /** Soft glow for a data mark. Paint-only — it never changes layout. */
 export const GLOW = `drop-shadow(0 0 6px color-mix(in oklch, ${ACCENT} 45%, transparent))`
 

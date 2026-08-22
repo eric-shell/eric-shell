@@ -1,7 +1,7 @@
 import { useCallback, useMemo } from 'react'
 import { twMerge } from 'tailwind-merge'
 import { useTooltip, useTooltipInPortal, defaultStyles } from '@visx/tooltip'
-import { ACCENT, TOOLTIP_STYLE, formatHour, localHourOffset } from '../lib/chartTheme'
+import { TOOLTIP_STYLE, formatHour, localHourOffset, magnitudeStep } from '../lib/chartTheme'
 import { ChartEmpty } from './ChartFrame'
 import type { HourRow } from '@/../api/_lib/insights-types'
 
@@ -22,8 +22,9 @@ const TIP_HALF = 62
 /**
  * Page views by hour of day — "when does traffic actually arrive?"
  *
- * One series, so length carries magnitude and a single accent carries the mark;
- * an ordinal ramp here would only re-encode the bar heights.
+ * One series, painted by `magnitudeStep` — the same deep-to-bright ramp behind
+ * Scroll depth, Viewport mix, and the three rank lists — keyed to each hour's
+ * share of the peak.
  *
  * TIME ZONES. The aggregate buckets in UTC because Postgres has no idea what
  * the reader's clock says. The shift to local hours happens here — but only
@@ -162,27 +163,26 @@ export default function HourlyActivity({ hourly }: { hourly: HourRow[] }) {
                   // An empty hour keeps a 2px stub so the reader can see the
                   // hour exists and was quiet, rather than guessing at a gap.
                   height: col.views === 0 ? 2 : `${Math.max(6, (col.views / max) * 100)}%`,
-                  // Flat ACCENT at full opacity — the same mark every other
-                  // chart in this panel draws.
+                  // One flat colour per bar, off the panel's shared magnitude
+                  // ramp: the peak hour is ACCENT, the quietest measured hour
+                  // sits near ACCENT_DEEP, everything else interpolates. Zero
+                  // comes back as ACCENT_DEEP and is dimmed below.
                   //
-                  // This used to carry a baseline-anchored ACCENT_DEEP→ACCENT
-                  // gradient, a glow on all 24 columns, and 0.74 opacity on
-                  // everything but the peak. Alone it looked deliberate; beside
-                  // the flat bright bars in Top sources and Scroll depth it read
-                  // as a chart from a different design system. The gradient did
-                  // most of the damage: these columns are short, so the dark end
+                  // Flat is the load-bearing word. A per-bar *gradient* was
+                  // tried and removed — these columns are short, so the dark end
                   // is what you actually see, and the strip came out navy where
-                  // its neighbours are cyan.
+                  // its neighbours are cyan. Each bar is one solid step.
                   //
-                  // No peak emphasis either. One series gets one colour; the
-                  // peak is the tallest column by definition and the frame's
-                  // meta already names the hour, so tinting it was re-encoding
-                  // height in a second channel and dimming the other 23 to do it.
-                  background: ACCENT,
-                  // The one surviving opacity, and it marks a state rather than
-                  // de-emphasising data: a quiet hour is not a small value.
-                  // Same treatment ViewportMix gives a zero-count swatch.
-                  opacity: col.views === 0 ? 0.22 : 1,
+                  // Still no separate peak emphasis: the peak is the brightest
+                  // step because it is the tallest, which is the ramp doing its
+                  // job, not a second treatment layered on top.
+                  background: magnitudeStep(col.views, max),
+                  // Marks a state rather than de-emphasising data: a quiet hour
+                  // is not a small value. Same treatment ViewportMix gives a
+                  // zero-count swatch — but lifted from 0.22, because the stub
+                  // is now ACCENT_DEEP rather than ACCENT and at 0.22 a 2px line
+                  // of it is indistinguishable from the canvas.
+                  opacity: col.views === 0 ? 0.45 : 1,
                 }}
               />
             </div>

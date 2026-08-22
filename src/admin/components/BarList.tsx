@@ -1,4 +1,4 @@
-import { ACCENT } from '../lib/chartTheme'
+import { magnitudeStep } from '../lib/chartTheme'
 import { ChartEmpty } from './ChartFrame'
 
 export interface BarListItem {
@@ -13,13 +13,15 @@ export interface BarListItem {
 /**
  * A ranked horizontal bar list — top sources, top pages.
  *
- * **One colour for every bar, on purpose.** These are nominal categories
- * (hostnames, paths): colouring them darker-where-bigger would spend the
- * identity channel re-encoding what bar length already shows, and a ramp across
- * nominal rows is an explicit anti-pattern. Rank is carried by order and length.
+ * **Bars are shaded by magnitude**, via `magnitudeStep` — the top row is the
+ * bright ACCENT, the tail runs deep, scaled to the largest row rather than the
+ * total so the shape of the tail stays readable when one row dominates.
  *
- * Bars are scaled to the largest row, not to the total, so the shape of the tail
- * stays readable when one row dominates.
+ * The rows are nominal (hostnames, paths, tags), so this is not an ordinal
+ * ramp: the shade carries no identity and the tooltip and screen-reader list
+ * never refer to it. It is a second reading of the same magnitude the bar
+ * length already gives, which is why nothing is lost when two rows tie or when
+ * the caller re-sorts. Rank itself is still carried by order and length.
  */
 export default function BarList({ items, empty, unit }: {
   items: BarListItem[]
@@ -52,7 +54,11 @@ export default function BarList({ items, empty, unit }: {
                 style={{
                   width: `${(item.value / max) * 100}%`,
                   minWidth: item.value > 0 ? 3 : 0,
-                  background: ACCENT,
+                  // Floored well above the bottom of the ramp — see
+                  // `magnitudeStep`. A tail row here can be the 3px `minWidth`
+                  // stub above, and a 3px mark is the last thing that can
+                  // afford to be painted at 2.5:1.
+                  background: magnitudeStep(item.value, max),
                 }}
               />
             </span>
