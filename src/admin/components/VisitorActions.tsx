@@ -74,12 +74,11 @@ export default function VisitorActions({ actions }: { actions: ActionMix }) {
             total={total}
             label={rows.map(row => `${row.label}: ${row.pct}%`).join(', ')}
           >
-            {/* The KPI survives the change and keeps the centre. This is the
-                one card in the row with a single headline number — the other
-                two show their totals there, because a split has no headline —
-                so `hero` stays here and nowhere else. */}
+            {/* The one card here whose centre is a rate rather than a total:
+                this split has a headline number and the other two do not. It is
+                drawn at the same size as theirs regardless, so the row reads as
+                three peers. */}
             <RingCentre
-              hero
               value={`${share(actions.acted, total)}%`}
               sub={`${actions.acted} of ${total} acted`}
             />

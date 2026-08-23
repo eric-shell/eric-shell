@@ -9,27 +9,28 @@ import type { ReactNode } from 'react'
  * centre next to a 26px centre reads as a rendering fault rather than a
  * hierarchy.
  *
- * `hero` is the one sanctioned difference — the KPI's value outranks a stat
- * tile's 26px, which is what marks it as the headline of the panel. Exactly one
- * card in the row may use it.
+ * ONE SIZE, no variants. There was a `hero` flag that drew the KPI at 34px and
+ * the other two at 22px, on the theory that the panel needed a headline. Three
+ * identical rings on one line with one number visibly larger than the others
+ * did not read as hierarchy, it read as a mistake, so the three now match and
+ * 34px is the size they match at. The insight row is deliberately a set of
+ * peers.
  *
  * Rendered as HTML over the svg rather than as `<text>`: it inherits the site's
  * sans and its proportional figures. `tabular-nums` would make a value like
  * 12% look loose at this size.
  */
-export default function RingCentre({ value, sub, hero = false }: {
+export default function RingCentre({ value, sub }: {
   value: ReactNode
   sub: ReactNode
-  hero?: boolean
 }) {
   return (
     <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
-      <span
-        className={`font-sans font-semibold leading-none text-white ${hero ? 'text-[34px]' : 'text-[22px]'}`}
-      >
-        {value}
-      </span>
-      <span className={`mt-1 text-white/70 ${hero ? 'text-[11px]' : 'text-[10px]'}`}>{sub}</span>
+      {/* Comfortably inside the ring: the track's inner diameter is 75 viewBox
+          units, about 132px at this card's width, against roughly 52px of
+          stacked type. A four-figure total still clears it. */}
+      <span className="font-sans text-[34px] font-semibold leading-none text-white">{value}</span>
+      <span className="mt-1 text-[11px] text-white/70">{sub}</span>
     </div>
   )
 }

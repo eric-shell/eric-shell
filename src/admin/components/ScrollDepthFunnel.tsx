@@ -77,8 +77,7 @@ export default function ScrollDepthFunnel({ scroll }: { scroll: ScrollDepth }) {
   return (
     <>
       <div className="flex min-w-0 flex-1 flex-col items-center gap-3">
-        {/* Same cap the Action rate gauge uses at its non-hero size, so the
-            three instruments in this row are one family at two weights. */}
+        {/* Same cap every circular card in this row uses. */}
         <div className="mx-auto w-full max-w-44">
           <RadialSegments
             segments={rows}
