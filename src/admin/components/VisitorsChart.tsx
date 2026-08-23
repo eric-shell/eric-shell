@@ -7,7 +7,7 @@ import { scaleLinear, scaleTime } from '@visx/scale'
 import { ParentSize } from '@visx/responsive'
 import { localPoint } from '@visx/event'
 import { useTooltip, useTooltipInPortal, defaultStyles } from '@visx/tooltip'
-import { TOOLTIP_STYLE } from '../lib/chartTheme'
+import { GLOW, TOOLTIP_STYLE } from '../lib/chartTheme'
 import { formatMonthDay } from '../lib/dateFormat'
 import type { StatDay } from '@/../api/_lib/types'
 
@@ -105,12 +105,46 @@ function Chart({ days, width, height }: { days: StatDay[]; width: number; height
 
   if (width < 10 || data.length === 0) return null
 
+  /**
+   * The scale's ceiling, not the raw peak: `nice: true` rounds the domain up,
+   * so this is both the top of the plot and a rounder number to label.
+   */
+  const ceiling = yScale.domain()[1] as number
+
   return (
     <div className="relative h-full w-full">
       <svg ref={containerRef} width={width} height={height} className="overflow-visible">
         <LinearGradient id="visitors-area" from={ACCENT} to={DEEP} fromOpacity={0.38} toOpacity={0.02} />
 
         <Group>
+          {/* Y-REFERENCE. At `xl` this plot is ~700px wide and had no vertical
+              scale of any kind — no ceiling, no baseline, no value — so it could
+              only ever be read as a shape. Two hairlines and one number fix
+              that, and stay under the ink budget an axis would have cost:
+              solid, never dashed, and drawn before the data so the line and the
+              marker sit on top of them.
+
+              The ceiling label is anchored left. Right would put it under the
+              most recent day, which is the end of the series and the point most
+              likely to be at the top of the plot. */}
+          <line
+            x1={0} x2={width} y1={yScale(ceiling)} y2={yScale(ceiling)}
+            stroke="#ffffff" strokeOpacity={0.1} strokeWidth={1}
+          />
+          <text
+            x={0} y={yScale(ceiling) + 10}
+            fontSize={9} fill="#ffffff" fillOpacity={0.55}
+            className="tabular-nums"
+          >
+            {ceiling}
+          </text>
+          {/* Baseline, matching the one under the hourly strip. It is where the
+              area closes, so without it the fill just fades into the card. */}
+          <line
+            x1={0} x2={width} y1={innerH} y2={innerH}
+            stroke="#ffffff" strokeOpacity={0.15} strokeWidth={1}
+          />
+
           <AreaClosed<Point>
             data={data}
             x={d => xScale(getDate(d))}
@@ -119,7 +153,13 @@ function Chart({ days, width, height }: { days: StatDay[]; width: number; height
             curve={curveMonotoneX}
             fill="url(#visitors-area)"
           />
-          {/* 2px line, round join/cap — the fixed mark spec. */}
+          {/* 2px line, round join/cap — the fixed mark spec.
+              Glow on the line only, never on the area: the fill is already a
+              38%-to-2% ramp over a third of the card, and a halo on a shape
+              that large fogs the panel instead of lifting a mark. Full-strength
+              GLOW because the stroke is full ACCENT, the same footing the
+              gauge's arc peaks on. The <svg> is `overflow-visible`, so the
+              halo survives at the plot edges. */}
           <LinePath<Point>
             data={data}
             x={d => xScale(getDate(d))}
@@ -129,6 +169,7 @@ function Chart({ days, width, height }: { days: StatDay[]; width: number; height
             strokeWidth={2}
             strokeLinecap="round"
             strokeLinejoin="round"
+            style={{ filter: GLOW }}
           />
 
           {tooltipData && (

@@ -2,10 +2,10 @@ import { Eyebrow, Panel } from '../../components/ui'
 import BarList from './BarList'
 import { ChartFrame } from './ChartFrame'
 import HourlyActivity from './HourlyActivity'
-import RadialGauge from './RadialGauge'
+import VisitorActions from './VisitorActions'
 import ScrollDepthFunnel from './ScrollDepthFunnel'
 import ViewportMix from './ViewportMix'
-import { Skeleton } from './Skeleton'
+import { InsightCardSkeleton, type InsightShape } from './Skeleton'
 import { formatHour, labelSource, localHourOffset } from '../lib/chartTheme'
 import type { InsightsPayload } from '@/../api/_lib/insights-types'
 
@@ -34,6 +34,22 @@ const SPANS = [
 ]
 
 /**
+ * What each card in `SPANS` order actually draws, so the skeleton reserves the
+ * right shape rather than one generic block for all eight. Kept beside the
+ * spans because the two are read together and must be reordered together —
+ * a card moved in the grid without moving here gets the wrong placeholder, and
+ * the panel jumps by whatever the two shapes differ by.
+ *
+ * Action rate, Scroll depth and Viewport are rings; the four rank lists are
+ * bars; Views by hour is the strip.
+ */
+const SHAPES: InsightShape[] = [
+  'ring', 'ring', 'ring',
+  'bars', 'bars', 'bars', 'bars',
+  'hours',
+]
+
+/**
  * Three ratio cards, then three rank lists, then a fourth rank list beside the
  * hour-of-day band. Six columns rather than three so the band can span cleanly;
  * the six cards above it are thirds either way, and six of them divides evenly
@@ -57,10 +73,11 @@ function InsightsSkeleton() {
           variant="raised-dark"
           // `min-w-0` for the same reason ChartFrame carries it — the
           // placeholder must sit on exactly the track the real card will.
-          className={`flex min-w-0 animate-pulse flex-col gap-3 rounded-2xl p-4 ${span}`}
+          // `p-4` and the rounding are ChartFrame's too; the gap now lives on
+          // the inner figure, matching the real one.
+          className={`flex min-w-0 animate-pulse flex-col rounded-2xl p-4 ${span}`}
         >
-          <Skeleton className="h-2 w-24" />
-          <Skeleton className="h-24 w-full" />
+          <InsightCardSkeleton shape={SHAPES[i]} />
         </Panel>
       ))}
     </div>
@@ -113,39 +130,28 @@ export default function InsightsPanel({ data }: { data: InsightsPayload | null }
           {/* Row one — the three session-quality ratios, all the same form
               family, so a third of the row each is the right size for them. */}
 
-          {/* A single ratio against its own track — the one form the owner
-              specifically wanted, and the one the palette can carry without a
-              categorical hue in sight.
+          {/* Every visitor sorted into one rung of an intent ladder, rather
+              than the bare `acted / total` gauge this used to be.
 
-              It measures ACTING rather than returning. A portfolio is mostly a
+              It measures ACTING rather than returning — a portfolio is mostly a
               one-visit destination reached from an application or a resume
               link, so a return rate here is structurally near zero and says
-              more about the format than about the site; whether a visit ended
-              in a click through to the work, a question, or a message is the
-              thing this page exists to move. The `Returning` tag on the visitor
-              table still carries the other question, at the row level where a
-              two-in-thirty-eight signal is actually readable. */}
-          <ChartFrame title="Action rate" meta={`${data.windowDays}d`} className={SPANS[0]}>
-            <RadialGauge
-              value={data.visitors.acted}
-              total={data.visitors.total}
-              unit="visitors acted on the work"
-              // Overlapping by construction — one visitor who did all three is
-              // counted in all three and once in the arc — so the caption says
-              // so rather than leaving a reader to wonder why the parts sum
-              // past the value.
-              parts={[
-                { label: 'clicked out', value: data.visitors.clicked },
-                { label: 'chatted', value: data.visitors.chatted },
-                { label: 'wrote in', value: data.visitors.contacted },
-              ]}
-              // "Activity", not "sessions": a Do Not Track visitor records no
-              // session at all, so a session denominator would leave out the
-              // most privacy-conscious visitors while still counting their
-              // chats in the numerator — see the action query in
-              // api/admin/insights.ts.
-              caption="Visitors who clicked through to the work, chatted, or sent the contact form, over everyone with recorded activity. A visitor can appear in more than one part."
-            />
+              more about the format than about the site. The `Returning` tag on
+              the visitor table still carries that question, at the row level
+              where a two-in-thirty-eight signal is actually readable.
+
+              What changed is the resolution. The three actions overlap, so as
+              a breakdown under a single ratio they could only ever be text; as
+              an exclusive ladder they are the chart, and on this much traffic
+              the shape of engagement is far more legible than one percentage
+              standing on a handful of people. The headline rate keeps the
+              centre of the ring. */}
+          <ChartFrame
+            title="What visitors did"
+            meta={`${data.windowDays} ${data.windowDays === 1 ? 'day' : 'days'}`}
+            className={SPANS[0]}
+          >
+            <VisitorActions actions={data.visitors} />
           </ChartFrame>
 
           {/* The meta counts the sessions actually charted, not every session in

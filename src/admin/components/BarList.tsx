@@ -1,4 +1,4 @@
-import { magnitudeStep } from '../lib/chartTheme'
+import { glowFor, magnitudeStep } from '../lib/chartTheme'
 import { ChartEmpty } from './ChartFrame'
 
 export interface BarListItem {
@@ -41,14 +41,22 @@ export default function BarList({ items, empty, unit }: {
           two hosts can perfectly well share the words "View project". Nothing
           in a row carries state, so position is the honest identity here. */}
       <ul className="flex flex-1 flex-col justify-center gap-2" aria-hidden="true">
-        {items.map((item, i) => (
+        {items.map((item, i) => {
+          const fill = magnitudeStep(item.value, max)
+          return (
           <li
             key={i}
             className="flex items-center gap-2"
             title={`${item.label} — ${item.value} ${unit}${item.detail ? `, ${item.detail}` : ''}`}
           >
             <span className="w-[38%] shrink-0 truncate text-[11px] text-white/85">{item.label}</span>
-            <span className="h-2 min-w-0 flex-1 overflow-hidden rounded-sm bg-white/7">
+            {/* No `overflow-hidden` on the track, deliberately: the fill's
+                glow is drawn outside its box and the track would clip it back
+                to a rectangle. Nothing is lost by dropping it — the fill can
+                never exceed `max`, so it cannot overrun the track, and both
+                radii are 2px, so the fill's square left corner sits inside the
+                track's rounded one by well under a pixel. */}
+            <span className="h-2 min-w-0 flex-1 rounded-sm bg-white/7">
               <span
                 className="block h-full rounded-r-sm transition-[width] duration-500 motion-reduce:transition-none"
                 style={{
@@ -58,13 +66,18 @@ export default function BarList({ items, empty, unit }: {
                   // `magnitudeStep`. A tail row here can be the 3px `minWidth`
                   // stub above, and a 3px mark is the last thing that can
                   // afford to be painted at 2.5:1.
-                  background: magnitudeStep(item.value, max),
+                  background: fill,
+                  // In the row's own step, so the halo can never be brighter
+                  // than the bar it belongs to. A zero row draws no box and so
+                  // no glow; skipping it keeps that explicit.
+                  filter: item.value > 0 ? glowFor(fill) : undefined,
                 }}
               />
             </span>
             <span className="shrink-0 text-right text-[11px] tabular-nums text-white/85">{item.value}</span>
           </li>
-        ))}
+          )
+        })}
       </ul>
 
       <ul className="sr-only">

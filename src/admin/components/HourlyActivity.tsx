@@ -1,7 +1,7 @@
 import { useCallback, useMemo } from 'react'
 import { twMerge } from 'tailwind-merge'
 import { useTooltip, useTooltipInPortal, defaultStyles } from '@visx/tooltip'
-import { TOOLTIP_STYLE, formatHour, localHourOffset, magnitudeStep } from '../lib/chartTheme'
+import { TOOLTIP_STYLE, formatHour, glowFor, localHourOffset, magnitudeStep } from '../lib/chartTheme'
 import { ChartEmpty } from './ChartFrame'
 import type { HourRow } from '@/../api/_lib/insights-types'
 
@@ -131,12 +131,20 @@ export default function HourlyActivity({ hourly }: { hourly: HourRow[] }) {
             `pointerleave` fires every time the pointer crosses one of the 23
             gaps, which is what made the readout flicker off mid-strip; leaving
             the strip is the only moment it should actually go away. */}
+        {/* Base gap is `gap-0.5`, up from `gap-px`. A 1px gutter between two
+            glowing columns is entirely inside both halos, which welded the
+            strip into one lit block on a phone — the same failure the comment
+            above warns about for the gutter itself, arrived at from the other
+            direction. 2px holds, and the strip loses 23px of bar across 24
+            columns to buy it. */}
         <div
-          className="flex h-18 items-end gap-px sm:gap-0.5 xl:h-24 xl:gap-1"
+          className="flex h-18 items-end gap-0.5 xl:h-24 xl:gap-1"
           aria-hidden="true"
           onPointerLeave={hideTooltip}
         >
-          {columns.map(col => (
+          {columns.map(col => {
+            const fill = magnitudeStep(col.views, max)
+            return (
             <div
               key={col.displayHour}
               // The wash is what makes the hit target visible: it fills the
@@ -176,7 +184,13 @@ export default function HourlyActivity({ hourly }: { hourly: HourRow[] }) {
                   // Still no separate peak emphasis: the peak is the brightest
                   // step because it is the tallest, which is the ramp doing its
                   // job, not a second treatment layered on top.
-                  background: magnitudeStep(col.views, max),
+                  background: fill,
+                  // 3px, half what every other chart here uses. These columns
+                  // are ~13px wide with a 2px gutter, the densest marks in the
+                  // panel; at 6px the halos meet in the gap and the strip stops
+                  // reading as 24 separate hours. A zero hour gets none — it is
+                  // a state marker, and lighting it up argues the opposite.
+                  filter: col.views > 0 ? glowFor(fill, 3) : undefined,
                   // Marks a state rather than de-emphasising data: a quiet hour
                   // is not a small value. Same treatment ViewportMix gives a
                   // zero-count swatch — but lifted from 0.22, because the stub
@@ -186,7 +200,8 @@ export default function HourlyActivity({ hourly }: { hourly: HourRow[] }) {
                 }}
               />
             </div>
-          ))}
+            )
+          })}
         </div>
 
         {/* Hairline solid baseline — never dashed. */}

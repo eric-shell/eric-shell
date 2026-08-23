@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import {
-  type LucideIcon, LogOut, MailCheck, MessageSquare, MousePointer2,
-  RefreshCw, Users,
+  type LucideIcon, ArrowDown, ArrowUp, LogOut, MailCheck, Minus, MessageSquare,
+  MousePointer2, RefreshCw, Users,
 } from 'lucide-react'
 import { Button, Container, Eyebrow, H2, Panel } from '../../components/ui'
 import VisitorsChart from './VisitorsChart'
@@ -10,11 +10,50 @@ import VisitorsPanel from './VisitorsPanel'
 import { MetricsRowSkeleton, Skeleton } from './Skeleton'
 import { apiCall } from '../lib/api'
 import { formatDuration } from '../lib/dateFormat'
+import { glowFor, magnitudeStep } from '../lib/chartTheme'
 import { detectProxyBursts, isAutomated } from '../lib/classify'
 import { isNewSince, useLastVisit } from '../lib/lastVisit'
-import { DEFAULT_TIMEFRAME, isTimeframe, withinTimeframe, type Timeframe } from '../lib/timeframe'
+import { DEFAULT_TIMEFRAME, isTimeframe, previousTimeframe, withinTimeframe, type Timeframe } from '../lib/timeframe'
 import type { StatDay, VisitorListPayload, VisitorSummary } from '@/../api/_lib/types'
 import type { InsightsPayload } from '@/../api/_lib/insights-types'
+
+/**
+ * Period-over-period change, as a signed percentage.
+ *
+ * `null` where there is nothing honest to say: no previous window at all
+ * (all-time), or a previous window of zero — going from 0 to 3 is not "+300%",
+ * it is a first. The caller renders nothing in both cases rather than a zero.
+ */
+function delta(current: number, previous: number | null): number | null {
+  if (previous === null || previous === 0) return null
+  return Math.round(((current - previous) / previous) * 100)
+}
+
+/**
+ * The trend chip beside a tile's value.
+ *
+ * DELIBERATELY NOT COLOUR-CODED. The rule this file already states — semantic
+ * colour marks a genuine signal, never decoration — does not survive four tiles
+ * each painting a green or red delta; at that point the row is a traffic light
+ * and the one green that means something (a contact submission) is lost in it.
+ * Direction is carried by the arrow, magnitude by the number, and the ink stays
+ * neutral. The arrow is also why this is not colour-alone.
+ *
+ * A flat 0% keeps a dash rather than an arrow: "no change" is a third state and
+ * an arrow pointing either way would misreport it.
+ */
+function TrendChip({ value }: { value: number }) {
+  const Icon = value > 0 ? ArrowUp : value < 0 ? ArrowDown : Minus
+  return (
+    <span
+      className="flex shrink-0 items-center gap-0.5 text-[11px] font-semibold tabular-nums text-white/70"
+      title={`${value > 0 ? '+' : ''}${value}% vs the previous period of the same length`}
+    >
+      <Icon size={11} strokeWidth={2.5} aria-hidden="true" />
+      {Math.abs(value)}%
+    </span>
+  )
+}
 
 /**
  * Stat tile. Label stays uppercase micro-type to match the site's `Eyebrow`
@@ -24,15 +63,31 @@ import type { InsightsPayload } from '@/../api/_lib/insights-types'
  * `tone` marks a genuine signal, never decoration: `positive` is only for a
  * conversion. Semantic color always ships with an icon so it is never
  * color-alone. green-400 is 7.04:1 on the blue-950 canvas — AA text.
+ *
+ * `meter` turns a tile whose sub-line is already a ratio into something
+ * glanceable: the same single-proportion-against-its-own-track form the Action
+ * rate gauge uses, at tile scale. Only pass it where the number above it IS
+ * that ratio's numerator — it is drawn from the same array in the same render,
+ * which is what keeps the bar and the percentage from ever disagreeing.
+ *
+ * The meter is blue even on the `positive` tile. Marks and semantics are two
+ * different systems here: every data mark in the admin is a step of the accent
+ * ramp, and green is reserved for the one callout that means something. Giving
+ * the meter the tone would have merged them.
  */
-function StatCard({ label, value, sub, icon: Icon, tone = 'neutral' }: {
+function StatCard({ label, value, sub, icon: Icon, tone = 'neutral', meter, trend }: {
   label: string
   value: number | string
   sub: string
   icon?: LucideIcon
   tone?: 'neutral' | 'positive'
+  /** `[part, whole]` for the ratio bar. Omit on tiles that aren't ratios. */
+  meter?: [number, number]
+  /** Signed percent change vs the previous window, or null for no comparison. */
+  trend?: number | null
 }) {
   const positive = tone === 'positive' && value !== 0
+  const fill = meter ? magnitudeStep(meter[0], meter[1]) : null
   return (
     <Panel
       variant="raised-dark"
@@ -50,8 +105,29 @@ function StatCard({ label, value, sub, icon: Icon, tone = 'neutral' }: {
         <p className="text-[10px] font-semibold uppercase tracking-wide text-white/65">{label}</p>
       </div>
       {/* Proportional figures, not tabular: tabular-nums makes a value like 121
-          look loose at display size. Sans, never the display face. */}
-      <p className="mt-1.5 font-sans text-[26px] font-semibold leading-none text-white">{value}</p>
+          look loose at display size. Sans, never the display face.
+          The trend sits on the value's baseline rather than under the sub-line:
+          it qualifies the number, and reading them as one line is the point. */}
+      <div className="mt-1.5 flex items-baseline gap-2">
+        <p className="font-sans text-[26px] font-semibold leading-none text-white">{value}</p>
+        {trend !== null && trend !== undefined && <TrendChip value={trend} />}
+      </div>
+      {meter && fill && (
+        // Track spans the tile, so a short bar reads as a small share rather
+        // than just a small bar. Same 3px floor the rank lists use: a 1-in-40
+        // rate must still draw something.
+        <div className="mt-2 h-1 w-full rounded-full bg-white/10" aria-hidden="true">
+          <div
+            className="h-full rounded-full transition-[width] duration-500 motion-reduce:transition-none"
+            style={{
+              width: `${pct(meter[0], meter[1])}%`,
+              minWidth: meter[0] > 0 ? 3 : 0,
+              background: fill,
+              filter: meter[0] > 0 ? glowFor(fill, 4) : undefined,
+            }}
+          />
+        </div>
+      )}
       <p className={`mt-1 text-xs ${positive ? 'font-medium text-green-400' : 'text-white/85'}`}>{sub}</p>
     </Panel>
   )
@@ -68,6 +144,13 @@ const POLL_MS = 120_000
 interface DashboardProps {
   onLogout: () => void
 }
+
+/**
+ * Did this visitor reach out at all? Module scope, not a closure: three places
+ * read it, including a `useMemo`, and a per-render arrow would either sit
+ * missing from a dep list or invalidate the memo on every render.
+ */
+const hasEngaged = (v: VisitorSummary) => v.chat_message_count > 0 || v.contact_count > 0
 
 function pct(n: number, total: number) {
   if (!total) return 0
@@ -216,7 +299,6 @@ export default function Dashboard({ onLogout }: DashboardProps) {
   // visitor totals (page views, engaged time) are lifetime figures on rows that
   // fall in the window, not a re-aggregate of the window itself; the row data
   // isn't broken out by day.
-  const hasEngaged = (v: VisitorSummary) => v.chat_message_count > 0 || v.contact_count > 0
 
   // Computed over the FULL list, before the timeframe narrows it. A burst is a
   // fact about the traffic, not about the window you happen to be looking
@@ -241,6 +323,39 @@ export default function Dashboard({ onLogout }: DashboardProps) {
   const converted = baseVisitors?.filter(v => v.contact_count > 0).length ?? 0
   const totalViews = baseVisitors?.reduce((s, v) => s + v.page_view_count, 0) ?? 0
   const totalEngagedMs = baseVisitors?.reduce((s, v) => s + v.total_engaged_ms, 0) ?? 0
+
+  /**
+   * The same four numbers over the window immediately before this one.
+   *
+   * Computed from the same rows through the SAME filter chain — timeframe, then
+   * bots, then engaged-only — because a delta is only worth showing if both
+   * sides were counted the same way. A server aggregate could not do this: it
+   * cannot see the bot or engaged chips, so its "previous period" would include
+   * crawler traffic the tile above it has excluded, and toggling a chip would
+   * move the number while leaving the delta stale.
+   *
+   * `null` for the all-time window, which has nothing before it. That is the
+   * default, so a fresh dashboard shows no trend until a window is picked.
+   *
+   * Page views and engaged time are lifetime per-visitor counters, as the note
+   * on `baseVisitors` says — so their delta compares the lifetime totals of two
+   * different visitor cohorts, not traffic in two windows. Both sides are
+   * computed identically, which is what makes the comparison legitimate; it is
+   * a statement about who showed up, not about how much they browsed this week.
+   */
+  const prev = useMemo(() => {
+    if (visitors === null) return null
+    const inPrev = previousTimeframe(visitors, timeframe)
+    if (inPrev === null) return null
+    const afterBotsPrev = hideBots ? inPrev.filter(v => !isAutomated(v, bursts)) : inPrev
+    const rows = engagedOnly ? afterBotsPrev.filter(hasEngaged) : afterBotsPrev
+    return {
+      visitors: rows.length,
+      views: rows.reduce((sum, v) => sum + v.page_view_count, 0),
+      engaged: rows.filter(v => v.chat_message_count > 0).length,
+      converted: rows.filter(v => v.contact_count > 0).length,
+    }
+  }, [visitors, timeframe, hideBots, engagedOnly, bursts])
 
   return (
     <Container className="flex flex-col gap-4 px-4 py-6 sm:gap-6 sm:px-6 sm:py-10">
@@ -290,18 +405,28 @@ export default function Dashboard({ onLogout }: DashboardProps) {
           <MetricsRowSkeleton />
         ) : (
           <>
-            <StatCard label="Visitors" value={totalVisitors} sub="total" icon={Users} />
+            {/* No meter on the first two: neither number is a part of a whole
+                that is on this page. "Visitors" is the whole, and page views
+                have no denominator at all — a bar under either would need a
+                maximum invented to draw it against. */}
+            <StatCard
+              label="Visitors" value={totalVisitors} sub="total" icon={Users}
+              trend={delta(totalVisitors, prev?.visitors ?? null)}
+            />
             <StatCard
               label="Page views"
               value={totalViews}
               sub={totalEngagedMs > 0 ? `${formatDuration(totalEngagedMs)} on site` : 'across all visitors'}
               icon={MousePointer2}
+              trend={delta(totalViews, prev?.views ?? null)}
             />
             <StatCard
               label="Engaged"
               value={engaged}
               sub={`chatted · ${pct(engaged, totalVisitors)}%`}
               icon={MessageSquare}
+              meter={[engaged, totalVisitors]}
+              trend={delta(engaged, prev?.engaged ?? null)}
             />
             {/* The only tile that earns semantic color — a contact submission is
                 the one event on this dashboard that actually means something. */}
@@ -311,6 +436,8 @@ export default function Dashboard({ onLogout }: DashboardProps) {
               sub={`submitted · ${pct(converted, totalVisitors)}%`}
               icon={MailCheck}
               tone="positive"
+              meter={[converted, totalVisitors]}
+              trend={delta(converted, prev?.converted ?? null)}
             />
             <Panel variant="raised-dark" className="col-span-2 min-h-[116px] rounded-2xl p-4 md:col-span-4 xl:col-span-1 xl:flex-1">
               {stats

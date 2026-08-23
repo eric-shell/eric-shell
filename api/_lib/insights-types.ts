@@ -132,17 +132,37 @@ export interface FilterRow {
  * person can do all three and is counted in each, which is why they are
  * reported as a breakdown beside the ratio rather than as a stacked bar.
  */
+/**
+ * What visitors did, on two readings of the same three actions.
+ *
+ * `clicked` / `chatted` / `contacted` OVERLAP — one visitor who did all three
+ * is in all three — so they sum past `acted` and can only ever be reported as
+ * totals, never as parts of a whole.
+ *
+ * `contacted` / `chattedOnly` / `clickedOnly`, plus the `total - acted`
+ * remainder, are the same visitors sorted into an exclusive ladder by their
+ * STRONGEST action. Those four partition `total` exactly, which is what lets
+ * the UI draw them as segments of one ring.
+ */
 export interface ActionMix {
   /** Visitors with any recorded activity in the window — the denominator. */
   total: number
-  /** Of those, how many did at least one of the three below. */
+  /** Of those, how many did at least one of the three actions. */
   acted: number
-  /** Clicked a link that left the site. */
+  /** Clicked a link that left the site. Overlapping total. */
   clicked: number
-  /** Sent at least one message to the chat. */
+  /** Sent at least one message to the chat. Overlapping total. */
   chatted: number
-  /** Submitted the contact form. */
+  /**
+   * Submitted the contact form. Also the top rung of the ladder — there is
+   * nothing above it, so the overlapping and exclusive counts are the same
+   * number and only one field is needed.
+   */
   contacted: number
+  /** Chatted but did not submit the form. Second rung. */
+  chattedOnly: number
+  /** Clicked out but neither chatted nor submitted. Third rung. */
+  clickedOnly: number
 }
 
 export interface PathRow {

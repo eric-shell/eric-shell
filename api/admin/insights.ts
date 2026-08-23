@@ -142,10 +142,21 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
       // assistant rows as a pair, so this is equivalent today — but it says the
       // thing that is actually meant, which is that a PERSON typed something.
       //
-      // The three parts are NOT a partition. One visitor who clicked out, then
-      // chatted, then wrote in is counted in all three and once in `acted`, so
-      // the parts routinely sum past it. The UI reports them as a breakdown
-      // beside the ratio, never as segments of it.
+      // TWO READINGS OF THE SAME THREE ACTIONS, and the difference matters.
+      //
+      // `clicked` / `chatted` / `contacted` overlap: one visitor who clicked
+      // out, then chatted, then wrote in is counted in all three and once in
+      // `acted`, so they routinely sum past it. They are totals, never parts.
+      //
+      // `chatted_only` / `clicked_only` sort the same visitors into an
+      // exclusive ladder by their strongest action, with `contacted` as the top
+      // rung (nothing outranks it, so it needs no variant) and `total - acted`
+      // as the remainder. Those four partition the denominator exactly, which
+      // is what lets the UI draw them as one ring instead of a bare ratio.
+      //
+      // `not exists` rather than `not in`: the anti-join is NULL-safe, and a
+      // single NULL on the right of `not in` makes the whole predicate return
+      // no rows.
       db`
         with active as (
           select visitor_id from visitor_sessions
@@ -190,7 +201,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
           ) any_action)::int                    as acted,
           (select count(*) from clicked)::int   as clicked,
           (select count(*) from chatted)::int   as chatted,
-          (select count(*) from contacted)::int as contacted
+          (select count(*) from contacted)::int as contacted,
+          (select count(*) from chatted ch
+             where not exists (
+               select 1 from contacted c where c.visitor_id = ch.visitor_id
+             ))::int                            as chatted_only,
+          (select count(*) from clicked cl
+             where not exists (
+               select 1 from contacted c where c.visitor_id = cl.visitor_id
+             )
+             and not exists (
+               select 1 from chatted ch where ch.visitor_id = cl.visitor_id
+             ))::int                            as clicked_only
       `,
       // Entry referrer per session, reduced to a bare host.
       //
@@ -363,6 +385,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
         clicked: num(a.clicked),
         chatted: num(a.chatted),
         contacted: num(a.contacted),
+        chattedOnly: num(a.chatted_only),
+        clickedOnly: num(a.clicked_only),
       },
       sources: sourceRows.map(row => ({
         host: typeof row.host === 'string' ? row.host : '',

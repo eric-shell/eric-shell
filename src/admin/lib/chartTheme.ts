@@ -43,6 +43,22 @@ export function ordinalStep(t: number): string {
 }
 
 /**
+ * Ring geometry for the circular cards in the insight row, in a 0–100 viewBox.
+ *
+ * Here rather than in the component because "the same size" is the entire
+ * point: three cards side by side drawing rings that differ by two units read
+ * as a mistake, and two separately tuned implementations had already drifted to
+ * r=42/stroke=9 and r=38/stroke=10 before this existed. The skeleton reads it
+ * too, so the placeholder ring cannot drift from the real one either.
+ *
+ * The ring reaches `RING_R + RING_STROKE / 2` = 46.5 of a 50-unit half-box, so
+ * a glow falls outside the viewBox: every consumer needs `overflow-visible` on
+ * the svg or the halo is shaved flat on four sides.
+ */
+export const RING_R = 42
+export const RING_STROKE = 9
+
+/**
  * Where the smallest *non-zero* value in a series sits on the ramp, 0 being
  * ACCENT_DEEP and 1 being ACCENT. See `magnitudeStep`.
  */
@@ -74,8 +90,52 @@ export function magnitudeStep(value: number, max: number): string {
   return ordinalStep(MAGNITUDE_FLOOR + (1 - MAGNITUDE_FLOOR) * Math.min(1, value / max))
 }
 
-/** Soft glow for a data mark. Paint-only — it never changes layout. */
-export const GLOW = `drop-shadow(0 0 6px color-mix(in oklch, ${ACCENT} 45%, transparent))`
+/**
+ * A ramp step by **rank** rather than by value: `rank` 0 is the brightest of
+ * `count` marks, `count - 1` the deepest, evenly spaced across the same floored
+ * range `magnitudeStep` uses.
+ *
+ * Use this instead of `magnitudeStep` when the series is short and its values
+ * are structurally bunched — a funnel that drops off steeply puts all four of
+ * its bars in the bottom third of the ramp, and a card of four near-identical
+ * navy bars separates nothing. Ranking spends the whole ramp every time, so the
+ * steps stay as far apart as the palette allows regardless of the numbers.
+ *
+ * The tradeoff is real and it is why this is not the default: rank throws away
+ * the *size* of the gaps. Four marks at 90/12/11/10 look evenly stepped here.
+ * Only reach for it where bar length is already carrying the magnitude, so the
+ * ramp is free to carry the order.
+ */
+export function rankStep(rank: number, count: number): string {
+  if (count <= 1) return ACCENT
+  const t = (count - 1 - Math.min(Math.max(rank, 0), count - 1)) / (count - 1)
+  return ordinalStep(MAGNITUDE_FLOOR + (1 - MAGNITUDE_FLOOR) * t)
+}
+
+/**
+ * Soft glow for a data mark, in the mark's *own* colour. Paint-only — a
+ * `drop-shadow` filter never changes layout or the element's own box.
+ *
+ * The colour argument is not decoration. Every mark in this panel is now a step
+ * of the magnitude ramp, and a fixed-ACCENT halo around a deep tail bar would
+ * put more light outside the mark than in it — inverting the exact ordering the
+ * ramp exists to show. A bar glows in its own step, so the tail stays quiet.
+ *
+ * `radius` exists for density. 6px reads as a soft lift under a mark with room
+ * around it; on the 24-column hourly strip, where the gutter is 2–4px, a 6px
+ * halo crosses the gap from both sides and welds the strip into one glowing
+ * block. Dense marks pass a smaller radius rather than going without.
+ *
+ * CLIPPING. A glow is drawn outside the element's box, so any ancestor with
+ * `overflow: hidden` erases it. Both bar tracks here had one; see the notes at
+ * those call sites for what replaced it.
+ */
+export function glowFor(color: string, radius = 6): string {
+  return `drop-shadow(0 0 ${radius}px color-mix(in oklch, ${color} 45%, transparent))`
+}
+
+/** The full-strength glow, in ACCENT. Used by the gauge, whose arc peaks there. */
+export const GLOW = glowFor(ACCENT)
 
 /**
  * Tooltip chrome, shared by every chart that has one.

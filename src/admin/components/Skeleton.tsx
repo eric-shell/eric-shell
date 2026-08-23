@@ -1,5 +1,6 @@
 import { twMerge } from 'tailwind-merge'
 import { Panel } from '../../components/ui'
+import { RING_R, RING_STROKE } from '../lib/chartTheme'
 import { VISITOR_COLUMNS } from '../lib/visitorColumns'
 
 export function Skeleton({ className }: { className?: string }) {
@@ -50,13 +51,24 @@ export function MetricsRowSkeleton() {
           variant="raised-dark"
           className="flex min-w-[120px] animate-pulse flex-col justify-between rounded-2xl p-4"
         >
-          {/* StatCard's three lines and the exact gaps between them: a 15px
-              label row, `mt-1.5`, the 26px `leading-none` value, `mt-1`, then
-              the 16px sub. That comes to the same 101px tile, so the row does
-              not resize when the numbers land. `justify-between` is StatCard's
-              too — inert until `xl`, where the row takes a min height. */}
+          {/* StatCard's lines and the exact gaps between them: a 15px label
+              row, `mt-1.5`, the 26px `leading-none` value, `mt-2` + the 4px
+              ratio meter, `mt-1`, then the 16px sub. 113px of tile, up from
+              101 before the meter existed.
+
+              The meter is drawn on all four even though only Engaged and
+              Converted carry one. Grid items stretch, so every real tile is
+              already the height of the tallest — a meter tile — and a
+              skeleton without one would be 12px short of the row it stands in
+              for.
+
+              No trend chip. It sits inline on the value's baseline and adds no
+              height, and it only renders once a timeframe other than `all` is
+              picked — which is not the default. A placeholder for something
+              that usually never arrives is worse than none. */}
           <Line h="h-[15px]" bar="h-2.5" w="w-20" />
           <Line h="h-[26px]" bar="h-5" w="w-10" className="mt-1.5" />
+          <Skeleton className="mt-2 h-1 w-full rounded-full" />
           <Line h="h-4" bar="h-2.5" w="w-24" className="mt-1" />
         </Panel>
       ))}
@@ -70,6 +82,129 @@ export function MetricsRowSkeleton() {
         <Skeleton className="h-full min-h-[82px] w-full" />
       </Panel>
     </>
+  )
+}
+
+/**
+ * The three body shapes an insight card can have. `InsightsPanel` maps its
+ * `SPANS` order onto these — see the array there.
+ */
+export type InsightShape = 'ring' | 'bars' | 'hours'
+
+/** ChartFrame's figcaption: a 10px title and a 10px meta, baseline-aligned. */
+function FrameCaptionSkeleton() {
+  return (
+    <div className="flex items-baseline justify-between gap-2">
+      <Line h="h-[15px]" bar="h-2" w="w-20" />
+      <Line h="h-[15px]" bar="h-2" w="w-12" />
+    </div>
+  )
+}
+
+/**
+ * Deterministic bar heights for the hourly strip, as percentages.
+ *
+ * Fixed rather than random: a placeholder that reshuffles between renders
+ * draws the eye to itself, and `animate-pulse` on the panel is already
+ * carrying the "this is loading" signal.
+ */
+const HOUR_STUBS = [
+  18, 12, 10, 8, 8, 12, 22, 38, 55, 68, 74, 80,
+  86, 78, 72, 66, 70, 82, 90, 76, 58, 42, 30, 22,
+]
+
+/**
+ * One insight card's contents, at the geometry the real chart renders.
+ *
+ * The `ring` shape is exact and worth the precision: the ring is `w-full
+ * max-w-44` over a square viewBox, and `ChartLegend` reserves four rows on
+ * every circular card, so the whole block is deterministic before any data
+ * arrives. It is also the tallest thing in the panel by a wide margin — the
+ * old placeholder reserved 96px for what is now a ~176px ring plus an 82px
+ * legend, and the first row of the panel jumped by more than 150px on load.
+ *
+ * `bars` cannot be exact, and that is the honest limit here: the row count is
+ * whatever the query returned, capped at eight. Six is the reserve — enough
+ * that a well-populated list barely moves, small enough that a quiet one does
+ * not collapse. It is the only shape in this file that approximates.
+ */
+export function InsightCardSkeleton({ shape }: { shape: InsightShape }) {
+  return (
+    <div className="flex h-full min-w-0 flex-col gap-3">
+      <FrameCaptionSkeleton />
+
+      {shape === 'ring' && (
+        <>
+          <div className="flex min-w-0 flex-1 flex-col items-center gap-3">
+            {/* Drawn from the shared ring constants rather than as a bordered
+                div, so the placeholder scales with the card exactly as the real
+                ring does and cannot drift from it when the geometry changes. */}
+            <div className="mx-auto w-full max-w-44">
+              <svg viewBox="0 0 100 100" className="w-full" aria-hidden="true">
+                <circle
+                  cx="50" cy="50" r={RING_R}
+                  fill="none"
+                  strokeWidth={RING_STROKE}
+                  className="stroke-white/10"
+                />
+              </svg>
+            </div>
+            {/* ChartLegend's four reserved rows, at its row box and gap. */}
+            <ul className="flex w-full flex-col gap-1.5">
+              {Array.from({ length: 4 }).map((_, i) => (
+                <li key={i} className="flex min-h-4 items-center gap-2">
+                  <Skeleton className="h-2 w-2 shrink-0 rounded-xs" />
+                  <Skeleton className="h-2 w-full max-w-24" />
+                  <Skeleton className="ml-auto h-2 w-12 shrink-0" />
+                </li>
+              ))}
+            </ul>
+          </div>
+          {/* Two lines of the 10px `leading-snug` caption every circular card
+              now carries, bottom-aligned the way the real one is. */}
+          <div className="mt-auto flex flex-col items-center gap-1">
+            <Skeleton className="h-2 w-full" />
+            <Skeleton className="h-2 w-2/3" />
+          </div>
+        </>
+      )}
+
+      {shape === 'bars' && (
+        <ul className="flex flex-1 flex-col justify-center gap-2">
+          {Array.from({ length: 6 }).map((_, i) => (
+            // `h-4`, because BarList's label is an 11px line box and that, not
+            // the 8px track beside it, is what sets the row height.
+            <li key={i} className="flex h-4 items-center gap-2">
+              <Skeleton className="h-2 w-[38%] shrink-0" />
+              <Skeleton className="h-2 min-w-0 flex-1 rounded-sm" />
+              <Skeleton className="h-2 w-5 shrink-0" />
+            </li>
+          ))}
+        </ul>
+      )}
+
+      {shape === 'hours' && (
+        <div className="flex flex-1 flex-col gap-1">
+          <div className="flex h-18 items-end gap-0.5 xl:h-24 xl:gap-1">
+            {HOUR_STUBS.map((h, i) => (
+              <div
+                key={i}
+                className="min-w-0 flex-1 rounded-t-[3px] bg-white/10"
+                style={{ height: `${h}%` }}
+              />
+            ))}
+          </div>
+          {/* The real baseline, not a placeholder for it — it is a hairline
+              either way, and a grey stub would read as missing. */}
+          <div className="h-px w-full bg-white/15" />
+          <div className="grid grid-cols-4">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <Line key={i} h="h-[15px]" bar="h-2" w="w-6" />
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
   )
 }
 

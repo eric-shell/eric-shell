@@ -44,3 +44,31 @@ export function withinTimeframe(rows: VisitorSummary[], tf: Timeframe): VisitorS
   const cutoff = Date.now() - DAYS[tf] * 24 * 60 * 60 * 1000
   return rows.filter(v => new Date(v.last_activity_at).getTime() >= cutoff)
 }
+
+/**
+ * The window immediately before `withinTimeframe`'s, same length — what the
+ * metric tiles compare against.
+ *
+ * `null` for `all`, and the caller must render no delta rather than a zero:
+ * all-time has nothing before it, and "0%" would be a claim about a period
+ * that does not exist. That is also the default timeframe, so the tiles show
+ * no trend until a window is chosen. Correct, and worth knowing before anyone
+ * files it as a bug.
+ *
+ * A row lands here by the same `last_activity_at` rule, which means the two
+ * windows are disjoint and a visitor is counted in exactly one of them. It also
+ * means "previous" is a window of *last activity*, not of visits: a visitor who
+ * came in both periods appears only in the current one. That is the same
+ * definition the number above the delta uses, which is the property that makes
+ * the comparison meaningful — both sides are counted identically.
+ */
+export function previousTimeframe(rows: VisitorSummary[], tf: Timeframe): VisitorSummary[] | null {
+  if (tf === 'all') return null
+  const span = DAYS[tf] * 24 * 60 * 60 * 1000
+  const start = Date.now() - span * 2
+  const end = Date.now() - span
+  return rows.filter(v => {
+    const t = new Date(v.last_activity_at).getTime()
+    return t >= start && t < end
+  })
+}
