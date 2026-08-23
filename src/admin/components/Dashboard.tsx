@@ -439,7 +439,10 @@ export default function Dashboard({ onLogout }: DashboardProps) {
           Outside the Container on purpose: the footer is full bleed and carries
           a Container of its own, so nesting it would indent it by two gutters
           and misalign it with every other edge on the page. */}
-      <Footer />
+      {/* The public site hands the footer a section that its skew is cut
+          against; here it follows a panel with a hard bottom edge, so the
+          separation has to be stated. */}
+      <Footer className="mt-4 md:mt-8" />
     </>
   )
 }

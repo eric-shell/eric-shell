@@ -1,14 +1,25 @@
+import { twMerge } from 'tailwind-merge'
 import { Backdrop, CascadeGroup, CascadeItem, Container } from '../../ui'
 import { navLinks, connectLinks, socialLinks } from '@/data'
 
-export default function Footer() {
+/**
+ * `className` merges onto the `<footer>` itself, per the convention every
+ * component here follows. The admin is the only caller passing one: on the
+ * public site the footer butts straight up against the Contact section, which
+ * is what its skew is cut against, while the dashboard ends in a panel and
+ * needs the gap stated rather than inherited.
+ */
+export default function Footer({ className }: { className?: string }) {
   const year = new Date().getFullYear()
 
   // The block padding lives on the footer rather than the Container because
   // skew-inner shears the Container — inside the padding its low corner has
   // room; on the footer's own edge it would hang past the page and add scroll.
   return (
-    <footer className="relative z-50 pt-12 pb-16 md:pt-24 md:pb-28 bg-gradient-to-br from-blue-950 to-blue-900 text-white skew-footer">
+    <footer className={twMerge(
+      'relative z-50 pt-12 pb-16 md:pt-24 md:pb-28 bg-gradient-to-br from-blue-950 to-blue-900 text-white skew-footer',
+      className,
+    )}>
       {/* flip so the blob layout doesn't mirror the /resume hero's dark
           Backdrop on the same page. */}
       <Backdrop tone="dark" flip />
