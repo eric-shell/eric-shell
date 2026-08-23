@@ -1,5 +1,5 @@
 import { ChartEmpty } from './ChartFrame'
-import { rankStep, share } from '../lib/chartTheme'
+import { magnitudeRamp, share } from '../lib/chartTheme'
 import RadialSegments from './RadialSegments'
 import ChartLegend from './ChartLegend'
 import RingCentre from './RingCentre'
@@ -64,14 +64,12 @@ export default function ScrollDepthFunnel({ scroll }: { scroll: ScrollDepth }) {
   }
 
   const total = scroll.measured
-  const rows = bands(scroll).map((band, i) => ({
+  const banded = bands(scroll)
+  const colors = magnitudeRamp(banded.map(band => band.value))
+  const rows = banded.map((band, i) => ({
     ...band,
     pct: share(band.value, total),
-    // Rank by band, not by value: the ramp carries the depth axis, and the arc
-    // length already carries the magnitude. Ranking by value instead would
-    // repaint the swatches every time the data moved, and the legend below
-    // depends on shade meaning the same thing tomorrow.
-    color: rankStep(i, 4),
+    color: colors[i],
   }))
 
   return (

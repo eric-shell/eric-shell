@@ -1,5 +1,5 @@
 import { ChartEmpty } from './ChartFrame'
-import { rankStep, share } from '../lib/chartTheme'
+import { magnitudeRamp, share } from '../lib/chartTheme'
 import ChartLegend from './ChartLegend'
 import RadialSegments from './RadialSegments'
 import RingCentre from './RingCentre'
@@ -22,12 +22,19 @@ import type { ActionMix } from '@/../api/_lib/insights-types'
  * the visitor who sent a message from the one who opened a repo link. That
  * distinction is the entire point of a portfolio's analytics.
  *
- * THE LADDER IS ORDERED BY INTENT, not by volume, and the ramp follows it:
- * brightest at the top rung. That is deliberately the opposite of the "bigger
- * segment, brighter" rule the rank lists use, because here the smallest segment
- * is the one that matters — a contact submission is the outcome this site
- * exists to produce, and it must not be the dimmest mark on the card because it
- * is also the rarest.
+ * THE RING IS ORDERED BY INTENT; THE RAMP IS NOT. Segments run round the ring
+ * in ladder order, strongest rung first, but brightness tracks SIZE: the
+ * biggest slice is always the lightest blue. Those are two different axes and
+ * separating them is deliberate.
+ *
+ * The ramp did follow the ladder at first, on the argument that a contact
+ * submission is the outcome this site exists to produce and should not be the
+ * dimmest mark just because it is the rarest. That argument is real but it
+ * loses to a plainer one: on a proportional ring, a reader reads shade as
+ * amount. Making the smallest wedge the brightest fights the geometry it sits
+ * in, and the same treatment applied to Scroll depth put that card's largest
+ * band in its darkest blue. Emphasis for the rung that matters belongs
+ * somewhere that is not competing with the size encoding.
  *
  * The rungs are exclusive by construction in SQL (see the action query in
  * api/admin/insights.ts), so they sum to `total` and the ring cannot overflow.
@@ -58,11 +65,13 @@ export default function VisitorActions({ actions }: { actions: ActionMix }) {
     looked: Math.max(0, total - actions.acted),
   }
 
+  const values = RUNGS.map(rung => counts[rung.key])
+  const colors = magnitudeRamp(values)
   const rows = RUNGS.map((rung, i) => ({
     ...rung,
-    value: counts[rung.key],
-    pct: share(counts[rung.key], total),
-    color: rankStep(i, RUNGS.length),
+    value: values[i],
+    pct: share(values[i], total),
+    color: colors[i],
   }))
 
   return (

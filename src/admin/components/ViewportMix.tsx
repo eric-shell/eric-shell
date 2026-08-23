@@ -1,4 +1,4 @@
-import { rankStep, share } from '../lib/chartTheme'
+import { magnitudeRamp, share } from '../lib/chartTheme'
 import RadialSegments from './RadialSegments'
 import ChartLegend from './ChartLegend'
 import RingCentre from './RingCentre'
@@ -26,18 +26,16 @@ import type { ViewportMix as ViewportMixData } from '@/../api/_lib/insights-type
  * in the canvas colour rather than a lighter stroke, which would add
  * data-weight ink that isn't data.
  *
- * COLOUR HERE IS IDENTITY, NOT MAGNITUDE — the one chart in the panel where
- * that is still true, and deliberately so. Three segments share a single bar,
- * so the shade is what tells them apart, and the legend swatches below map
- * shade to label. Shading by value instead (as the rank lists and the hourly
- * strip now do) would repaint the swatches every time the data moved: a reader
- * who learned "bright means wide" would be wrong the next day, and two
- * similar-sized buckets would become indistinguishable in the bar they share.
- * The index is the rank, and the ranking is the width band.
+ * COLOUR IS MAGNITUDE, like every other partition in the panel: the biggest
+ * bucket is the lightest blue.
  *
- * What it *does* now share with the rest of the panel is the contrast floor.
- * `rankStep` bottoms out at 3.23:1 on the canvas where the raw `ordinalStep(0)`
- * it used before was 2.55:1, under the 3:1 minimum for a non-text mark.
+ * This card used to index the ramp by band instead, narrow deep through to wide
+ * bright, on the argument that shade was doing identity work against the legend
+ * swatches. That reads correctly only while wide happens to be the largest
+ * bucket, which it is on this site and might not be on another day. A shade
+ * that means "amount" on two cards in a row and "which band" on the third is
+ * the kind of inconsistency a reader absorbs without being able to name it, and
+ * the legend already carries identity in words.
  */
 const BUCKETS: { key: keyof ViewportMixData; label: string; hint: string }[] = [
   { key: 'phone', label: 'Narrow', hint: 'under 640px — phones' },
@@ -51,14 +49,12 @@ export default function ViewportMix({ viewport }: { viewport: ViewportMixData })
     return <ChartEmpty>No session reported a viewport size in this window.</ChartEmpty>
   }
 
+  const colors = magnitudeRamp(BUCKETS.map(bucket => viewport[bucket.key]))
   const rows = BUCKETS.map((bucket, i) => ({
     ...bucket,
     value: viewport[bucket.key],
     pct: share(viewport[bucket.key], total),
-    // Reversed against `rankStep`'s own direction (0 is its brightest) so the
-    // long-standing reading is preserved: narrow is the deep end, wide is
-    // bright. Only the floor changed, not the order.
-    color: rankStep(BUCKETS.length - 1 - i, BUCKETS.length),
+    color: colors[i],
   }))
 
   return (

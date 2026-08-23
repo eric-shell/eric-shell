@@ -113,6 +113,42 @@ export function rankStep(rank: number, count: number): string {
 }
 
 /**
+ * Ramp steps for a set of segments, ranked by VALUE: the largest is always the
+ * brightest, the smallest always the deepest, evenly spaced between.
+ *
+ * This is the encoding for any partition drawn as one ring. Two other options
+ * were tried and both are wrong here:
+ *
+ * `rankStep` by array index spends the whole ramp, but it ties brightness to
+ * the order the buckets are declared in rather than to their size. That reads
+ * correctly only while the declaration order happens to match the data, and it
+ * silently inverts the moment it does not. Scroll depth hit exactly this when
+ * it changed from cumulative stages to exclusive bands: the band order stayed
+ * the same, the sizes flipped, and its biggest band became its darkest.
+ *
+ * `magnitudeStep` never inverts, but it bunches. Four segments at 30/25/23/22
+ * come out very nearly the same colour, which is honest and useless on a ring
+ * where shade is what separates one wedge from the next.
+ *
+ * Ranking by value keeps both properties: brightness always tracks size, and
+ * the steps stay as far apart as the palette allows whatever the numbers do.
+ * What it gives up is a fixed shade per label. A bucket's colour moves as the
+ * data moves, so shade cannot be used as an identity key and the legend has to
+ * carry the label, which it does.
+ *
+ * Ties take distinct adjacent ranks rather than a shared colour. Two equal
+ * segments that render identically are indistinguishable where they touch.
+ */
+export function magnitudeRamp(values: number[]): string[] {
+  const byValue = values
+    .map((value, i) => ({ value, i }))
+    .sort((a, b) => b.value - a.value)
+  const rankOf = new Array<number>(values.length)
+  byValue.forEach((entry, rank) => { rankOf[entry.i] = rank })
+  return values.map((_, i) => rankStep(rankOf[i], values.length))
+}
+
+/**
  * Soft glow for a data mark, in the mark's *own* colour. Paint-only — a
  * `drop-shadow` filter never changes layout or the element's own box.
  *
