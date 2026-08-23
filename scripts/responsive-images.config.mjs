@@ -21,6 +21,23 @@
 import { readdirSync } from 'node:fs'
 
 /**
+ * Note screenshots do NOT live under public/notes.
+ *
+ * `/notes/:slug` is rewritten to `/notes/:slug.html` in vercel.json, so a
+ * request for /notes/insight-rings-960.avif was rewritten to
+ * insight-rings-960.avif.html and 404ed. It worked under `vite preview`, which
+ * applies no rewrites, and failed under `vercel dev` and would have failed in
+ * production. The route owns that prefix; images take their own.
+ *
+ * Widths must stay in step with NoteFigure in src/lib/NoteFigure.tsx, which is
+ * what the srcSet advertises.
+ */
+const OUT = 'public/note-shots'
+const NOTE_WIDTHS = [640, 960, 1280, 1920]
+/** The single PNG the <img> falls back to. Mid-ladder, so it suits most slots. */
+const NOTE_FALLBACK_WIDTH = 1280
+
+/**
  * Note screenshots, discovered rather than listed.
  *
  * Everything else in this manifest is a photograph somebody chose, so a hand
@@ -30,14 +47,9 @@ import { readdirSync } from 'node:fs'
  * every new figure needs two edits and the failure when you forget the second
  * is a note whose images 404 in production but not in dev.
  *
- * Widths must stay in step with `NOTE_IMAGE_WIDTHS` in src/lib/markdown.tsx,
- * which is what the srcSet advertises.
- *
  * PNG, not JPEG, for the fallback. These are UI screenshots: flat fills, hard
  * type edges, and thin one-pixel rules are exactly what JPEG's chroma
- * subsampling smears. `quality` is set because on PNG that is the switch that
- * enables palette quantisation at all, without which sharp encodes fully
- * lossless and a screenshot of a dashboard runs to megabytes.
+ * subsampling smears.
  */
 function noteShots() {
   let files = []
@@ -46,13 +58,23 @@ function noteShots() {
   } catch {
     return []  // No screenshots captured yet. Not an error.
   }
-  return files.sort().map(file => ({
-    src: `assets-source/notes/${file}`,
-    outDir: 'public/notes',
-    widths: [640, 960, 1280, 1920],
-    formats: ['avif', 'webp', 'png'],
-    quality: { png: 88 },
-  }))
+  return files.sort().flatMap(file => {
+    const src = `assets-source/notes/${file}`
+    return [
+      { src, outDir: OUT, widths: NOTE_WIDTHS, formats: ['avif', 'webp'] },
+      // ONE PNG, at one width, as the <img> fallback and nothing else.
+      //
+      // A full PNG ladder was 487KB of the 641KB a single screenshot cost, to
+      // serve a browser that supports neither AVIF nor WebP. WebP has been
+      // universal since 2020 and AVIF since 2024; anything without both is not
+      // rendering this site anyway. It gets one correctly sized image rather
+      // than a choice of four, which is the right trade for a fallback nobody
+      // reaches. `quality` is what switches sharp to palette quantisation on
+      // PNG at all; without it the encode is lossless and a dashboard
+      // screenshot runs to megabytes.
+      { src, outDir: OUT, widths: [NOTE_FALLBACK_WIDTH], formats: ['png'], quality: { png: 88 } },
+    ]
+  })
 }
 
 export default [

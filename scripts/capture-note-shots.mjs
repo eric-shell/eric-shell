@@ -7,7 +7,9 @@
  *
  * Writes assets-source/notes/<name>.png at 2x, one per entry in
  * notes-shots.config.mjs. Run `npm run images` afterwards to emit the AVIF /
- * WebP / PNG ladder into public/notes/ that a note's srcSet points at.
+ * WebP ladder plus the PNG fallback into public/note-shots/, which is what a
+ * note's srcSet points at. Not public/notes: that prefix belongs to the note
+ * route and vercel.json rewrites it to `:slug.html`.
  *
  * Sources are committed and variants are not, the same split the rest of the
  * image pipeline uses: a screenshot is the source of truth for a published
@@ -20,6 +22,7 @@
  * `settleMs` then covers anything that still needs to land.
  */
 import { mkdir, stat } from 'node:fs/promises'
+import sharp from 'sharp'
 import { chromium } from 'playwright'
 import shots from './notes-shots.config.mjs'
 import { stubAdminRoutes } from './crm-stub.mjs'
@@ -81,9 +84,19 @@ async function capture(browser, shot) {
     await page.screenshot({ path, fullPage: false })
   }
 
+  // Playwright writes a fully lossless PNG, which for a screenshot of a mostly
+  // flat UI is a lot of bytes for detail that is not there. Requantise in
+  // place: this file is COMMITTED, and at ~1.6MB each a backfill of every note
+  // would have added more to the repository than the entire rest of the image
+  // pipeline holds. Palette quantisation at 90 is visually lossless on flat
+  // fills and hard type edges, which is all a UI screenshot is.
+  const raw = (await stat(path)).size
+  const shrunk = await sharp(path).png({ compressionLevel: 9, quality: 90, effort: 10 }).toBuffer()
+  await sharp(shrunk).toFile(path)
+
   const { size } = await stat(path)
   await ctx.close()
-  return { path, size, errors }
+  return { path, size, raw, errors }
 }
 
 const browser = await chromium.launch()
@@ -92,8 +105,11 @@ await mkdir(OUT, { recursive: true })
 let failed = 0
 for (const shot of shots) {
   try {
-    const { path, size, errors } = await capture(browser, shot)
-    console.log(`${path}  ${(size / 1024).toFixed(0)}KB  @${shot.width}x${SCALE}`)
+    const { path, size, raw, errors } = await capture(browser, shot)
+    console.log(
+      `${path}  ${(size / 1024).toFixed(0)}KB` +
+      ` (from ${(raw / 1024).toFixed(0)}KB)  @${shot.width}x${SCALE}`,
+    )
     // Page errors do not fail the run, but a screenshot of a broken page is
     // not worth publishing and the operator should hear about it.
     for (const e of errors) console.warn(`  page error: ${e}`)

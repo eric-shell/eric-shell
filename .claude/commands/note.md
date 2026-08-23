@@ -88,22 +88,29 @@ one available; a 1440px grid squeezed into a 672px column is unreadable.
 npm run build
 npx vite preview --port 4173 &
 npm run shots          # -> assets-source/notes/<name>.png at 2x
-npm run images         # -> public/notes/<name>-{640,960,1280,1920}.{avif,webp,png}
+npm run images         # -> public/note-shots/ (AVIF + WebP at four widths, one PNG fallback)
 ```
 
 The image manifest globs `assets-source/notes/`, so no second entry is needed
 there. Both the source and the variants are committed, matching the rest of the
 image pipeline.
 
+**The public path is `/note-shots`, never `/notes`.** `vercel.json` rewrites
+`/notes/:slug` to `/notes/:slug.html`, so an image served from under that prefix
+is requested as `<file>.avif.html` and 404s. It does not fail under `vite
+preview`, which applies no rewrites, so this only shows up on `vercel dev` and
+in production.
+
 **3. Reference it** from the body as ordinary markdown, with a base path
 carrying no width and no extension:
 
 ```markdown
-![Alt text goes here.](/notes/insight-rings "Caption goes here.")
+![Alt text goes here.](/note-shots/insight-rings "Caption goes here.")
 ```
 
-`noteMdComponents` turns that into a `<figure>` with AVIF, WebP and PNG
-srcSets, lazy loading, and a `<figcaption>`.
+`noteMdComponents` turns that into a `<figure>`: AVIF and WebP srcSets across
+four widths, one PNG as the `<img>` fallback, lazy loading, and a
+`<figcaption>`.
 
 ### Alt text and captions do different jobs
 

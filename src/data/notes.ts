@@ -103,7 +103,7 @@ One ring, divided proportionally, with the whole circle standing for the total. 
 
 That changed the question the card answers, from "how far did people get" to "where did people stop". I did not want to lose the cumulative reading entirely, so it survives in the screen-reader list, where it costs nothing and is still the better answer to "did enough of them reach the contact form".
 
-![Three ring charts side by side on a dark panel, titled What visitors did, Scroll depth and Viewport width. Each ring is a full circle split into segments of light and dark blue, with a figure in the middle and a legend of three or four labelled rows underneath giving each segment a percentage and a count.](/notes/insight-rings "The row after the rewrite. These are fixture numbers from the UI test harness, not real traffic.")
+![Three ring charts side by side on a dark panel, titled What visitors did, Scroll depth and Viewport width. Each ring is a full circle split into segments of light and dark blue, with a figure in the middle and a legend of three or four labelled rows underneath giving each segment a percentage and a count.](/note-shots/insight-rings "The row after the rewrite. These are fixture numbers from the UI test harness, not real traffic.")
 
 ## Four bands, not five
 

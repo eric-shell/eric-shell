@@ -1,13 +1,14 @@
 // Screenshots that appear in notes entries.
 //
 // Each entry is captured by `npm run shots` into assets-source/notes/<name>.png
-// and then emitted as responsive variants into public/notes/ by
+// and then emitted as responsive variants into public/note-shots/ by
 // `npm run images`, which picks this directory up automatically.
 //
 // A note references one by BASE PATH, with no width and no extension:
 //
-//     ![Alt text](/notes/<name> "Caption.")
+//     ![Alt text](/note-shots/<name> "Caption.")
 //
+// (never /notes/, which the note route itself owns and rewrites to .html)
 // so `name` is a live URL fragment. Renaming one silently breaks the srcSet in
 // whatever note points at it, exactly like renaming a slug. Add a new entry
 // rather than renaming an old one.

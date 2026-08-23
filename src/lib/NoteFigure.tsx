@@ -1,20 +1,30 @@
 /**
- * Widths every note screenshot is emitted at. Kept here and in
- * `scripts/notes-shots.config.mjs`; if the two disagree the srcSet advertises
- * a file that does not exist, and the browser silently falls back to the last
- * candidate that does.
+ * Widths every note screenshot is emitted at, and the single width the PNG
+ * fallback is emitted at. Both must match `scripts/responsive-images.config.mjs`;
+ * if they disagree the srcSet advertises a file that does not exist and the
+ * browser quietly falls back to whichever candidate does.
  */
 const NOTE_IMAGE_WIDTHS = [640, 960, 1280, 1920]
+const NOTE_FALLBACK_WIDTH = 1280
 
 /**
  * A screenshot in a note body, written as ordinary markdown:
  *
- *     ![What the ring looks like](/notes/insight-rings "Caption goes here.")
+ *     ![What the ring looks like](/note-shots/insight-rings "Caption goes here.")
  *
- * The `src` is a BASE PATH with no width and no extension. Everything else is
- * derived: AVIF, WebP and PNG srcSets across `NOTE_IMAGE_WIDTHS`, with the
- * 1280 PNG as the fallback `src`. Writing the full filename by hand would mean
- * one width, one format, and a file rename breaking silently.
+ * The `src` is a BASE PATH under `/note-shots`, with no width and no extension.
+ * Everything else is derived: AVIF and WebP srcSets across
+ * `NOTE_IMAGE_WIDTHS`, plus one PNG as the `<img>` fallback. Writing the full
+ * filename by hand would mean one width, one format, and a rename breaking
+ * silently.
+ *
+ * NOT `/notes/`. That prefix belongs to the note route, which vercel.json
+ * rewrites to `:slug.html`, so an image under it is requested as
+ * `<file>.avif.html` and 404s. See the note in the image manifest.
+ *
+ * There is no PNG srcSet, only a single fallback `src`. A browser without both
+ * AVIF and WebP does not need a choice of four widths, and the full PNG ladder
+ * was three quarters of what a screenshot cost to store.
  *
  * Markdown already carries both things an accessible figure needs, so neither
  * is a custom syntax: the alt text is the alt text, and the title (the quoted
@@ -38,9 +48,7 @@ export default function NoteFigure({ src, alt, title }: { src?: string; alt?: st
         <source type="image/avif" srcSet={set('avif')} sizes={NOTE_IMAGE_SIZES} />
         <source type="image/webp" srcSet={set('webp')} sizes={NOTE_IMAGE_SIZES} />
         <img
-          src={`${src}-1280.png`}
-          srcSet={set('png')}
-          sizes={NOTE_IMAGE_SIZES}
+          src={`${src}-${NOTE_FALLBACK_WIDTH}.png`}
           alt={alt ?? ''}
           // Screenshots are captured at a fixed aspect and the box is reserved
           // from it, so a note never reflows as its images arrive.
