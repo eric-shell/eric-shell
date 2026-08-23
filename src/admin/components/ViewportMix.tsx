@@ -97,7 +97,7 @@ export default function ViewportMix({ viewport }: { viewport: ViewportMixData })
           devices. It also gives the card a third block, so it reserves the same
           vertical structure as the two circular cards beside it. */}
       <p className="mt-auto text-[10px] leading-snug text-white/55 text-center">
-        Browser viewport width, not device type — a half-screen desktop window
+        Browser viewport width, not device type. A half-screen desktop window
         counts as narrow.
       </p>
 

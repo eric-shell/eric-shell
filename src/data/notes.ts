@@ -63,6 +63,65 @@ export const commitUrl = (sha: string) => `${repoUrl}/commit/${sha}`
  */
 const entries: Note[] = [
   {
+    slug: 'four-numbers-that-could-not-be-a-pie-chart',
+    title: 'The four numbers that could not be a pie chart',
+    date: '2026-08-22',
+    summary:
+      'My scroll depth chart had four numbers that sum to well over 200%. Here is why no pie can draw them, and the objection I raised that turned out to be wrong.',
+    tags: ['Design', 'Data modelling', 'CRM'],
+    commit: '6743c82',
+    body: `The admin dashboard behind this site has a panel of small charts. I wanted the top row to read as one instrument instead of three unrelated widgets, which meant picking a single form and making everything fit it. Two of the three fit immediately. The third refused, and the reason turned out to be arithmetic rather than taste.
+
+## Four numbers, 250%
+
+Scroll depth records how far into a page a session got, as four cumulative stages: reached at least 25%, at least 50%, at least 75%, at least 90%. Those are nested sets. Everyone who reached 90% is also counted in the other three.
+
+So the four counts routinely sum to more than double the sessions they describe. You cannot draw them as slices of a circle, because a pie asserts that its wedges are the entirety of something. Normalising them to fit would produce four percentages of a quantity nobody asked about.
+
+This is the same constraint that had already forced a compromise elsewhere in the panel. The action-rate card listed three things visitors do (click out, chat, submit the form) as plain text under its gauge, because one visitor can do all three and the numbers overflow their own total.
+
+## The objection I got wrong
+
+The obvious escape is concentric rings: four separate gauges, one inside the next. I argued against it on the grounds that radius distorts them. At radii 42, 33, 24 and 15, the same 50% draws an arc 2.8 times longer on the outer ring than the inner one, so a flat funnel would render as a steep decline.
+
+That is true and it is also not the thing a reader does with a ring gauge. Arc length is not what you read. You read how far around its own track the arc travelled, and terminal angle does not care about radius. Every 50% ends at six o'clock on every ring. I checked the geometry rather than continuing to argue about it:
+
+\`\`\`
+ring 0 r=44: 50% sweeps 180deg -> endpoint (50.0, 94.0)
+ring 1 r=35: 50% sweeps 180deg -> endpoint (50.0, 85.0)
+ring 2 r=26: 50% sweeps 180deg -> endpoint (50.0, 76.0)
+ring 3 r=17: 50% sweeps 180deg -> endpoint (50.0, 67.0)
+\`\`\`
+
+Same vertical line, four radii. The objection was measuring the wrong property.
+
+Concentric rings still did not ship, for a duller reason: four stacked tracks spend a lot of vertical space, and the innermost one is small enough that judging its arc is genuinely hard.
+
+## What worked
+
+One ring, divided proportionally, with the whole circle standing for the total. For that to be honest the data had to become an actual partition, so the card now subtracts adjacent stages into exclusive bands: under 25%, 25 to 49%, 50 to 74%, 75% or more. Those sum to exactly the sessions measured.
+
+That changed the question the card answers, from "how far did people get" to "where did people stop". I did not want to lose the cumulative reading entirely, so it survives in the screen-reader list, where it costs nothing and is still the better answer to "did enough of them reach the contact form".
+
+![Three ring charts side by side on a dark panel, titled What visitors did, Scroll depth and Viewport width. Each ring is a full circle split into segments of light and dark blue, with a figure in the middle and a legend of three or four labelled rows underneath giving each segment a percentage and a count.](/notes/insight-rings "The row after the rewrite. These are fixture numbers from the UI test harness, not real traffic.")
+
+## Four bands, not five
+
+The stages support a fifth band, splitting 75 to 89 from 90 and above. I dropped it on palette grounds.
+
+The admin draws everything from one blue ramp, because every step of the brand blue sits below the chroma floor where a colour reads as grey against a data mark. One hue is the only thing that palette does well. Five evenly spaced steps put the lightness difference between neighbours at 0.054, under the 0.06 that ordinal ramp was validated at, and stretching the ramp to compensate pushes its dark end to 2.55:1 against the canvas, under the 3:1 minimum for a mark that is not text. Four bands clear both, at 0.072 and 3.23:1.
+
+So the resolution of that chart is set by the palette, not by the data. That felt backwards until I wrote it down, and then it seemed obviously right: a fifth band nobody can reliably tell from the fourth is not more information.
+
+## Small things that only show up at this size
+
+Round line caps had to go. A round cap overhangs the end of its arc by half the stroke width, which is 4.5 units here, against gaps between segments of 1.47 units. Every seam would have bled into its neighbour and the division would have been the first thing lost.
+
+The entrance animation grows each segment with \`stroke-dashoffset\` over a path normalised with \`pathLength="100"\`, rather than interpolating the \`d\` attribute. Transitions on \`d\` are not portable across engines, and dashoffset is what the gauge next to it already used.
+
+And once all three cards drew the same ring, the one that had been there longest turned out to have been quietly clipping its own glow the whole time. Its \`<svg>\` was missing \`overflow-visible\`, so the halo was shaved flat against the viewBox. I had looked at that card for weeks without noticing, and only saw it when an identical ring appeared beside it doing the same thing correctly.`,
+  },
+  {
     slug: 'responsive-work-card-images',
     title: 'Responsive work-card images, and the sizes attribute that made tablets worse',
     date: '2026-08-01',

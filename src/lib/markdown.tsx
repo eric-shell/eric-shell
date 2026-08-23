@@ -3,6 +3,7 @@
 // components/ui/Markdown — keep it that way, or the parser lands back in the
 // initial bundle.
 import type { Components } from 'react-markdown'
+import NoteFigure from './NoteFigure'
 
 const EMAIL_RE = /(?<!\]\(mailto:)(?<!\[)([\w.+-]+@[\w-]+\.[\w.-]+)(?!\w)(?!\]\(mailto:)/g
 
@@ -64,6 +65,28 @@ export function chatMdComponents(onAnchorNavigate?: () => void): Components {
  * signal of which one it is.
  */
 export const noteMdComponents: Components = {
+  img: ({ src, alt, title }) => (
+    <NoteFigure src={typeof src === 'string' ? src : undefined} alt={alt} title={title} />
+  ),
+  // react-markdown wraps a lone image in a paragraph, and a <figure> inside a
+  // <p> is invalid. An HTML parser would close the paragraph early; React does
+  // not, because it builds the DOM through createElement and never parses, so
+  // the bad nesting survives into the live document. Unwrap it here.
+  //
+  // The test is the source node, not the rendered child's component identity.
+  // Identity looks like it should work and does not: react-markdown renders an
+  // image through the `img` entry above, so the child's `type` is that wrapper
+  // rather than the NoteFigure it returns, and comparing against NoteFigure
+  // matched nothing. Verified in a browser afterwards rather than assumed.
+  p: ({ node, children }) => {
+    const kids = (node?.children ?? []).filter(
+      c => !(c.type === 'text' && c.value.trim() === ''),
+    )
+    if (kids.length === 1 && kids[0].type === 'element' && kids[0].tagName === 'img') {
+      return <>{children}</>
+    }
+    return <p className="font-sans text-base md:text-lg leading-relaxed mb-5 last:mb-0">{children}</p>
+  },
   h2: ({ children }) => (
     <h2 className="font-display font-bold uppercase leading-none tracking-tight text-2xl md:text-3xl mt-12 mb-4 first:mt-0">
       {children}
@@ -72,7 +95,6 @@ export const noteMdComponents: Components = {
   h3: ({ children }) => (
     <h3 className="font-sans font-semibold text-lg md:text-xl mt-8 mb-3">{children}</h3>
   ),
-  p: ({ children }) => <p className="font-sans text-base md:text-lg leading-relaxed mb-5 last:mb-0">{children}</p>,
   ul: ({ children }) => (
     <ul className="list-disc pl-6 mb-5 last:mb-0 font-sans text-base md:text-lg leading-relaxed [&_li>p]:mb-0">
       {children}

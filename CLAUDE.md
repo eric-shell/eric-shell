@@ -133,6 +133,7 @@ npm run lint      # ESLint
 npm run lqip      # regenerate src/data/lqip.ts blur-up placeholders (run after `npm run images` adds Instagram posts)
 npm run seed:crm  # seed fake CRM visitors/sessions/page views (see /crm); :clean removes, :status counts
 npm run check:crm-ui -- http://localhost:3000 ./out   # screenshot the CRM at 4 widths, report overflow (no DB writes)
+npm run shots     # capture note screenshots into assets-source/notes/ (needs a server; see /note)
 ```
 
 Env vars for `vercel dev` come from the linked Vercel project (cloud), not `.env.local`. Use `npx vercel env add NAME [development|preview|production]` to add new keys per-environment.
@@ -187,6 +188,9 @@ Home section order in `App.tsx`:
 
 A changelog of engineering decisions made on this site. Entries live in [src/data/notes.ts](src/data/notes.ts); `/notes` is the index, `/notes/<slug>` is a single entry.
 
+- **A note is for an interesting or substantial change, not for every change.** Run `/note` before writing one. The bar is whether a stranger who works on the web would get something out of it: a measurement that contradicted an assumption, a wrong turn worth describing, a constraint that turned out to be arithmetic rather than taste, a fix whose obvious version made things worse. Routine work does not qualify, and a section padded with filler stops being worth reading. **Don't add an entry just because a task finished** — ask if it isn't clear.
+- **Voice: personal, collected, technical where the detail earns it.** First person, past tense, specific numbers over adjectives, and name what went wrong before what fixed it. Beyond the em dash ban below, the things that make prose read as machine-written are worth avoiding too: tricolons in every sentence, "it's not just X, it's Y", restating the heading in the first line of the paragraph, and summarising at the end what was just said.
+- **Most notes about something visual should carry a screenshot.** `npm run shots` drives Playwright from [scripts/notes-shots.config.mjs](scripts/notes-shots.config.mjs) into `assets-source/notes/`, and `npm run images` globs that directory to emit the AVIF/WebP/PNG ladder into `public/notes/`. Reference one from a body as `![Alt](/notes/<name> "Caption.")` — a base path with no width and no extension; `noteMdComponents` derives the `<picture>`, the srcSets and the `<figcaption>`. **Alt and caption do different jobs and must not be the same sentence**: alt is what the image shows for someone who cannot see it, the caption is what it means. If a shot is of fixture data rather than real traffic, the caption has to say so.
 - **Adding an entry to `notes.ts` is the entire workflow.** Everything the five-item route checklist above demands is derived from that array by `notesEntries()` in `vite.config.ts`: the HTML document, the Vite input, and the `sitemap.xml` line. The `vercel.json` rewrite (`/notes/:slug`) and the `getRoute()` case are written once and cover every slug. **Don't hand-write a document under `notes/`** — it is gitignored and will be overwritten.
 - **`notes/*.html` and `public/sitemap.xml` are generated and gitignored.** They are derived from `notes.ts`; a committed copy is a second source of truth waiting to disagree with the first. `sitemap.xml` therefore no longer exists in the repo — it is written at config-evaluation time, which is why both `vite dev` and `vite build` see it. Static routes carry a hand-declared `lastmod` in `STATIC_ROUTES`; `/notes` derives its own from the newest entry.
 - **Generation runs while the config is evaluated, not in a plugin hook** — `rollupOptions.input` resolves real paths from disk before any hook fires. `writeIfChanged` exists because rewriting identical bytes on every dev restart bumps mtimes and produces a full-reload loop.
@@ -251,3 +255,4 @@ Static site + serverless functions on Vercel. `npm run build` produces `dist/` (
 | `/contact` | Placeholder — Contact section implementation notes |
 | `/chat` | Reference for the Hero chat: file map, prompt structure, streaming protocol, persistence, vercel-dev gotchas |
 | `/crm` | Reference for the admin CRM: schema, auth model, file map, adding endpoints, env-var gotchas |
+| `/note` | When a change earns a `/notes` entry, the house voice, and the screenshot pipeline |

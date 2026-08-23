@@ -16,6 +16,7 @@
     "seed:crm:clean": "node scripts/seed-crm.mjs clean",
     "seed:crm:status": "node scripts/seed-crm.mjs status",
     "check:crm-ui": "node scripts/crm-ui-check.mjs",
+    "shots": "node scripts/capture-note-shots.mjs",
     "storybook": "storybook dev -p 6006",
     "build-storybook": "storybook build"
   },
