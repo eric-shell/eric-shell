@@ -32,10 +32,28 @@ const OUT = 'assets-source/notes'
 /** 2x, so the widest variant in the ladder has real pixels behind it. */
 const SCALE = 2
 
+/**
+ * Breathing room around a cropped capture, in CSS pixels on all four sides.
+ *
+ * A crop taken at an element's exact bounding box comes out flush: type touches
+ * the frame, card edges sit on the border, and in a note the figure reads as
+ * something that was cut off rather than framed. The first screenshot published
+ * here had a line of text clipped against the right edge.
+ *
+ * 24 rather than a round 20 because it is the dashboard's own `sm:px-6` gutter,
+ * so the margin reads as the page's own continuing past the crop instead of an
+ * arbitrary band. The padding is filled by whatever is actually behind the
+ * element, which is the page background, so it never looks like a border.
+ *
+ * Overridable per shot with `pad`, and `pad: 0` is honoured for the rare case
+ * where a flush edge is the point.
+ */
+const PAD = 24
+
 const STUBS = { crm: stubAdminRoutes }
 
 async function capture(browser, shot) {
-  const { name, url, width, clip, clipTo, stub, settleMs = 800, height = 1200 } = shot
+  const { name, url, width, clip, clipTo, stub, pad = PAD, settleMs = 800, height = 1200 } = shot
   const ctx = await browser.newContext({
     viewport: { width, height },
     deviceScaleFactor: SCALE,
@@ -67,19 +85,53 @@ async function capture(browser, shot) {
     return b
   }
 
-  if (clip && clipTo) {
-    // Crop from the top of `clip` down to the bottom of `clipTo`, keeping the
-    // former's width. A note is usually about one part of a screen, and the
-    // rest of it shrinks that part into illegibility once the figure is scaled
-    // into a 672px reading column.
+  if (clip) {
     const top = await box(clip)
-    const last = await box(clipTo)
+    // `clipTo` crops from the top of `clip` down to the bottom of another
+    // element, keeping the first one's width. A note is usually about one part
+    // of a screen, and the rest of it shrinks that part into illegibility once
+    // the figure is scaled into a 672px reading column.
+    const last = clipTo ? await box(clipTo) : top
+    const bottom = last.y + last.height
+
+    // Clamped to the document, so padding at a page edge shrinks rather than
+    // asking for a region that is not there. Playwright throws on a clip that
+    // leaves the page, and the element nearest an edge is exactly the one most
+    // likely to want the padding.
+    const doc = await page.evaluate(() => ({
+      w: document.documentElement.scrollWidth,
+      h: document.documentElement.scrollHeight,
+    }))
+
+    // Never pad INTO the next element. Padding below the last card in a row
+    // reached straight across the 12px grid gap and showed a sliver of the row
+    // beneath, which reads as a botched crop rather than as breathing room.
+    // Whatever gap actually exists is the budget, so the bottom margin is
+    // usually smaller than the other three. That asymmetry is much less
+    // noticeable than a strip of half a card.
+    const nextTop = await page.evaluate(sel => {
+      const next = document.querySelector(sel)?.nextElementSibling
+      if (!next) return null
+      return next.getBoundingClientRect().top + window.scrollY
+    }, clipTo ?? clip)
+    const padBottom = nextTop === null ? pad : Math.max(0, Math.min(pad, nextTop - bottom))
+
+    const x = Math.max(0, top.x - pad)
+    const y = Math.max(0, top.y - pad)
+
     await page.screenshot({
       path,
-      clip: { x: top.x, y: top.y, width: top.width, height: last.y + last.height - top.y },
+      // `fullPage` so a crop reaching below the fold is captured rather than
+      // silently cut at the viewport. Coordinates are page-relative, which is
+      // what boundingBox returns while the page is still unscrolled.
+      fullPage: true,
+      clip: {
+        x,
+        y,
+        width: Math.min(doc.w - x, top.width + pad * 2),
+        height: Math.min(doc.h - y, bottom - y + padBottom),
+      },
     })
-  } else if (clip) {
-    await (await page.$(clip)).screenshot({ path })
   } else {
     await page.screenshot({ path, fullPage: false })
   }

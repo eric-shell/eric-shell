@@ -82,6 +82,12 @@ should carry one image.
 Pick the viewport width that shows the thing being written about, not the widest
 one available; a 1440px grid squeezed into a 672px column is unreadable.
 
+Every crop gets 24px of padding on all four sides automatically, so a figure
+never comes out with type flush against its own edge. The bottom is clamped to
+whatever gap actually exists before the next element, because padding past that
+shows a sliver of it and reads as a botched crop. Override with `pad` per shot;
+`pad: 0` is honoured.
+
 **2. Capture and encode:**
 
 ```bash
