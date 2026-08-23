@@ -39,4 +39,38 @@ export default [
     // photographing them, or the shot catches half-drawn arcs.
     settleMs: 2200,
   },
+  {
+    // For `a-resume-that-prints`. The whole subject of that note is what the
+    // page becomes on paper, which is invisible on screen by definition.
+    name: 'resume-print',
+    url: '/resume.html',
+    media: 'print',
+    // 816px is 8.5in at 96dpi, so the print rules see roughly the page width
+    // they were written against rather than a desktop viewport.
+    width: 816,
+    height: 1056,
+    fullPage: true,
+    // No crop, so no padding: the paper's own margins are the framing, and
+    // adding more would misrepresent how much white space the page has.
+    pad: 0,
+    settleMs: 1200,
+  },
+  {
+    // For `truncating-a-uuid-from-the-middle`. The point is that the id is cut
+    // in the middle rather than at the end, which you either see or you do not.
+    name: 'crm-visitor-table',
+    url: '/dashboard.html',
+    stub: 'crm',
+    // 1440, not 1280: the table only shows its full column set from `xl`, and
+    // the id column sits beside the ones that give it context.
+    width: 1440,
+    height: 1400,
+    clip: 'section[aria-labelledby="visitors-heading"] table',
+    // Six rows, not all twenty-five. The full table is 3216px tall and reduces
+    // to an illegible smear in a note's column; six is enough to show the id
+    // format repeating and the flags varying.
+    clipTo: 'section[aria-labelledby="visitors-heading"] tbody tr:nth-child(6)',
+    // Past the stubs' deliberate 1200ms hold, or this photographs the skeleton.
+    settleMs: 2400,
+  },
 ]

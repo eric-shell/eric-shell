@@ -982,6 +982,8 @@ That last point is why the follow-up commit is documentation rather than code. A
     commit: '58788c7',
     body: `People ask for a resume as a file. The obvious answer is to keep a PDF next to the web page, and the obvious problem with that is two copies of the same facts, one of which is always slightly out of date. Usually the one you sent.
 
+![The resume rendered for print: a two column layout in black on white. Name and contact details run across the top, an About, Values and Credentials column sits on the left, and a Work Experience column of dated roles runs down the right.](/note-shots/resume-print "The same page under print rules. The dark hero, the ambient background and the site navigation are all gone, and a contact block that is hidden on screen takes their place.")
+
 So there is no PDF artifact. \`/resume\` prints to one, via \`@media print\`, and the browser's own "Save as PDF" is the export.
 
 ## Printing is a different medium, not a narrower screen
@@ -1119,6 +1121,8 @@ The general version: the strongest signals are usually not "this looks like a kn
     tags: ['UX', 'CSS', 'Accessibility'],
     commit: '49e3df1',
     body: `A v4 UUID is 36 characters. The CRM's Visitor column is 128 to 144 pixels wide. Something has to give.
+
+![Six rows of a dark visitor table. The first column shows ids shortened as 5eed0003 ellipsis e1d3, keeping characters from both the start and the end. Further columns show status tags, a last seen date, a location, contact details and engagement counts.](/note-shots/crm-visitor-table "Cut in the middle, so the tail that actually distinguishes one visitor from another survives. Fixture data from the UI test harness, not real visitors.")
 
 It used to give in JavaScript: cut the string to its first 8 characters and render that. Which is fine to look at, and quietly destroys the column's only real use.
 

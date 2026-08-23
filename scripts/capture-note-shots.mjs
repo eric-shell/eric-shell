@@ -53,13 +53,23 @@ const PAD = 24
 const STUBS = { crm: stubAdminRoutes }
 
 async function capture(browser, shot) {
-  const { name, url, width, clip, clipTo, stub, pad = PAD, settleMs = 800, height = 1200 } = shot
+  const {
+    name, url, width, clip, clipTo, stub, media, fullPage = false,
+    pad = PAD, settleMs = 800, height = 1200,
+  } = shot
   const ctx = await browser.newContext({
     viewport: { width, height },
     deviceScaleFactor: SCALE,
     reducedMotion: 'reduce',
   })
   const page = await ctx.newPage()
+
+  // `media: 'print'` renders the page as a printer would see it. Some of what
+  // this site does is only visible under print rules (the resume collapses to
+  // one page, drops its decorative layers and reveals a contact block that is
+  // hidden on screen), and there is no way to show that in a note without
+  // photographing it.
+  if (media) await page.emulateMedia({ media })
 
   const errors = []
   page.on('pageerror', e => errors.push(e.message))
@@ -133,7 +143,7 @@ async function capture(browser, shot) {
       },
     })
   } else {
-    await page.screenshot({ path, fullPage: false })
+    await page.screenshot({ path, fullPage })
   }
 
   // Playwright writes a fully lossless PNG, which for a screenshot of a mostly
