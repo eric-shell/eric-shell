@@ -11,7 +11,10 @@ type ChatPayload = { messages?: unknown; website?: unknown }
 
 const MAX_MESSAGES = 20
 const MAX_USER_LENGTH = 2000
-const MODEL = 'llama-3.3-70b-versatile'
+// Groq retired every Llama chat model; gpt-oss-120b is the closest replacement.
+// It reasons before answering, and those tokens count against max_tokens, so
+// effort stays low and the budget carries headroom over the old 500.
+const MODEL = 'openai/gpt-oss-120b'
 
 function isMessage(v: unknown): v is Message {
   if (!v || typeof v !== 'object') return false
@@ -85,7 +88,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
     stream = await groq.chat.completions.create({
       model: MODEL,
       temperature: 0.5,
-      max_tokens: 500,
+      max_tokens: 700,
+      reasoning_effort: 'low',
       stream: true,
       messages: [
         { role: 'system', content: buildSystemPrompt() },
