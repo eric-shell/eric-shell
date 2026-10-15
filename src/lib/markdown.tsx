@@ -20,6 +20,15 @@ const baseComponents: Omit<Components, 'a'> = {
   li: ({ children }) => <li className="mb-1.5 last:mb-0">{children}</li>,
   code: ({ children }) => <code className="px-1 py-0.5 rounded bg-blue-100 font-mono text-xs">{children}</code>,
   strong: ({ children }) => <span className="font-semibold">{children}</span>,
+  // The prompt asks for no headings, quotes or rules, but the model doesn't
+  // always comply, and Tailwind's preflight strips all three to bare unspaced
+  // text. Give each a chat-sized form so a stray one still reads as intended.
+  h1: ({ children }) => <p className="mb-2 last:mb-0 font-semibold">{children}</p>,
+  h2: ({ children }) => <p className="mb-2 last:mb-0 font-semibold">{children}</p>,
+  h3: ({ children }) => <p className="mb-2 last:mb-0 font-semibold">{children}</p>,
+  h4: ({ children }) => <p className="mb-2 last:mb-0 font-semibold">{children}</p>,
+  blockquote: ({ children }) => <blockquote className="mb-2 last:mb-0 border-l-2 border-blue-200 pl-3">{children}</blockquote>,
+  hr: () => <hr className="my-3 border-blue-100" />,
 }
 
 export function chatMdComponents(onAnchorNavigate?: () => void): Components {
