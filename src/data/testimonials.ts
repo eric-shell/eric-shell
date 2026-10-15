@@ -18,7 +18,7 @@ export const testimonials: Testimonial[] = [
   },
   {
     review: "Eric is an exemplary Front End Developer and site builder in all aspects. Not only is he able to build exceptional responsive websites, he can manage other developers, communicate directly with stakeholders, create training documentation and foster collaboration on any team he's involved with. He has a depth of knowledge that is unparalleled and always strives to create the most holistic solution that he can while respecting requirements, budgets and timelines.",
-    author: "Suren K. — Associate Principle Developer",
+    author: "Suren K. — Associate Principal Developer",
   },
   {
     review: "Eric consistently goes the extra mile, whether we were working in the office or remotely. His communication skills — both written and verbal — are exemplary, and he has an exceptional ability to tackle complex challenges with ease. I could always count on him to provide the answers I needed or to resolve client issues promptly and effectively.",
@@ -30,7 +30,7 @@ export const testimonials: Testimonial[] = [
   },
   {
     review: "Eric was consistently professional and hard-working. He brought a level of knowledge of Front End solutions and coding patterns to our team that was previously lacking, and he led the development of some key products for our consumer-facing websites. Eric is a manager's dream as he is intrinsically motivated to be challenged, produce high-quality products, and meet his deadlines.",
-    author: "Andera B. — Product Manager",
+    author: "Andrea B. — Product Manager",
   },
   {
     review: "Eric consistently brought innovative ideas to the table, helping us push the boundaries of what was possible with each project. His client-facing skills were outstanding, making complex technical concepts easy to understand for stakeholders, while also managing expectations and ensuring all parties were aligned.",
