@@ -3,8 +3,8 @@ import { resolve, dirname } from 'node:path'
 import { mkdirSync, readFileSync, readdirSync, unlinkSync, writeFileSync } from 'node:fs'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
-import { workItems } from './src/data/work'
-import { notes } from './src/data/notes'
+import { workItems } from './src/data/work.ts'
+import { notes } from './src/data/notes.ts'
 
 const SITE = 'https://eric.sh'
 
@@ -259,9 +259,9 @@ ${body}
  * cosmetic one.
  */
 function notesEntries(): Record<string, string> {
-  writeIfChanged(resolve(__dirname, 'public/sitemap.xml'), sitemap())
+  writeIfChanged(resolve(import.meta.dirname, 'public/sitemap.xml'), sitemap())
 
-  const dir = resolve(__dirname, 'notes')
+  const dir = resolve(import.meta.dirname, 'notes')
   mkdirSync(dir, { recursive: true })
 
   const inputs: Record<string, string> = {}
@@ -344,11 +344,72 @@ function notesSchema(): Plugin {
   }
 }
 
+const NOTES_META_ID = 'virtual:notes-meta'
+const NOTES_BODIES_ID = 'virtual:notes-bodies'
+const NOTE_BODY_PREFIX = 'virtual:notes-body/'
+
+/**
+ * Serves the notes to the browser with the bodies split out, one per chunk.
+ *
+ * `notes.ts` is one array holding every body, which is the right shape to write
+ * in and the wrong one to ship: anything that imports it carries all of them.
+ * The index renders no body and each article renders one, and both were
+ * downloading the full set, 36KB gzipped and growing by one entry at a time.
+ *
+ * Three kinds of module come out of the same array:
+ *
+ *   virtual:notes-meta         every entry, minus `body`
+ *   virtual:notes-bodies       slug -> () => import('virtual:notes-body/<slug>')
+ *   virtual:notes-body/<slug>  that one body, as a default-exported string
+ *
+ * The dynamic imports are what make each body its own chunk. They are written
+ * out one per slug rather than built from a template string because the bundler
+ * can only split what it can see statically.
+ *
+ * A plugin rather than a restructure, so that adding an entry to `notes.ts`
+ * stays the entire workflow. The array is read once, when this config is
+ * evaluated; editing notes.ts already restarts the dev server, since the config
+ * imports it.
+ */
+function notesData(): Plugin {
+  return {
+    name: 'notes-data',
+    resolveId(id) {
+      if (id === NOTES_META_ID || id === NOTES_BODIES_ID || id.startsWith(NOTE_BODY_PREFIX)) return `\0${id}`
+    },
+    load(id) {
+      if (!id.startsWith('\0')) return
+      const name = id.slice(1)
+      if (name === NOTES_META_ID) {
+        // Copy-and-delete rather than naming the fields to keep, so a field
+        // added to `Note` later reaches the browser without an edit here.
+        const meta = notes.map((n) => {
+          const rest: Partial<typeof n> = { ...n }
+          delete rest.body
+          return rest
+        })
+        return `export const notes = ${JSON.stringify(meta)}`
+      }
+      if (name === NOTES_BODIES_ID) {
+        const entries = notes.map(
+          (n) => `${JSON.stringify(n.slug)}: () => import(${JSON.stringify(NOTE_BODY_PREFIX + n.slug)})`,
+        )
+        return `export const bodies = {${entries.join(',')}}`
+      }
+      if (name.startsWith(NOTE_BODY_PREFIX)) {
+        const note = notes.find((n) => n.slug === name.slice(NOTE_BODY_PREFIX.length))
+        if (!note) throw new Error(`notes-data: no note for ${name}`)
+        return `export default ${JSON.stringify(note.body)}`
+      }
+    },
+  }
+}
+
 export default defineConfig({
-  plugins: [react(), tailwindcss(), workSchema(), notesSchema()],
+  plugins: [react(), tailwindcss(), workSchema(), notesSchema(), notesData()],
   resolve: {
     alias: {
-      '@': resolve(__dirname, 'src'),
+      '@': resolve(import.meta.dirname, 'src'),
     },
   },
   build: {
@@ -361,11 +422,11 @@ export default defineConfig({
       // both routes canonicalized themselves to the homepage, which told Google
       // not to index them while the sitemap asked it to.
       input: {
-        main: resolve(__dirname, 'index.html'),
-        resume: resolve(__dirname, 'resume.html'),
-        privacy: resolve(__dirname, 'privacy.html'),
-        notes: resolve(__dirname, 'notes.html'),
-        dashboard: resolve(__dirname, 'dashboard.html'),
+        main: resolve(import.meta.dirname, 'index.html'),
+        resume: resolve(import.meta.dirname, 'resume.html'),
+        privacy: resolve(import.meta.dirname, 'privacy.html'),
+        notes: resolve(import.meta.dirname, 'notes.html'),
+        dashboard: resolve(import.meta.dirname, 'dashboard.html'),
         // One document per note, written to disk by this call. See notesEntries.
         ...notesEntries(),
       },

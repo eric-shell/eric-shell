@@ -11,6 +11,26 @@ type ChatPayload = { messages?: unknown; website?: unknown }
 
 const MAX_MESSAGES = 20
 const MAX_USER_LENGTH = 2000
+const MAX_TOKENS = 700
+/**
+ * Ceiling on an assistant turn the client sends back as history.
+ *
+ * The thread is stateless: the browser replays every earlier turn, including
+ * the ones that claim to be ours, and nothing proves a turn marked `assistant`
+ * ever came from this endpoint. Only `user` turns were length-checked, so a
+ * caller could post twenty megabyte-sized "assistant" messages and have each
+ * request spend a full context window of input tokens — a handful of those
+ * drains the Groq quota and takes the chat down for every real visitor.
+ *
+ * Derived from `MAX_TOKENS`, because that is the only thing that bounds a
+ * genuine reply: 8 characters per token is about double what English averages,
+ * so no reply this endpoint actually produced can reach it.
+ *
+ * Clamped, not rejected. A 400 here would lock a real visitor out of their own
+ * conversation until they cleared it, on the strength of a turn they did not
+ * write; cutting the tail off a forged one costs nobody anything.
+ */
+const MAX_ASSISTANT_LENGTH = MAX_TOKENS * 8
 // Groq retired every Llama chat model; gpt-oss-120b is the closest replacement.
 // It reasons before answering, and those tokens count against max_tokens, so
 // effort stays low and the budget carries headroom over the old 500.
@@ -36,7 +56,15 @@ function validate(body: ChatPayload): { ok: true; messages: Message[] } | { ok: 
       return { ok: false, error: `Message must be ${MAX_USER_LENGTH} characters or less.` }
     }
   }
-  return { ok: true, messages }
+  return {
+    ok: true,
+    // Rebuilt field by field: only `role` and `content` go upstream, whatever
+    // else the client attached, and assistant turns are clamped (see above).
+    messages: messages.map(m => ({
+      role: m.role,
+      content: m.role === 'assistant' ? m.content.slice(0, MAX_ASSISTANT_LENGTH) : m.content,
+    })),
+  }
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse): Promise<void> {
@@ -88,7 +116,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
     stream = await groq.chat.completions.create({
       model: MODEL,
       temperature: 0.5,
-      max_tokens: 700,
+      max_tokens: MAX_TOKENS,
       reasoning_effort: 'low',
       stream: true,
       messages: [

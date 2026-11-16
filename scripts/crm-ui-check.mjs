@@ -18,7 +18,7 @@ const OUT = process.argv[3] ?? '.'
 // entirely and a desktop-only sweep would never see it.
 const WIDTHS = [1440, 1280, 1024, 768, 412, 360]
 
-import { stubAdminRoutes, target } from './crm-stub.mjs'
+import { HOLD_MS, stubAdminRoutes, target } from './crm-stub.mjs'
 
 
 /**

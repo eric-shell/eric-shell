@@ -66,7 +66,16 @@ function NavTooltip({ text, show, align }: { text: string; show: boolean; align:
   )
 }
 
-export default function Header() {
+interface HeaderProps {
+  /**
+   * Whether this is the home route. `App` passes it from the route it resolved,
+   * because the prerender has no `window.location` to ask and the two must
+   * agree anyway. Left out (Storybook), it falls back to the URL.
+   */
+  isHome?: boolean
+}
+
+export default function Header({ isHome }: HeaderProps) {
   const [echoes, setEchoes] = useState<number[]>([])
   const [hidden, setHidden] = useState(false)
   const [atTop, setAtTop] = useState(true)
@@ -80,7 +89,7 @@ export default function Header() {
   // render cycle) can read the current value without going stale or having to
   // rebind the listener on every open/close.
   const tooltipStateRef = useRef<{ sectionId: string; text: string } | null>(null)
-  const isHomePage = window.location.pathname === '/'
+  const isHomePage = isHome ?? (typeof window !== 'undefined' && window.location.pathname === '/')
   // /resume and /privacy get a Home link ahead of the section anchors; on the
   // home page itself the logo already scrolls to top, so it would be dead weight.
   const links = isHomePage ? navLinks : [homeLink, ...navLinks]
@@ -260,6 +269,12 @@ export default function Header() {
           menuOpen ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0 pointer-events-none'
         }`}
         aria-hidden={!menuOpen}
+        // `aria-hidden` alone only hides it from the accessibility tree. The
+        // links inside are still focusable, so with the menu closed Tab walked
+        // through five invisible, zero-height controls before reaching the
+        // page. `inert` takes them out of the tab order and out of reach of
+        // find-in-page as well.
+        inert={!menuOpen}
       >
         <nav aria-label="Mobile navigation">
           <ul className="px-6 pb-6 pt-1 flex flex-col gap-2">

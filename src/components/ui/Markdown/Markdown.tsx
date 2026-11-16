@@ -1,9 +1,9 @@
-import { lazy, Suspense } from 'react'
+import { Suspense, use } from 'react'
 import type { Components } from 'react-markdown'
-import { linkifyEmail } from '@/lib/markdown'
+import { linkifyEmail, loadMarkdown } from '@/lib/markdown'
 
-/**
- * react-markdown, split out of the initial bundle.
+/*
+ * react-markdown is split out of the initial bundle.
  *
  * It carries micromark + hast — 115KB raw, ~35KB gzipped — and it used to sit
  * in the shared `ui` chunk, which every homepage visit downloads before first
@@ -11,11 +11,15 @@ import { linkifyEmail } from '@/lib/markdown'
  * has no business in the critical path. Splitting it took the `ui` chunk from
  * 61KB gzipped to 28KB.
  *
- * This lazy() is the ONLY value import of react-markdown in the app. A plain
- * `import ReactMarkdown from 'react-markdown'` anywhere else puts it straight
- * back into the initial graph.
+ * The one value import of it in the app is the dynamic `import()` inside
+ * `loadMarkdown` (lib/markdown.tsx). A plain
+ * `import ReactMarkdown from 'react-markdown'` anywhere puts it straight back
+ * into the initial graph.
+ *
+ * Read with `use()` rather than wrapped in `React.lazy`. They behave the same
+ * while the chunk is in flight, but a lazy component cannot be loaded ahead of
+ * its first render, and the note pages need exactly that — see `loadMarkdown`.
  */
-const ReactMarkdown = lazy(() => import('react-markdown'))
 
 interface MarkdownProps {
   components: Components
@@ -38,7 +42,13 @@ interface MarkdownProps {
 export default function Markdown({ components, children }: MarkdownProps) {
   return (
     <Suspense fallback={<p className="mb-2 last:mb-0">{children}</p>}>
-      <ReactMarkdown components={components}>{linkifyEmail(children)}</ReactMarkdown>
+      <Parsed components={components}>{children}</Parsed>
     </Suspense>
   )
+}
+
+/** Suspends until the parser has loaded, then renders through it. */
+function Parsed({ components, children }: MarkdownProps) {
+  const { default: ReactMarkdown } = use(loadMarkdown())
+  return <ReactMarkdown components={components}>{linkifyEmail(children)}</ReactMarkdown>
 }

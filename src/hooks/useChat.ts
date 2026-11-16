@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { toast } from '../components/ui'
 import { identityHeaders, sendEvent } from '../lib/telemetry'
 
@@ -31,6 +31,10 @@ export function useChat() {
   const [messages, setMessages] = useState<ChatMessage[]>(readStored)
   const [input, setInput] = useState('')
   const [isLoading, setIsLoading] = useState(false)
+  // The request in flight, if any. `reset` aborts it: clearing the thread while
+  // a reply was pending used to leave the fetch running, and the reply then
+  // landed in the emptied thread (and in localStorage) as a lone assistant turn.
+  const inFlight = useRef<AbortController | null>(null)
 
   useEffect(() => {
     if (typeof window === 'undefined') return
@@ -55,9 +59,13 @@ export function useChat() {
     setInput('')
     setIsLoading(true)
 
+    const controller = new AbortController()
+    inFlight.current = controller
+
     try {
       const response = await fetch('/api/chat', {
         method: 'POST',
+        signal: controller.signal,
         headers: {
           'Content-Type': 'application/json',
           ...identityHeaders(),
@@ -111,6 +119,9 @@ export function useChat() {
       }
 
     } catch {
+      // Cleared on purpose, not a failure: `reset` has already emptied the
+      // thread, so there is nothing to roll back, report, or apologise for.
+      if (controller.signal.aborted) return
       toast.error('An unexpected error occurred. Please try again.')
       setMessages(prev => {
         const last = prev[prev.length - 1]
@@ -126,11 +137,19 @@ export function useChat() {
         duration_ms: elapsed(),
       })
     } finally {
-      setIsLoading(false)
+      // Only if this is still the current request. After a clear, `reset` has
+      // already dropped the flag, and a send started since then owns it — an
+      // aborted request settling late must not switch that one's spinner off.
+      if (inFlight.current === controller) {
+        inFlight.current = null
+        setIsLoading(false)
+      }
     }
   }, [input, isLoading, messages])
 
   const reset = useCallback(() => {
+    inFlight.current?.abort()
+    inFlight.current = null
     setMessages([])
     setInput('')
     setIsLoading(false)

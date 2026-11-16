@@ -1,0 +1,39 @@
+# Lint, typecheck, test and build on every push to main and every pull request.
+#
+# The build step is the important one: `npm run build` ends by prerendering
+# every public route (scripts/prerender.mjs) and fails if any of them renders
+# wrong, so a green run means each page's HTML was produced, not just that the
+# bundle compiled.
+#
+# No secrets are needed. Nothing here talks to Neon, Groq, Resend or Upstash:
+# the tests stub the model locally and every database path soft-fails without
+# POSTGRES_URL.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run build

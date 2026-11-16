@@ -53,6 +53,28 @@ const TYPE_SPEED_MS = 28
 const COMPOSER_CONTROL = 1 + 10 + 18 + 10 + 1
 const COMPOSER_INSET = (56 - COMPOSER_CONTROL) / 2
 
+/**
+ * Markdown source, flattened to roughly what it reads as.
+ *
+ * For the screen-reader announcement of a reply, which is plain text: read
+ * aloud, the raw source is "asterisk asterisk design systems asterisk asterisk"
+ * and a link is its whole URL. Deliberately rough — it only has to cover what
+ * the prompt lets the model produce (bold, inline code, links, list markers).
+ */
+function spokenText(markdown: string): string {
+  return markdown
+    .replace(/\[([^\]]+)\]\([^)]*\)/g, '$1')
+    .replace(/[*_`#>]+/g, '')
+    .replace(/^\s*[-+]\s+/gm, '')
+    .replace(/\s+/g, ' ')
+    .trim()
+}
+
+/** True where the primary input is touch, i.e. where focus means a keyboard on screen. */
+function onTouchDevice(): boolean {
+  return window.matchMedia?.('(pointer: coarse)').matches === true
+}
+
 function useTypewriter(text: string, enabled: boolean): string {
   const [count, setCount] = useState(() => (enabled ? 0 : text.length))
   const [prevKey, setPrevKey] = useState<[string, boolean]>([text, enabled])
@@ -122,6 +144,44 @@ export default function Chat({
   }, [isOpen])
 
   const hasMessages = messages.length > 0
+
+  /**
+   * What a screen reader is told about the conversation, via the `role="status"`
+   * region at the bottom of the panel.
+   *
+   * The thread itself is not a live region and must not become one. A reply
+   * streams in a few characters at a time and the greeting is typed out letter
+   * by letter; announced as they change, both come out as a stutter of
+   * fragments. So the region carries two whole messages instead: that the
+   * question was sent, and then the complete reply, once, when the stream ends.
+   *
+   * State adjusted during render, keyed on `isLoading` flipping, rather than an
+   * effect — the announcement then lands in the same commit as the reply it
+   * describes.
+   *
+   * `sentAt` is the thread length when the request went out. A reply is only
+   * announced if the thread is longer than that afterwards: on a failed request
+   * the hook rolls the question back, and without the check the region would
+   * fall back to the previous reply and read it out a second time.
+   */
+  const [announcement, setAnnouncement] = useState('')
+  const [wasLoading, setWasLoading] = useState(isLoading)
+  const [sentAt, setSentAt] = useState(0)
+  if (wasLoading !== isLoading) {
+    setWasLoading(isLoading)
+    if (isLoading) {
+      setSentAt(messages.length)
+      setAnnouncement('Message sent. Waiting for a reply.')
+    } else {
+      const reply = messages[messages.length - 1]
+      setAnnouncement(
+        messages.length > sentAt && reply?.role === 'assistant'
+          ? `Reply: ${spokenText(reply.content)}`
+          : ''
+      )
+    }
+  }
+
   const animateWelcome =
     !hasMessages &&
     typeof window !== 'undefined' &&
@@ -191,6 +251,17 @@ export default function Chat({
   const handleClear = () => {
     sendEvent('chat_cleared')
     onClear?.()
+    // The Clear button only exists while there is a thread, so it unmounts as
+    // a result of its own click and takes focus with it. Hand it to the
+    // composer, which is where a cleared conversation continues from. Not on
+    // touch, where focusing a field raises the keyboard over the panel.
+    if (!onTouchDevice()) textareaRef.current?.focus({ preventScroll: true })
+  }
+
+  /** Same reasoning for a suggestion chip: the chips vanish once one is sent. */
+  const handlePrompt = (text: string) => {
+    onPrompt?.(text)
+    if (!onTouchDevice()) textareaRef.current?.focus({ preventScroll: true })
   }
 
   const mdComponents = chatMdComponents(handleClose)
@@ -323,7 +394,7 @@ export default function Chat({
                   variant={'primary'}
                   className="rounded-full"
                   disabled={isLoading || !welcomeDone}
-                  onClick={() => onPrompt(s)}
+                  onClick={() => handlePrompt(s)}
                 >
                   {s}
                 </Button>
@@ -345,11 +416,11 @@ export default function Chat({
             </div>
           ))}
           {showTypingDots && (
-            <div
-              className={assistantBubbleClass}
-              aria-live="polite"
-              aria-label="Assistant is typing"
-            >
+            // Decoration, as far as assistive tech is concerned. It used to carry
+            // `aria-live`, which did nothing: a live region announces CHANGES to
+            // content it already holds, and this one mounts with its content and
+            // unmounts with it. The status region below is what speaks.
+            <div className={assistantBubbleClass} aria-hidden="true">
               <span className="inline-flex gap-1 items-center text-lg leading-none text-blue-800">
                 <span className="animate-bounce">·</span>
                 <span className="animate-bounce [animation-delay:120ms]">·</span>
@@ -365,20 +436,33 @@ export default function Chat({
           <div className="relative">
             <textarea
               ref={textareaRef}
+              // Without this the field's accessible name is its placeholder,
+              // and the placeholder is an animation: a screen reader landed on
+              // whichever half-typed prompt happened to be showing.
+              aria-label="Ask a question"
               value={value}
               onChange={e => onChange(e.target.value)}
               onKeyDown={e => {
                 if (e.key === 'Enter' && !e.shiftKey) {
                   e.preventDefault()
                   onSubmit()
+                  // On a phone, sending should put the keyboard away so the
+                  // reply is not arriving underneath it. `disabled` used to do
+                  // that as a side effect; `readOnly` (below) does not.
+                  if (onTouchDevice()) e.currentTarget.blur()
                 }
               }}
               placeholder={typedPlaceholder ?? placeholder}
               rows={1}
-              disabled={isLoading}
+              // `readOnly`, not `disabled`, while a reply is in flight. A
+              // disabled element cannot hold focus, so every send threw
+              // keyboard focus to <body> and never gave it back: the next Tab
+              // started again from the top of the page. Read-only blocks typing
+              // just the same and keeps the caret where it was.
+              readOnly={isLoading}
               style={{ maxHeight: TEXTAREA_MAX_HEIGHT }}
               className={twMerge(
-                'block w-full rounded-[28px] border pl-5 py-4 font-sans text-base leading-6 resize-none overflow-y-auto [&::-webkit-scrollbar]:hidden [scrollbar-width:none] transition-[height] duration-150 ease-out focus:outline-none disabled:opacity-60',
+                'block w-full rounded-[28px] border pl-5 py-4 font-sans text-base leading-6 resize-none overflow-y-auto [&::-webkit-scrollbar]:hidden [scrollbar-width:none] transition-[height] duration-150 ease-out focus:outline-none read-only:opacity-60',
                 // Right inset clears the control cluster: COMPOSER_INSET +
                 // buttons + the gap between them, plus room for the text to
                 // stop short of the first one.
@@ -418,7 +502,18 @@ export default function Chat({
                 </Button>
               )}
               <Button
-                onClick={onSubmit}
+                // Wrapped, not passed bare: the hook behind `onSubmit` takes an
+                // optional prompt string, and a bare handler hands it the click
+                // event instead, which it then tries to `.trim()`.
+                onClick={e => {
+                  onSubmit()
+                  // This button disables itself the moment it is pressed. For a
+                  // keyboard press (`detail` is 0: no mouse clicks) that would
+                  // strand focus on a dead control, so it goes back to the
+                  // composer. A pointer press is left alone — on a phone,
+                  // refocusing the field would raise the keyboard again.
+                  if (e.detail === 0) textareaRef.current?.focus({ preventScroll: true })
+                }}
                 disabled={submitDisabled}
                 variant="primary"
                 shape="square"
@@ -459,6 +554,10 @@ export default function Chat({
           </div>
         </div>
       </div>
+      {/* The one live region in the panel — see `announcement`. Always mounted,
+          and empty until there is something to say: a live region has to exist
+          before its content changes for the change to be announced. */}
+      <div role="status" className="sr-only">{announcement}</div>
     </div>
   )
 }

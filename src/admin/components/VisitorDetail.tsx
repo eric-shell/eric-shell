@@ -23,9 +23,10 @@ interface VisitorDetailProps {
    * Reports whether there are unsaved edits in here, so the list can guard the
    * close paths it owns — clicking the row again, clicking a different row, and
    * Escape. Those don't route through this component, so the flag has to travel
-   * up rather than the guard living down here.
+   * up rather than the guard living down here. Reported with this drawer's own
+   * id, so it can only ever clear its own flag — see `setUnsaved`.
    */
-  onDirtyChange?: (dirty: boolean) => void
+  onDirtyChange?: (id: string, dirty: boolean) => void
 }
 
 type Tab = 'chat' | 'contact' | 'activity'
@@ -36,6 +37,7 @@ export default function VisitorDetail({ id, stamp, onClose, onDeleted, onSaved, 
     notes, setNotes,
     locationOverride, setLocationOverride,
     dirty,
+    loadFailed, retryLoad,
     saving, saveDetails,
     deleting, deleteVisitor,
   } = useVisitorDetail(id, stamp, { onClose, onDeleted, onSaved })
@@ -44,9 +46,9 @@ export default function VisitorDetail({ id, stamp, onClose, onDeleted, onSaved, 
   // Cleared on unmount as well as on change: once this drawer is gone there is
   // nothing left to discard, and a stale `true` would prompt on the next close.
   useEffect(() => {
-    onDirtyChange?.(dirty)
-    return () => onDirtyChange?.(false)
-  }, [dirty, onDirtyChange])
+    onDirtyChange?.(id, dirty)
+    return () => onDirtyChange?.(id, false)
+  }, [id, dirty, onDirtyChange])
 
   // Shown as placeholder context so it's obvious what the override replaces.
   const ipGuess = [data?.visitor.city, data?.visitor.region, data?.visitor.country]
@@ -67,7 +69,17 @@ export default function VisitorDetail({ id, stamp, onClose, onDeleted, onSaved, 
       </div>
 
       {data === null ? (
-        <DetailSkeleton />
+        // A skeleton means "loading", so it must not outlive the request. A
+        // failed load used to toast once and then sit here as a skeleton for as
+        // long as the drawer stayed open, which reads as a hang.
+        loadFailed ? (
+          <Panel variant="error-glass" role="alert" className="flex flex-wrap items-center justify-between gap-3 rounded-lg px-3 py-2 text-sm leading-snug">
+            <span>This visitor's details didn't load.</span>
+            <Button variant="raised-dark" size="sm" onClick={retryLoad}>Try again</Button>
+          </Panel>
+        ) : (
+          <DetailSkeleton />
+        )
       ) : (
         <>
           <TabBar

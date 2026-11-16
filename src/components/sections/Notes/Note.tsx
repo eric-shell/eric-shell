@@ -1,20 +1,21 @@
+import { Suspense, use } from 'react'
 import { ArrowLeft, ArrowRight, GitCommitHorizontal } from 'lucide-react'
-import type { Note as NoteEntry } from '@/data/notes'
-import { commitUrl, noteBySlug, noteNeighbours } from '@/data/notes'
-import { noteMdComponents, prefetchMarkdown } from '@/lib/markdown'
+import type { NoteMeta } from '@/data/notes-index'
+import { commitUrl, noteBody, noteBySlug, noteNeighbours } from '@/data/notes-index'
+import { loadMarkdown, noteMdComponents } from '@/lib/markdown'
 import { Backdrop, Button, CascadeGroup, CascadeItem, Container, Eyebrow, H1, Markdown, Panel, Pill } from '../../ui'
 import { formatNoteDate } from './formatDate'
 
 /*
- * Warmed at module scope, not in an effect.
+ * Started at module scope, not in an effect and not on idle.
  *
  * On every other route the markdown parser is optional — the chat needs it only
  * once there is a reply. Here it *is* the page: the entire body renders through
- * <Markdown>, whose Suspense fallback is a single raw-text paragraph. Starting
- * the fetch when this route's chunk lands, rather than after the first paint an
- * effect would wait for, is what keeps that fallback from being seen.
+ * <Markdown>. Starting the fetch the moment this route's chunk lands, rather
+ * than when the article first renders, takes one round trip off the time until
+ * the page is interactive.
  */
-prefetchMarkdown()
+void loadMarkdown()
 
 interface NoteProps {
   slug: string
@@ -103,13 +104,17 @@ export default function Note({ slug }: NoteProps) {
 
       <section className="py-16 md:py-24">
         <Container>
-          <CascadeGroup threshold={0.05}>
-            <CascadeItem index={0}>
-              <article>
-                <Markdown components={noteMdComponents}>{note.body}</Markdown>
-              </article>
-            </CascadeItem>
-          </CascadeGroup>
+          {/* The body is this note's own chunk, so it arrives a moment after
+              the masthead. Nothing as a fallback, on purpose: in a built page
+              the article is already in the document (see scripts/prerender.mjs)
+              and React keeps that HTML on screen until the chunk lands, so a
+              fallback would never be seen.
+
+              The boundary wraps the CascadeGroup, not the other way round, and
+              that order matters — see NoteArticle. */}
+          <Suspense fallback={null}>
+            <NoteArticle slug={note.slug} />
+          </Suspense>
 
           {(previous || next) && (
             <CascadeGroup
@@ -137,6 +142,38 @@ export default function Note({ slug }: NoteProps) {
 }
 
 /**
+ * The article itself. Split from `Note` so that only this suspends while the
+ * body chunk is in flight, and the masthead above it renders straight away.
+ *
+ * Two rules here, both about hydrating the prerendered page:
+ *
+ * It waits for the markdown parser as well as the body, even though it never
+ * touches the parser itself. `<Markdown>` below has its own Suspense boundary,
+ * and that boundary sits under this CascadeGroup's context, which changes when
+ * the article scrolls into view. If the parser were still loading at that
+ * moment React would drop the prerendered article and show the fallback. Having
+ * it settled before anything here renders is what rules that out; the full
+ * account is on `loadMarkdown`.
+ *
+ * And the CascadeGroup lives INSIDE this component, so inside the Suspense
+ * boundary in `Note`, for the same reason one level up: a boundary underneath a
+ * CascadeGroup is a boundary underneath a context that is about to change.
+ */
+function NoteArticle({ slug }: { slug: string }) {
+  const body = use(noteBody(slug))
+  use(loadMarkdown())
+  return (
+    <CascadeGroup threshold={0.05}>
+      <CascadeItem index={0}>
+        <article>
+          <Markdown components={noteMdComponents}>{body}</Markdown>
+        </article>
+      </CascadeItem>
+    </CascadeGroup>
+  )
+}
+
+/**
  * A neighbouring note, rendered as the same card the index uses.
  *
  * It used to be a label and a title. The label said "Older", which describes
@@ -155,7 +192,7 @@ function NotePagerLink({
   note,
   direction,
 }: {
-  note?: NoteEntry
+  note?: NoteMeta
   direction: 'previous' | 'next'
 }) {
   // Holds the column rather than rendering nothing, so at either end of the

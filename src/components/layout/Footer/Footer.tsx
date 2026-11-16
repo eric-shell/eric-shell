@@ -53,7 +53,11 @@ export default function Footer({ className }: { className?: string }) {
           </CascadeItem>
 
           <CascadeItem index={2} className="leading-none">
-            <span className="font-sans text-xs leading-none tracking-wider text-white/70">
+            {/* The year is baked into the prerendered HTML at build time and
+                read from the clock in the browser. They differ only between New
+                Year and the next deploy; without this, that one stale digit
+                would make React discard the whole prerendered page. */}
+            <span suppressHydrationWarning className="font-sans text-xs leading-none tracking-wider text-white/70">
               <span className="align-baseline font-mono">©</span> {year} Eric Shell. All Rights Reserved.
             </span>
           </CascadeItem>

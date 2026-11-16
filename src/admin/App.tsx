@@ -17,6 +17,19 @@ function onLoginRoute(): boolean {
   return window.location.pathname.replace(/\/+$/, '') === LOGIN_PATH
 }
 
+/**
+ * A route, carrying the current query string across the redirect.
+ *
+ * The contact notification email links to `/dashboard?v=<id>`, and it is
+ * usually opened signed out. Both hops of the sign-in round trip used to go to
+ * a bare path, so the link reliably landed on a dashboard with no visitor open.
+ * Only the query is carried and only onto these two fixed paths, so there is
+ * nothing here for an open redirect to use.
+ */
+function withQuery(path: string): string {
+  return path + window.location.search
+}
+
 export default function App() {
   const [authed, setAuthed] = useState<boolean | null>(null)
   const isLogin = onLoginRoute()
@@ -35,18 +48,19 @@ export default function App() {
   // history entry the back button can bounce off.
   useEffect(() => {
     if (authed === null) return
-    if (authed && isLogin) window.location.replace(DASHBOARD_PATH)
-    else if (!authed && !isLogin) window.location.replace(LOGIN_PATH)
+    if (authed && isLogin) window.location.replace(withQuery(DASHBOARD_PATH))
+    else if (!authed && !isLogin) window.location.replace(withQuery(LOGIN_PATH))
   }, [authed, isLogin])
 
   const handleLogout = useCallback(() => {
     // Also the `onUnauthorized` path for every admin fetch, so an expired
-    // session lands on the login page rather than a dashboard full of errors.
-    window.location.assign(LOGIN_PATH)
+    // session lands on the login page rather than a dashboard full of errors —
+    // and, with the query carried, signs back in to the visitor it was on.
+    window.location.assign(withQuery(LOGIN_PATH))
   }, [])
 
   const handleLogin = useCallback(() => {
-    window.location.assign(DASHBOARD_PATH)
+    window.location.assign(withQuery(DASHBOARD_PATH))
   }, [])
 
   // Nothing renders until the probe has resolved AND the route agrees with it,

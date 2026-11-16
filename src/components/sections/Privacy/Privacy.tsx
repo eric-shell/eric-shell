@@ -1,5 +1,7 @@
 import { ArrowLeft } from 'lucide-react'
 import { Button, CascadeGroup, CascadeItem, Container, Eyebrow, H1, H2 } from '../../ui'
+import { useHydrated } from '@/lib/hydration'
+import { peekVisitorId } from '@/lib/visitorId'
 
 export default function Privacy() {
   return (
@@ -109,8 +111,12 @@ export default function Privacy() {
               <div className="flex flex-col gap-4">
                 <H2>Retention</H2>
                 <p className="font-sans text-base md:text-lg leading-relaxed">
-                  Records are kept indefinitely by default. If you'd like your visitor record, chat transcripts, or contact submission removed, email <a href="mailto:ericjshell@gmail.com?subject=Privacy%20request" className="font-semibold underline underline-offset-2 hover:opacity-70 transition-opacity">ericjshell@gmail.com</a> with the visitor ID shown below (if you have it) or the email you used to contact me. I'll delete the record promptly.
+                  Page views and visit records (time on page, scroll depth, window size, and campaign tags) are deleted automatically six months after the visit. Your visitor record, chat transcripts, contact submissions, and the interactions listed above are kept until you ask me to remove them.
                 </p>
+                <p className="font-sans text-base md:text-lg leading-relaxed">
+                  To have everything about you deleted, email <a href="mailto:ericjshell@gmail.com?subject=Privacy%20request" className="font-semibold underline underline-offset-2 hover:opacity-70 transition-opacity">ericjshell@gmail.com</a> with the visitor ID shown below, or the email address you used to contact me. I'll delete the record promptly.
+                </p>
+                <VisitorIdNotice />
               </div>
             </CascadeItem>
 
@@ -127,5 +133,35 @@ export default function Privacy() {
         </Container>
       </section>
     </main>
+  )
+}
+
+/**
+ * This browser's visitor ID, so a reader can quote it in a deletion request.
+ *
+ * The Retention copy has promised "the visitor ID shown below" for as long as
+ * it has existed, and nothing was ever shown.
+ *
+ * Read after hydration, not during render: the page is prerendered at build
+ * time, where there is no localStorage, and the build's HTML and the browser's
+ * first render have to match. And read with `peekVisitorId`, which never
+ * creates one — see there.
+ */
+function VisitorIdNotice() {
+  const hydrated = useHydrated()
+  const id = hydrated ? peekVisitorId() : null
+  return (
+    <div className="rounded-lg border border-blue-950/10 bg-blue-50 px-4 py-3 font-sans text-sm leading-relaxed">
+      <p className="font-semibold">Your visitor ID</p>
+      {/* `min-h` reserves the line before hydration, so the box does not grow
+          when the ID arrives. */}
+      <p className="min-h-6 text-blue-950/80">
+        {!hydrated ? null : id ? (
+          <code className="font-mono text-[0.95em] break-all select-all">{id}</code>
+        ) : (
+          'This browser has no visitor ID, so there is nothing tied to it to delete.'
+        )}
+      </p>
+    </div>
   )
 }

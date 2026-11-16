@@ -1,73 +1,56 @@
-# React + TypeScript + Vite
+# eric.sh
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Source for [eric.sh](https://eric.sh), the personal site of Eric Shell: a portfolio, a résumé, an AI chat that answers questions about his work, and [/notes](https://eric.sh/notes), a changelog of the engineering decisions behind the site itself. Each note links the commit it describes in this repo.
 
-Currently, two official plugins are available:
+## Stack
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+- **Front end:** Vite, React 19, TypeScript and Tailwind CSS v4. Every public route is prerendered to HTML at build time and hydrated in the browser.
+- **API:** Vercel serverless functions in `api/`. Chat runs on Groq, email on Resend, rate limiting on Upstash Redis, and storage on Neon Postgres.
+- **Admin:** a password-and-emailed-code CRM at `/dashboard`, built as a separate Vite entry. Its code never ships to public visitors.
 
-## React Compiler
+There is no third-party analytics and no cookies on the public site. What the site records about visitors, and why, is on [/privacy](https://eric.sh/privacy).
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## Running it
 
-## Expanding the ESLint configuration
+Requires Node 22 (see `.nvmrc`).
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+npm install
+npm run dev:site    # site and API at http://localhost:3000 (runs `vercel dev`)
+npm run dev         # the same, plus Storybook at http://localhost:6006
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+`vercel dev` needs the project linked (`npx vercel link`) and takes its environment from the linked Vercel project, not from a local file. [.env.example](.env.example) lists every variable and what breaks without it. The site renders without any of them; the chat, the contact form and the admin are what need keys.
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+For the front end alone, without the API, `npx vite` serves the site at http://localhost:5173.
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+## Checks
+
+```bash
+npm run lint
+npm run typecheck
+npm test
+npm run build       # builds dist/ and prerenders every public route
 ```
+
+All four run in CI on every push to `main` and every pull request ([.github/workflows/ci.yml](.github/workflows/ci.yml)). None of them need secrets.
+
+## Layout
+
+```
+src/components/   layout (header, footer), page sections, and shared UI primitives
+src/data/         content: work, résumé, testimonials, notes
+src/admin/        the CRM single-page app
+api/              serverless functions (each file is a route)
+db/schema.sql     Postgres schema, applied by hand
+scripts/          image pipeline, prerender, CRM seeding and screenshot tooling
+tests/            Vitest
+```
+
+[CLAUDE.md](CLAUDE.md) is the detailed reference. It covers the conventions, the reasoning behind decisions that look odd out of context, and what breaks if they are undone.
+
+## Deployment
+
+Vercel builds with `npm run build` and deploys `dist/` plus `api/`. The prerender is the last step of that script, so a deploy that ran bare `vite build` would still work but would ship empty HTML documents. Check the build log for `prerendered N documents`.
+
+The project is on Vercel's Hobby plan, which caps a deployment at 12 serverless functions. `api/` uses 11 of them.

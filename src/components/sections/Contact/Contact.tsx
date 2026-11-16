@@ -1,11 +1,14 @@
 import { lazy, Suspense } from 'react'
 import { Backdrop, CascadeGroup, CascadeItem, ContactForm, Container, Eyebrow, H2 } from '../../ui'
 import { useParallax } from '@/hooks'
+import { useHydrated } from '@/lib/hydration'
 
 const ParticlesSmall = lazy(() => import('../Hero/ParticlesSmall'))
 const ParticlesLarge = lazy(() => import('../Hero/ParticlesLarge'))
 
 export default function Contact() {
+  // Canvases are client-only, for the reason given on the Hero's.
+  const hydrated = useHydrated()
   const { sectionRef, bgRef, gradientRef, handleMouseMove, handleMouseLeave } = useParallax({
     bgStrength: 15,
     gradientStrength: 8,
@@ -49,7 +52,7 @@ export default function Contact() {
         />
       </picture>
 
-      <Suspense fallback={null}><ParticlesSmall mode="fall-toward" /></Suspense>
+      {hydrated && <Suspense fallback={null}><ParticlesSmall mode="fall-toward" /></Suspense>}
 
       <div
         ref={gradientRef}
@@ -58,7 +61,7 @@ export default function Contact() {
       />
       <Backdrop tone="photo" className="z-6" />
 
-      <Suspense fallback={null}><ParticlesLarge mode="fall-toward" /></Suspense>
+      {hydrated && <Suspense fallback={null}><ParticlesLarge mode="fall-toward" /></Suspense>}
 
       <Container className="relative z-20 w-full py-24 grid grid-cols-1 lg:grid-cols-2 gap-16 lg:gap-24 items-center">
 

@@ -1,5 +1,5 @@
 import { StrictMode } from 'react'
-import { createRoot } from 'react-dom/client'
+import { createRoot, hydrateRoot } from 'react-dom/client'
 import App from './App.tsx'
 import { initTelemetry } from './lib/telemetry'
 
@@ -12,11 +12,20 @@ console.log(
 const root = document.getElementById('root')
 if (!root) throw new Error('Root element #root not found in index.html')
 
-createRoot(root).render(
+const app = (
   <StrictMode>
     <App />
-  </StrictMode>,
+  </StrictMode>
 )
+
+// A built page arrives with its route already rendered into #root by
+// scripts/prerender.mjs, so React attaches to that markup instead of building
+// it again. `vite dev` serves the bare HTML entries with an empty root, and
+// there it renders from scratch as it always did — which is also what happens
+// if the prerender step is ever skipped, so that failure is a slower page, not
+// a broken one.
+if (root.hasChildNodes()) hydrateRoot(root, app)
+else createRoot(root).render(app)
 
 // Outside the React tree on purpose: StrictMode double-invokes effects in dev,
 // which would double-count the pageview. Never let telemetry break the render.

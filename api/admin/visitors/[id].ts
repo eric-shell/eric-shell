@@ -77,60 +77,73 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
 
   try {
     const db = sql()
-    const visitorRows = (await db`
-      select id, first_seen_at, last_seen_at, user_agent, country, city,
-             region, timezone, location_override, client_timezone, language,
-             referrer, notes
-      from visitors
-      where id = ${id}
-    `) as Visitor[]
+    // One HTTP round trip, not seven. Every awaited statement on the Neon HTTP
+    // driver is its own request, and these ran back to back: opening a drawer
+    // waited on seven sequential trips for seven statements that do not depend
+    // on one another. `transaction` posts them together and returns the results
+    // in order — the same reasoning as the pageview batch in api/track.ts.
+    //
+    // The existence check rides along rather than going first: asking for six
+    // result sets about a visitor who turns out not to exist costs nothing
+    // worth a second round trip to avoid.
+    const [visitorRows, messages, submissions, eventRows, clearEvents, sessions, pageViews] = (await db.transaction([
+      db`
+        select id, first_seen_at, last_seen_at, user_agent, country, city,
+               region, timezone, location_override, client_timezone, language,
+               referrer, notes
+        from visitors
+        where id = ${id}
+      `,
+      db`
+        select id, role, content, created_at
+        from chat_messages
+        where visitor_id = ${id}
+        order by created_at asc, id asc
+      `,
+      db`
+        select id, name, email, message, created_at
+        from contact_submissions
+        where visitor_id = ${id}
+        order by created_at desc
+      `,
+      db`
+        select type, count(*)::int as count
+        from visitor_events
+        where visitor_id = ${id}
+        group by type
+      `,
+      db`
+        select created_at
+        from visitor_events
+        where visitor_id = ${id} and type = 'chat_cleared'
+        order by created_at asc
+      `,
+      db`
+        select s.id, s.started_at, s.last_beat_at, s.engaged_ms, s.max_scroll_pct,
+               s.entry_path, s.referrer, s.viewport_w, s.viewport_h, s.screen_w, s.screen_h,
+               s.utm_source, s.utm_medium, s.utm_campaign,
+               (select count(*) from page_views p where p.session_id = s.id)::int as page_view_count
+        from visitor_sessions s
+        where s.visitor_id = ${id}
+        order by s.started_at desc
+        limit 100
+      `,
+      db`
+        select id, session_id, path, referrer, created_at
+        from page_views
+        where visitor_id = ${id}
+        order by created_at desc
+        limit 500
+      `,
+    ])) as unknown as [
+      Visitor[], ChatMessage[], ContactSubmission[], { type: string; count: number }[],
+      { created_at: string }[], VisitorSession[], PageView[],
+    ]
     if (visitorRows.length === 0) {
       res.status(404).json({ error: 'Not found' })
       return
     }
-
-    const messages = (await db`
-      select id, role, content, created_at
-      from chat_messages
-      where visitor_id = ${id}
-      order by created_at asc, id asc
-    `) as ChatMessage[]
-    const submissions = (await db`
-      select id, name, email, message, created_at
-      from contact_submissions
-      where visitor_id = ${id}
-      order by created_at desc
-    `) as ContactSubmission[]
-    const eventRows = (await db`
-      select type, count(*)::int as count
-      from visitor_events
-      where visitor_id = ${id}
-      group by type
-    `) as { type: string; count: number }[]
     const events = Object.fromEntries(eventRows.map(r => [r.type, r.count]))
-    const clearEvents = (await db`
-      select created_at
-      from visitor_events
-      where visitor_id = ${id} and type = 'chat_cleared'
-      order by created_at asc
-    `) as { created_at: string }[]
-    const sessions = (await db`
-      select s.id, s.started_at, s.last_beat_at, s.engaged_ms, s.max_scroll_pct,
-             s.entry_path, s.referrer, s.viewport_w, s.viewport_h, s.screen_w, s.screen_h,
-             s.utm_source, s.utm_medium, s.utm_campaign,
-             (select count(*) from page_views p where p.session_id = s.id)::int as page_view_count
-      from visitor_sessions s
-      where s.visitor_id = ${id}
-      order by s.started_at desc
-      limit 100
-    `) as VisitorSession[]
-    const pageViews = (await db`
-      select id, session_id, path, referrer, created_at
-      from page_views
-      where visitor_id = ${id}
-      order by created_at desc
-      limit 500
-    `) as PageView[]
 
     const payload: VisitorDetailPayload = {
       visitor: visitorRows[0],
