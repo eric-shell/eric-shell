@@ -27,6 +27,7 @@ export default function Dropdown({
   const [open, setOpen] = useState(false)
   const [focusedIndex, setFocusedIndex] = useState(-1)
   const ref = useRef<HTMLDivElement>(null)
+  const triggerRef = useRef<HTMLButtonElement>(null)
   const listRef = useRef<HTMLUListElement>(null)
   const [coords, setCoords] = useState<{ top: number; left: number; minWidth: number } | null>(null)
   const listboxId = useId()
@@ -65,6 +66,10 @@ export default function Dropdown({
     if (!opt) return
     onChange(opt.value)
     setOpen(false)
+    // The list unmounts on close. Whatever had focus inside it is gone, and
+    // the browser's answer to that is to drop focus on <body>, which leaves the
+    // keyboard dead until the next click. See the list's `onMouseDown` too.
+    triggerRef.current?.focus()
   }
 
   function handleKeyDown(e: React.KeyboardEvent) {
@@ -112,6 +117,7 @@ export default function Dropdown({
   return (
     <div ref={ref} className={`relative inline-block ${className}`} onKeyDown={handleKeyDown}>
       <Button
+        ref={triggerRef}
         type="button"
         variant="primary"
         size="md"
@@ -138,6 +144,12 @@ export default function Dropdown({
           id={listboxId}
           role="listbox"
           tabIndex={-1}
+          // Focus never moves into the list: the trigger keeps it and points at
+          // the active option with `aria-activedescendant`, which is what the
+          // keyboard handling above assumes. A mouse press would otherwise
+          // focus the option being clicked, and that option is about to
+          // unmount. Same fix MultiSelect carries, for the same bug.
+          onMouseDown={(e) => e.preventDefault()}
           style={{ top: coords.top, left: coords.left, minWidth: coords.minWidth }}
           className="fixed z-[9999] overflow-hidden rounded-lg border border-blue-950/10 bg-white shadow-lg"
         >

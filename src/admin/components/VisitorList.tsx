@@ -1,4 +1,4 @@
-import { Fragment, type ReactNode, type RefObject, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { Fragment, type ReactNode, type RefObject, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react'
 import {
   ArrowDownWideNarrow, ArrowUpNarrowWide, ChevronDown, ChevronLeft,
   ChevronRight, ChevronUp, MailCheck, MessageSquare, Pencil, StickyNote,
@@ -6,6 +6,7 @@ import {
 import VisitorDetail from './VisitorDetail'
 import type { VisitorEdits } from '../hooks/useVisitorDetail'
 import { detailStamp } from '../lib/detailCache'
+import { clearUnsaved, confirmDiscard, setUnsaved } from '../lib/unsavedEdits'
 import { Button } from '../../components/ui'
 import { twMerge } from 'tailwind-merge'
 import type { VisitorSummary } from '@/../api/_lib/types'
@@ -75,6 +76,14 @@ interface VisitorListProps {
    * paging simply doesn't scroll, which is the harmless direction to fail.
    */
   scrollTargetRef?: RefObject<HTMLElement | null>
+  /**
+   * Changes when the result set was narrowed or widened ON PURPOSE — search,
+   * timeframe, a filter chip. That is the only thing that sends the pager back
+   * to page 1. `visitors` cannot be used to tell: its identity also changes on
+   * every background poll, and treating a poll as a new query is what used to
+   * throw the reader off page 2 every two minutes.
+   */
+  resetKey?: string
 }
 
 /**
@@ -432,7 +441,7 @@ function MobileList({
   isNew: (v: VisitorSummary) => boolean
   onVisitorDeleted?: (id: string) => void
   onSaved: (id: string, edits: VisitorEdits) => void
-  onDirtyChange: (dirty: boolean) => void
+  onDirtyChange: (id: string, dirty: boolean) => void
 }) {
   return (
     <div className="md:hidden">
@@ -546,8 +555,29 @@ function MobileList({
  * again: these queries say *where* the sets change, the column list says *what*
  * is in each one, and only the breakpoints belong here.
  */
+const MD = '(min-width: 768px)'
 const LG = '(min-width: 1024px)'
 const XL = '(min-width: 1280px)'
+
+function subscribeToTableLayout(onChange: () => void) {
+  const query = window.matchMedia(MD)
+  query.addEventListener('change', onChange)
+  return () => query.removeEventListener('change', onChange)
+}
+
+/**
+ * Whether the table (true) or the phone cards (false) is the layout on screen.
+ *
+ * Both used to render always, with CSS hiding one. That is fine for rows and
+ * wrong for the drawer: each layout mounts its own `VisitorDetail` for the open
+ * row, both miss the cache in the same commit, and every uncached open paid for
+ * two function invocations and two Neon round trips to show one panel. It also
+ * classified and rendered every row twice. Same breakpoint as the `md:` classes
+ * the two wrappers still carry, so the JS and the CSS cannot disagree.
+ */
+function useTableLayout() {
+  return useSyncExternalStore(subscribeToTableLayout, () => window.matchMedia(MD).matches)
+}
 
 function readColumnCount() {
   if (typeof window === 'undefined') return visibleColumns('xl').length
@@ -569,17 +599,19 @@ function useColumnCount() {
   return count
 }
 
-export default function VisitorList({ visitors, bursts, newSince, onVisitorDeleted, scrollTargetRef }: VisitorListProps) {
+export default function VisitorList({ visitors, bursts, newSince, onVisitorDeleted, scrollTargetRef, resetKey }: VisitorListProps) {
   const [selectedId, setSelectedId] = useState<string | null>(
     () => new URLSearchParams(window.location.search).get('v')
   )
+  // The page the pager was last left on. NOT necessarily the page on screen —
+  // see `currentPage`, which is what everything below renders from.
   const [page, setPage] = useState(1)
   const columnCount = useColumnCount()
+  const tableLayout = useTableLayout()
   // The row that was just closed. It stays rendered for COLLAPSE_MS so the
   // collapse can play; without it, clicking to close would unmount the panel
   // instantly and there would be nothing left to animate.
   const [closingId, setClosingId] = useState<string | null>(null)
-  const didRestore = useRef(false)
   /** Set by `goToPage` so the layout effect below scrolls only for page turns. */
   const pendingScrollRef = useRef(false)
   // Locally applied edits, so the Location cell and the notes marker update on
@@ -623,14 +655,42 @@ export default function VisitorList({ visitors, bursts, newSince, onVisitorDelet
   )
 
   /**
-   * Whether the open drawer is holding edits that haven't been saved.
+   * The page on screen: whichever one holds the open row, else where the pager
+   * was left.
    *
-   * A ref, not state: nothing renders from it, and it is written by a child
-   * effect on every keystroke in Notes. As state that would re-render the whole
-   * table — every row, every classification — while someone is typing.
+   * An open drawer is rendered inside its row, so it only exists while that row
+   * is on the current page — and the rows move underneath it. A poll brings in
+   * newer visitors and pushes it across a page boundary; a sort click reorders
+   * everything. Each of those used to unmount the drawer, and whatever was typed
+   * into Notes went with it, unasked. Following the row means the only things
+   * that close a drawer are the ones that say so. It is also what lands a `?v=`
+   * deep link on the right page.
+   *
+   * Derived during render rather than kept in step by an effect: an effect runs
+   * after the commit, and by then a drawer whose row left the page has already
+   * unmounted and taken its text with it.
    */
-  const dirtyRef = useRef(false)
-  const setDirty = useCallback((d: boolean) => { dirtyRef.current = d }, [])
+  const totalPages = Math.max(1, Math.ceil(sorted.length / PAGE_SIZE))
+  const openIndex = selectedId !== null ? sorted.findIndex(v => v.id === selectedId) : -1
+
+  // Both of these adjust state while rendering instead of in an effect, which
+  // is React's own pattern for state that depends on a prop: the correction
+  // lands before anything paints, rather than one frame after.
+  //
+  // Drop a selection the rows no longer contain — deleted, or filtered out — so
+  // `?v=` never names a visitor that isn't on screen.
+  if (selectedId !== null && openIndex === -1) setSelectedId(null)
+  // A deliberate change of result set goes back to page 1, for the same reason
+  // a sort does. Keyed on `resetKey` and NOT on `visitors`: see the prop.
+  const [seenResetKey, setSeenResetKey] = useState(resetKey)
+  if (seenResetKey !== resetKey) {
+    setSeenResetKey(resetKey)
+    setPage(1)
+  }
+  // Clamped, because a poll or a delete can leave `page` past the last page.
+  const currentPage = openIndex !== -1
+    ? Math.floor(openIndex / PAGE_SIZE) + 1
+    : Math.min(page, totalPages)
 
   /**
    * Open a row, close one, or swap between two.
@@ -639,33 +699,27 @@ export default function VisitorList({ visitors, bursts, newSince, onVisitorDelet
    * re-open of a row still animating out reclaims it immediately — otherwise it
    * would be mounted twice, once opening and once fading away.
    *
-   * Every close path funnels through here — the drawer's X, a click on the open
-   * row, a click on a different row, and Escape — which is why the unsaved-edits
-   * guard lives here and not in the drawer. `useVisitorDetail` already refuses
-   * to let a background poll overwrite what you typed into Notes; this is the
-   * other half, and the one that was actually costing work.
+   * Every close path this component owns funnels through here — the drawer's X,
+   * a click on the open row, a click on a different row, and Escape — which is
+   * why the unsaved-edits guard is applied here and not in the drawer. The flag
+   * itself lives in `lib/unsavedEdits`, because the close paths this component
+   * does NOT own (search, the filters, sign-out) have to read it too.
    */
-  /**
-   * True if it's safe to throw away whatever is in Notes — either nothing is
-   * unsaved, or you said so.
-   *
-   * Extracted from `handleSelect` because paging is a close path too: it
-   * unmounts the drawer without going anywhere near this component's selection
-   * logic, so before this it was a silent fourth way to lose a note.
-   */
-  const confirmDiscard = useCallback(
-    () => !dirtyRef.current || confirm('You have unsaved changes to this visitor. Discard them?'),
-    [],
-  )
-
   const handleSelect = useCallback((id: string | null) => {
     // Read `selectedId` directly rather than from a setState updater: updaters
     // must be pure, and React would run this one twice in StrictMode.
     const leaving = selectedId !== null && selectedId !== id
     if (leaving && !confirmDiscard()) return
+    // Discarded, if there was anything. The outgoing drawer stays mounted for
+    // the collapse and would otherwise keep the flag up for those 300ms.
+    if (leaving) clearUnsaved()
     setClosingId(leaving ? selectedId : null)
     setSelectedId(id)
-  }, [selectedId, confirmDiscard])
+    // Park the pager on the page being looked at. Without this, closing a
+    // drawer that had been followed onto another page would snap back to
+    // wherever the pager was last left.
+    setPage(currentPage)
+  }, [selectedId, currentPage])
 
   // Escape closes the drawer — the first key anyone reaches for on a panel that
   // opened over a table. Routed through `handleSelect`, so it inherits the
@@ -686,7 +740,7 @@ export default function VisitorList({ visitors, bursts, newSince, onVisitorDelet
     // Before the drawer unmounts. The row and everything on it are gone, so
     // whatever was typed into Notes is no longer an unsaved edit — without this
     // the delete's own `onClose` would stop to ask about discarding it.
-    dirtyRef.current = false
+    clearUnsaved()
     onVisitorDeleted?.(id)
   }, [onVisitorDeleted])
 
@@ -699,43 +753,13 @@ export default function VisitorList({ visitors, bursts, newSince, onVisitorDelet
     return () => clearTimeout(timer)
   }, [closingId])
 
-  // Mirror of `sorted` for the restore-from-URL effect below. That effect must
-  // stay keyed on the `visitors` prop alone — depending on `sorted` would make
-  // it re-run on every sort click and on every saved location override, which
-  // would quietly reset pagination each time.
-  // `useRef(sorted)` seeds it for the mount pass; the effect keeps it current
-  // afterwards. Writing a ref during render is unsafe under concurrent
-  // rendering, and the lint rule is right to reject it.
-  const sortedRef = useRef(sorted)
-  useEffect(() => { sortedRef.current = sorted }, [sorted])
-
   const handleSort = useCallback((key: SortKey) => {
     setSort(current => nextSort(current, key))
     // Back to the top: you asked for a new ordering, so page 3 of the old one is
-    // meaningless. The selection survives in the URL either way.
+    // meaningless. An open drawer is the exception — the page follows its row
+    // (see `currentPage`), so re-sorting can't close it out from under you.
     setPage(1)
   }, [])
-
-  // On first visitors load: restore selectedId's page from URL. On subsequent
-  // changes (search filtering): reset to page 1, close detail if no longer visible.
-  useEffect(() => {
-    if (!didRestore.current) {
-      didRestore.current = true
-      setSelectedId(current => {
-        if (!current) return current
-        const idx = sortedRef.current.findIndex(v => v.id === current)
-        if (idx === -1) return null
-        setPage(Math.floor(idx / PAGE_SIZE) + 1)
-        return current
-      })
-    } else {
-      setPage(1)
-      setSelectedId(current => {
-        if (current && !visitors.some(v => v.id === current)) return null
-        return current
-      })
-    }
-  }, [visitors])
 
   // Sync selectedId to URL query param
   useEffect(() => {
@@ -772,12 +796,15 @@ export default function VisitorList({ visitors, bursts, newSince, onVisitorDelet
   const goToPage = useCallback((next: number) => {
     // A page turn unmounts the drawer, taking any half-written note with it.
     if (selectedId !== null && !confirmDiscard()) return
-    // The note is gone either way now. Without this the flag stays true and the
+    // The note is gone either way now. Without this the flag stays set and the
     // NEXT row you open prompts about an edit that no longer exists.
-    dirtyRef.current = false
+    clearUnsaved()
     pendingScrollRef.current = true
+    // Close it for real. The page follows an open row (see `currentPage`), so a
+    // selection left behind would spring the pager straight back to it.
+    setSelectedId(null)
     setPage(next)
-  }, [selectedId, confirmDiscard])
+  }, [selectedId])
 
   /**
    * Scroll only AFTER the new page's rows are in the DOM.
@@ -797,7 +824,7 @@ export default function VisitorList({ visitors, bursts, newSince, onVisitorDelet
    * `useLayoutEffect`, not `useEffect`: it runs after the DOM mutation but
    * before paint, so the scroll is never a visible frame late.
    *
-   * Keyed on `page` but gated behind a flag, because `setPage(1)` also fires for
+   * Keyed on the page but gated behind a flag, because `setPage(1)` also fires for
    * sort clicks and filter changes — and yanking the viewport when someone types
    * in the search box would be its own bug.
    */
@@ -805,12 +832,11 @@ export default function VisitorList({ visitors, bursts, newSince, onVisitorDelet
     if (!pendingScrollRef.current) return
     pendingScrollRef.current = false
     scrollTargetRef?.current?.scrollIntoView({ block: 'start' })
-  }, [page, scrollTargetRef])
+  }, [currentPage, scrollTargetRef])
 
-  const totalPages = Math.ceil(sorted.length / PAGE_SIZE)
-  const pageVisitors = sorted.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
-  const rangeStart = (page - 1) * PAGE_SIZE + 1
-  const rangeEnd = Math.min(page * PAGE_SIZE, sorted.length)
+  const pageVisitors = sorted.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE)
+  const rangeStart = (currentPage - 1) * PAGE_SIZE + 1
+  const rangeEnd = Math.min(currentPage * PAGE_SIZE, sorted.length)
 
   return (
     <div>
@@ -827,6 +853,7 @@ export default function VisitorList({ visitors, bursts, newSince, onVisitorDelet
           `lg`: Flags gets its column back. `xl`: the full eight.
           Nothing is dropped, only merged, and SortBar keeps the folded columns'
           sort keys reachable. */}
+      {tableLayout ? (
       <div className="hidden overflow-x-auto md:block">
       {/* Both min-widths went up 1rem with Flags' w-44 → w-48, deliberately.
           Location is the only flexible column, so widening a fixed one takes its
@@ -865,10 +892,42 @@ export default function VisitorList({ visitors, bursts, newSince, onVisitorDelet
                   onClick={() => handleSelect(isOpen ? null : v.id)}
                   className={twMerge(
                     'cursor-pointer border-b border-white/5 transition-colors',
+                    // The row lights up when the button inside it has keyboard
+                    // focus — that button is visually hidden, so this outline
+                    // is the only focus indicator there is. Inset, because a
+                    // table row clips an outline drawn outside its own box.
+                    'has-[:focus-visible]:outline-2 has-[:focus-visible]:-outline-offset-2 has-[:focus-visible]:outline-accent',
                     isOpen ? 'bg-black/[0.65]' : 'hover:bg-black/[0.15]'
                   )}
                 >
                   <td className="py-3 px-4">
+                    {/* The keyboard's way in. The row's click handler made the
+                        drawer mouse-only: a <tr> is not focusable and has no
+                        key handling, so nothing in this table could be opened
+                        without a pointer.
+
+                        A real button, hidden visually, rather than a tabIndex
+                        on the row: `aria-expanded` is not valid on a table row,
+                        and a button brings Enter, Space and the right role for
+                        free. And NOT a button wrapped around the id, which is
+                        the obvious version — text inside a <button> cannot be
+                        drag-selected in WebKit, and selecting the id to copy it
+                        is what this cell is for. */}
+                    <button
+                      type="button"
+                      // `select-none` so its label can never ride along in a
+                      // copied selection that starts at the edge of the cell.
+                      className="sr-only select-none"
+                      aria-expanded={isOpen}
+                      onClick={e => {
+                        // The row has the same handler; without this the click
+                        // bubbles to it and the drawer opens and shuts at once.
+                        e.stopPropagation()
+                        handleSelect(isOpen ? null : v.id)
+                      }}
+                    >
+                      Details for {v.contact_name || v.contact_email || `visitor ${v.id.slice(0, 8)}`}
+                    </button>
                     <VisitorIdValue v={v} isNew={isNew(v)} reserveDot={newSince != null} />
                     {/* Below `lg` the Flags column is folded away, so the badges
                         ride under the id — the same stacking the phone card uses. */}
@@ -919,7 +978,7 @@ export default function VisitorList({ visitors, bursts, newSince, onVisitorDelet
                             onClose={() => handleSelect(null)}
                             onDeleted={handleDeleted}
                             onSaved={handleSaved}
-                            onDirtyChange={setDirty}
+                            onDirtyChange={setUnsaved}
                           />
                         </div>
                       </DetailCollapse>
@@ -932,7 +991,7 @@ export default function VisitorList({ visitors, bursts, newSince, onVisitorDelet
         </tbody>
       </table>
       </div>
-
+      ) : (
       <MobileList
         rows={pageVisitors}
         bursts={bursts}
@@ -943,8 +1002,9 @@ export default function VisitorList({ visitors, bursts, newSince, onVisitorDelet
         isNew={isNew}
         onVisitorDeleted={handleDeleted}
         onSaved={handleSaved}
-        onDirtyChange={setDirty}
+        onDirtyChange={setUnsaved}
       />
+      )}
 
       {totalPages > 1 && (
         <div className="mt-4 flex items-center justify-between">
@@ -953,13 +1013,13 @@ export default function VisitorList({ visitors, bursts, newSince, onVisitorDelet
           </p>
           <div className="flex gap-1">
             <Button
-              variant="primary" size="sm" onClick={() => goToPage(page - 1)} disabled={page === 1}
+              variant="primary" size="sm" onClick={() => goToPage(currentPage - 1)} disabled={currentPage === 1}
               leftIcon={<ChevronLeft aria-hidden="true" />}
             >
               Prev
             </Button>
             <Button
-              variant="primary" size="sm" onClick={() => goToPage(page + 1)} disabled={page === totalPages}
+              variant="primary" size="sm" onClick={() => goToPage(currentPage + 1)} disabled={currentPage === totalPages}
               rightIcon={<ChevronRight aria-hidden="true" />}
             >
               Next

@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { ArrowRight, ArrowUpRight, CalendarArrowDown, CalendarArrowUp, ArrowDownAZ, ArrowUpZA, FileText, RotateCcw } from 'lucide-react'
-import { notes, repoUrl } from '@/data/notes'
+import { notes, repoUrl } from '@/data/notes-index'
 import { useFilterTelemetry } from '@/hooks'
 import { Backdrop, Button, CascadeGroup, CascadeItem, Container, Dropdown, Eyebrow, H1, MultiSelect, Panel, Pill } from '../../ui'
 import { formatNoteDate } from './formatDate'

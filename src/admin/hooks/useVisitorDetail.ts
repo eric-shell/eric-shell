@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { toast } from '../../components/ui'
 import { apiCall } from '../lib/api'
 import { dropDetail, readDetail, writeDetail } from '../lib/detailCache'
@@ -45,6 +45,11 @@ export function useVisitorDetail(id: string, stamp: string, { onClose, onDeleted
   const [locationOverride, setLocationOverride] = useState(cached?.visitor?.location_override ?? '')
   const [saving, setSaving] = useState(false)
   const [deleting, setDeleting] = useState(false)
+  // `apiCall` resolves null on any failure (401, 5xx, offline) after toasting.
+  // Without a state for that, the drawer had no way to stop showing a skeleton.
+  const [loadFailed, setLoadFailed] = useState(false)
+  // Bumped by `retryLoad` purely to re-run the fetch effect.
+  const [attempt, setAttempt] = useState(0)
 
   useEffect(() => {
     if (cached) return
@@ -52,14 +57,22 @@ export function useVisitorDetail(id: string, stamp: string, { onClose, onDeleted
     apiCall<VisitorDetailPayload>(`/api/admin/visitors/${id}`, undefined, {
       errorMessage: 'Failed to load visitor.',
     }).then(json => {
-      if (json && !cancelled) {
-        setData(json)
-        setNotes(json.visitor?.notes ?? '')
-        setLocationOverride(json.visitor?.location_override ?? '')
+      if (cancelled) return
+      if (!json) {
+        setLoadFailed(true)
+        return
       }
+      setData(json)
+      setNotes(json.visitor?.notes ?? '')
+      setLocationOverride(json.visitor?.location_override ?? '')
     })
     return () => { cancelled = true }
-  }, [id, cached])
+  }, [id, cached, attempt])
+
+  const retryLoad = useCallback(() => {
+    setLoadFailed(false)
+    setAttempt(n => n + 1)
+  }, [])
 
   // Mirror whatever is on screen into the cache, from one place: this covers
   // the fetch landing and the local merge after a save, and can't drift the way
@@ -128,6 +141,7 @@ export function useVisitorDetail(id: string, stamp: string, { onClose, onDeleted
     notes, setNotes,
     locationOverride, setLocationOverride,
     dirty,
+    loadFailed, retryLoad,
     saving, saveDetails,
     deleting, deleteVisitor,
   }

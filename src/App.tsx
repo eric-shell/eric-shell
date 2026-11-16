@@ -40,9 +40,7 @@ function ContactFallback() {
  */
 const NOTE_PATH = /^\/notes\/([a-z0-9-]+)(?:\.html)?$/
 
-function getRoute(): Route {
-  if (typeof window === 'undefined') return { kind: 'home' }
-  const path = window.location.pathname
+function getRoute(path: string): Route {
   // The `.html` forms are matched too. Each route is a real document
   // (resume.html / privacy.html / notes.html / notes/<slug>.html), and Vercel
   // will serve those paths directly as static files — so without this,
@@ -62,8 +60,17 @@ function getRoute(): Route {
   return { kind: 'home' }
 }
 
-export default function App() {
-  const route = getRoute()
+interface AppProps {
+  /**
+   * The route to render. Passed only by the build-time prerender
+   * (src/entry-server.tsx), which has no `window` to read; the browser leaves
+   * it out and the URL decides, as it always has.
+   */
+  pathname?: string
+}
+
+export default function App({ pathname }: AppProps) {
+  const route = getRoute(pathname ?? window.location.pathname)
 
   // Homepage only — the other routes are their own documents with their own
   // <title>, and cycling would overwrite it. See useTitleCycle.
@@ -91,7 +98,7 @@ export default function App() {
       >
         Skip to content
       </a>
-      <Header />
+      <Header isHome={route.kind === 'home'} />
       {route.kind === 'resume' ? (
         <Suspense fallback={null}><Resume /></Suspense>
       ) : route.kind === 'privacy' ? (

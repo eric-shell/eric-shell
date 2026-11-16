@@ -7,8 +7,10 @@
     "dev": "concurrently -n site,storybook -c cyan,magenta --kill-others-on-fail \"npm:dev:site\" \"npm:dev:storybook\"",
     "dev:site": "vercel dev",
     "dev:storybook": "storybook dev -p 6006 --no-open",
-    "build": "tsc -b && vite build",
+    "build": "tsc -b && vite build && node scripts/prerender.mjs",
     "lint": "eslint .",
+    "test": "vitest run",
+    "typecheck": "tsc -b",
     "preview": "vite preview",
     "images": "node scripts/generate-responsive-images.mjs",
     "lqip": "node scripts/generate-lqip.mjs",
@@ -32,7 +34,7 @@
     "@visx/scale": "^4.0.0",
     "@visx/shape": "^4.0.0",
     "@visx/tooltip": "^4.0.0",
-    "csv-parse": "^6.2.1",
+    "csv-parse": "^7.0.3",
     "groq-sdk": "^1.1.2",
     "lucide-react": "^1.8.0",
     "react": "^19.2.5",
@@ -44,8 +46,8 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.39.4",
-    "@storybook/addon-a11y": "^10.3.5",
-    "@storybook/addon-docs": "^10.3.5",
+    "@storybook/addon-a11y": "^10.6.7",
+    "@storybook/addon-docs": "^10.6.7",
     "@storybook/react": "^10.3.5",
     "@storybook/react-vite": "^10.3.5",
     "@tailwindcss/vite": "^4.2.4",
@@ -60,11 +62,12 @@
     "eslint-plugin-react-refresh": "^0.5.2",
     "globals": "^17.5.0",
     "playwright": "^1.61.1",
-    "sharp": "^0.34.5",
+    "sharp": "^0.35.5",
     "storybook": "^10.3.5",
     "tailwindcss": "^4.2.4",
     "typescript": "~6.0.2",
     "typescript-eslint": "^8.58.2",
-    "vite": "^8.0.9"
+    "vite": "^8.0.9",
+    "vitest": "^5.1.0"
   }
 }

@@ -15,6 +15,24 @@ const STORAGE_KEY = 'eric.sh:vid'
  */
 let cached: string | null = null
 
+/**
+ * The visitor id this browser already has, or null. Never creates one.
+ *
+ * For the privacy page, which shows the id so a reader can ask for their record
+ * to be deleted. `getVisitorId` would mint and store one for a reader who had
+ * never been assigned an id, which is a strange thing for the page that
+ * describes what this site stores to do on its own.
+ */
+export function peekVisitorId(): string | null {
+  if (cached) return cached
+  if (typeof window === 'undefined') return null
+  try {
+    return window.localStorage.getItem(STORAGE_KEY)
+  } catch {
+    return null
+  }
+}
+
 export function getVisitorId(): string {
   if (cached) return cached
   if (typeof window === 'undefined') return ''

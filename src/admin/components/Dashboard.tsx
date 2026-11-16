@@ -14,6 +14,7 @@ import { formatDuration } from '../lib/dateFormat'
 import { glowFor, magnitudeStep } from '../lib/chartTheme'
 import { detectProxyBursts, isAutomated } from '../lib/classify'
 import { isNewSince, useLastVisit } from '../lib/lastVisit'
+import { clearUnsaved, confirmDiscard, unsavedVisitorId } from '../lib/unsavedEdits'
 import { DEFAULT_TIMEFRAME, isTimeframe, withinTimeframe, type Timeframe } from '../lib/timeframe'
 import type { StatDay, VisitorListPayload, VisitorSummary } from '@/../api/_lib/types'
 import type { InsightsPayload } from '@/../api/_lib/insights-types'
@@ -230,10 +231,32 @@ export default function Dashboard({ onLogout }: DashboardProps) {
   // DELETE on the session resource, which is also what the route guard GETs.
   // Failure is swallowed on purpose: the local sign-out must happen either way,
   // or a network blip would leave you looking at a dashboard you asked to leave.
+  //
+  // Asked BEFORE the DELETE, not left to the `beforeunload` guard below: by the
+  // time that fires the session is already gone, and "stay on the page" would
+  // strand you on a dashboard where the note can no longer be saved.
   async function logout() {
+    if (!confirmDiscard()) return
+    clearUnsaved()
     try { await fetch('/api/admin/session', { method: 'DELETE' }) } catch { /* ignore */ }
     onLogout()
   }
+
+  // Every way of leaving the document that isn't a button here: reload, closing
+  // the tab, a footer link, and the redirect to /login when a poll comes back
+  // 401. None of them can be intercepted with a prompt of our own, so the
+  // browser's is the only guard there is. Checked at event time — registering
+  // it unconditionally is fine because it does nothing unless there are edits.
+  useEffect(() => {
+    const onBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (unsavedVisitorId() === null) return
+      e.preventDefault()
+      // Still what Safari and older Chromium key off.
+      e.returnValue = true
+    }
+    window.addEventListener('beforeunload', onBeforeUnload)
+    return () => window.removeEventListener('beforeunload', onBeforeUnload)
+  }, [])
 
   const handleVisitorDeleted = useCallback((deletedId: string) => {
     setVisitors(prev => prev?.filter(v => v.id !== deletedId) ?? null)
@@ -269,6 +292,25 @@ export default function Dashboard({ onLogout }: DashboardProps) {
   const afterBots = hideBots && inWindow ? inWindow.filter(v => !isAutomated(v, bursts)) : inWindow
   const quietCount = afterBots?.filter(v => !hasEngaged(v)).length ?? 0
   const baseVisitors = engagedOnly && afterBots ? afterBots.filter(hasEngaged) : afterBots
+
+  /**
+   * May the table's filters change to these settings?
+   *
+   * A filter that drops the open row takes its drawer with it, so if that
+   * drawer has unsaved edits this asks first. It checks the one row against the
+   * proposed settings rather than prompting on every change: widening the
+   * timeframe, or hiding bots while editing a note on a person, closes nothing.
+   * Mirrors the three steps above — keep them in step.
+   */
+  const mayFilter = (tf: Timeframe, bots: boolean, engaged: boolean): boolean => {
+    const editing = visitors?.find(v => v.id === unsavedVisitorId())
+    if (!editing) return true
+    const stays =
+      withinTimeframe([editing], tf).length === 1 &&
+      !(bots && isAutomated(editing, bursts)) &&
+      !(engaged && !hasEngaged(editing))
+    return stays || confirmDiscard()
+  }
 
   // Counted over the rows actually on screen, so the readout can never promise
   // dots the filters have taken away.
@@ -420,13 +462,13 @@ export default function Dashboard({ onLogout }: DashboardProps) {
         loading={loading}
         hasAnyVisitors={visitors !== null && visitors.length > 0}
         timeframe={timeframe}
-        onTimeframeChange={setTimeframe}
+        onTimeframeChange={tf => { if (mayFilter(tf, hideBots, engagedOnly)) setTimeframe(tf) }}
         hideBots={hideBots}
         botCount={botCount}
-        onToggleBots={() => setHideBots(h => !h)}
+        onToggleBots={() => { if (mayFilter(timeframe, !hideBots, engagedOnly)) setHideBots(!hideBots) }}
         engagedOnly={engagedOnly}
         quietCount={quietCount}
-        onToggleEngaged={() => setEngagedOnly(e => !e)}
+        onToggleEngaged={() => { if (mayFilter(timeframe, hideBots, !engagedOnly)) setEngagedOnly(!engagedOnly) }}
         onVisitorDeleted={handleVisitorDeleted}
       />
     </Container>

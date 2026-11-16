@@ -79,6 +79,8 @@ api/                       # Vercel serverless functions (auto-discovered)
 └── track.ts               # page views + session engagement beacon (rate-limited)
 
 db/schema.sql              # Postgres schema (Neon) — apply manually, see /crm
+
+tests/                     # Vitest — house rules for notes, chat validation, visitor helpers, the CRM unsaved-edits guard
 ```
 
 Path alias: `@/*` → `src/*` is configured in `vite.config.ts` and `tsconfig.app.json`. Use `@/data`, `@/hooks`, `@/lib/...` rather than long `../../../` chains.
@@ -94,12 +96,12 @@ Path alias: `@/*` → `src/*` is configured in `vite.config.ts` and `tsconfig.ap
   - `shape` (`pill` | `square`, default `pill`) — `pill` for text buttons; `square` for icon-only buttons.
   - `as="span"` renders the button's appearance on a non-interactive `<span>`, for a button inside something already clickable (a whole-card `<a>`, where nesting a button or link is invalid HTML). It exists so those call sites can still use a variant instead of hand-rolling surface classes. Never for something clickable in its own right.
 - `Panel` is a div-only wrapping surface (default `variant="secondary"`). For clickable cards, wrap `<Panel>` in an `<a>` — it is not polymorphic. `Card` (in `components/ui`) already packages this pattern for image/title/description/tag-pill cards — prefer it over hand-rolling a new one.
-- `Dropdown` is light-theme by default; swap border/bg classes via `className` if needed in a dark section.
+- `Dropdown` is light-theme by default; swap border/bg classes via `className` if needed in a dark section. Focus never enters its list: the trigger keeps it and uses `aria-activedescendant`, the list's `onMouseDown` prevents the default, and `selectAt` refocuses the trigger. Without those a mouse pick focuses an option that is about to unmount and drops focus on `<body>` (the same bug `MultiSelect` documents).
 - `MultiSelect` is the multi-value form of `Dropdown` — same trigger, portal, and keyboard model, but selection is a set and choosing an option keeps the panel open. Used by the `Work` grid and the notes index for tag filtering. Its option list is **derived** from the data in both places, never hand-listed. Run `/ui` before changing its focus handling, drop-up placement, or scroll re-measurement — each of those fixes a specific bug and the reasons are recorded there.
 - `Pill` is a tag/filter chip. Set `active` for filled state, `onClick` for interactive use (adds `aria-pressed`), `onDismiss` for a dismissible badge with X icon. Handles `e.preventDefault()` + `e.stopPropagation()` internally — safe inside card links.
 - `CascadeGroup` wraps a group of elements and fires when it enters the viewport (`react-intersection-observer`, `triggerOnce: true`). Use `mountOnly` for above-the-fold content (Header, Hero) — animates on mount instead of scroll. Accepts `threshold` (default `0.1`) and `stagger` (default `75ms`). Use `as` to render as any HTML element (e.g. `as="ul"`).
 - `CascadeItem` wraps a single item inside a `CascadeGroup`. Reads `inView` from context and fades up (`opacity-0 translate-y-[6px]` → visible) with a delay of `Math.min(index, 7) * stagger`. Use `as="li"` inside `<ul>` grids to preserve semantic HTML. The stagger index caps at 7 so long lists don't wait seconds.
-- `Markdown` is the **only** place react-markdown may be imported as a value. It carries micromark + hast (~35KB gzipped) and used to sit in the shared `ui` chunk that every homepage visit downloads before first paint; splitting it took that chunk from 61KB gzipped to 28KB. A plain `import ReactMarkdown from 'react-markdown'` anywhere else puts it straight back. Render with `<Markdown components={…}>{rawText}</Markdown>` — it applies `linkifyEmail` itself, so callers must not pre-apply it. `prefetchMarkdown()` (in `lib/markdown.tsx`) warms the chunk on idle; `Chat` already calls it.
+- `Markdown` is the only component that renders react-markdown, and `loadMarkdown()` in [src/lib/markdown.tsx](src/lib/markdown.tsx) holds the **only** value import of it (a dynamic one). It carries micromark + hast (~35KB gzipped) and used to sit in the shared `ui` chunk that every homepage visit downloads before first paint; splitting it took that chunk from 61KB gzipped to 28KB. A plain `import ReactMarkdown from 'react-markdown'` anywhere puts it straight back. Render with `<Markdown components={…}>{rawText}</Markdown>` — it applies `linkifyEmail` itself, so callers must not pre-apply it. `prefetchMarkdown()` warms the chunk on idle; `Chat` already calls it. **`Markdown` reads the module with `use(loadMarkdown())`, not `React.lazy`, and that is deliberate** — a lazy component cannot be loaded ahead of its first render, and the prerendered note pages need the parser settled before the article hydrates (see Prerendering).
 - Import from the barrel: `import { Button, H2, Eyebrow, Pill, CascadeGroup, CascadeItem } from '../ui'`
 
 ### CSS Utilities
@@ -121,20 +123,27 @@ Pattern:
 3. Card/item grids: use `CascadeGroup as="ul"` on the grid container and `CascadeItem as="li" index={i}` per card.
 4. Above-the-fold (Header, Hero): use `CascadeGroup mountOnly` instead of scroll trigger.
 5. Threshold guidance: `0.15` for headers, `0.1` for body copy, `0.05` for dense grids.
+6. `threshold` is a fraction of the *group*, so a tall group can ask for more than a screen holds and never fire (the notes list, 12,700px on a phone, was invisible on a 548px viewport). `CascadeGroup` measures itself and caps the ask at a quarter of the viewport (`MAX_VIEWPORT_SHARE`) — don't remove the cap, and don't work around it with a per-section `threshold={0}`.
 
 ## Development
 
 ```bash
 npm run dev       # vercel dev + storybook in parallel; site at http://localhost:3000, storybook at :6006
 npm run dev:site  # vercel dev only (site at http://localhost:3000) — runs Vite under the hood and serves /api/* serverless functions
-npm run build     # production build → dist/
+npm run build     # production build → dist/, then prerenders every public route into its HTML (scripts/prerender.mjs)
 npm run preview   # preview production build locally
-npm run lint      # ESLint
+npm run lint      # ESLint (src/, api/, scripts/, tests/)
+npm run typecheck # tsc -b across the app, api, node and test projects
+npm test          # Vitest, tests/ only — see below
 npm run lqip      # regenerate src/data/lqip.ts blur-up placeholders (run after `npm run images` adds Instagram posts)
 npm run seed:crm  # seed fake CRM visitors/sessions/page views (see /crm); :clean removes, :status counts
 npm run check:crm-ui -- http://localhost:3000 ./out   # screenshot the CRM at 4 widths, report overflow (no DB writes)
 npm run shots     # capture note screenshots into assets-source/notes/ (needs a server; see /note)
 ```
+
+- **Tests live in `tests/`, never under `api/`.** Vercel turns every file under `api/` into a function, and the project is one below the 12-function cap: a test file there fails the next production deploy. They run against a separate `vitest.config.ts` because evaluating `vite.config.ts` writes the notes documents and the sitemap. `tests/notes.test.ts` enforces the `/notes` house rules (no em dashes, slug shape, ISO dates, commit SHAs, summary length), so a failing run there usually means an entry, not the test, needs fixing.
+- **CI** ([.github/workflows/ci.yml](.github/workflows/ci.yml)) runs lint, typecheck, test and build on every push to `main` and every PR, with no secrets. Node is pinned by `.nvmrc`.
+- [.env.example](.env.example) is the reference for every environment variable and what breaks without each one. Keep it in step when a function reads a new one.
 
 Env vars for `vercel dev` come from the linked Vercel project (cloud), not `.env.local`. Use `npx vercel env add NAME [development|preview|production]` to add new keys per-environment.
 
@@ -184,6 +193,18 @@ Home section order in `App.tsx`:
 - **Adding a `VisitorEventType` is a three-file change plus a manual migration.** `src/lib/telemetry.ts` (the union), `api/events.ts` (`VALID_TYPES`), and the `type` check constraint on `visitor_events` in [db/schema.sql](db/schema.sql) — and the constraint has to be widened by hand in the Neon SQL editor, because `create table if not exists` will not alter a table that already exists. Until that ALTER runs, `/api/events` accepts the event and the insert is swallowed by its best-effort catch: **the event silently vanishes.** The ALTER is kept ready to paste at the bottom of schema.sql.
 - **The logo easter-egg sound is constructed on first play, not on import.** It was a module-scope `new Audio()` pointing at a 750KB WAV — the largest asset on the page, downloaded on every route, for a joke that fires on clicking an already-active nav item. Now 16KB AAC, fetched on first trigger. Don't move the construction back to module scope.
 
+## Prerendering
+
+Every public document is rendered to HTML at build time and hydrated in the browser. `npm run build` ends with [scripts/prerender.mjs](scripts/prerender.mjs), which builds the app a second time for Node from [src/entry-server.tsx](src/entry-server.tsx), renders each route, and writes the markup into that document's `#root`. Before this each document shipped an empty `<div id="root">`: the per-route head tags described content a non-JS crawler never received, and the hero image could not start downloading until React had rendered an `<img>` (1,328ms on a throttled phone; 185ms now).
+
+- **[src/main.tsx](src/main.tsx) hydrates when `#root` has children and client-renders when it is empty.** `vite dev` serves the bare entries, so dev is unchanged — and a build whose prerender step did not run degrades to the old behaviour rather than breaking. `dashboard.html` is never prerendered.
+- **The first client render must produce the markup the build produced.** Anything that depends on the browser (localStorage, `matchMedia`, feature detection, the clock) must not be read during render. Gate it on `useHydrated()` ([src/lib/hydration.ts](src/lib/hydration.ts)), which is false on the server and during hydration and true after; **never on `typeof window`**, which gives the server one answer and the hydrating client another. `Chat`, `Toaster` and the particle canvases are client-only for this reason, and the Hero holds the chat's place with a box of `CHAT_RESTING_HEIGHT` (430px, measured — re-measure if the chat's resting layout changes).
+- **`App` takes a `pathname` prop and passes `isHome` to `Header`**, because the prerender has no `window.location`. Don't read `window` at render time in anything a public route renders.
+- **A Suspense boundary must not sit under a `CascadeGroup` unless everything inside it is already loaded.** `CascadeGroup` is a context provider whose value changes when it scrolls into view, and React answers a context change above a not-yet-hydrated boundary by hydrating it on the spot; if anything inside still suspends, it discards the prerendered HTML and shows the fallback. On a note page that was the article collapsing to one paragraph of raw markdown and re-expanding: CLS 0.47. `NoteArticle` ([Note.tsx](src/components/sections/Notes/Note.tsx)) is the worked example — the boundary wraps the group, and it waits on `loadMarkdown()` before rendering. For the same reason, don't let a component re-render past a boundary it prerendered.
+- **`entry-server.tsx` renders until nothing suspends, with `progressiveChunkSize` maxed.** Either one missing and React emits the section as a hidden `<div>` plus an inline script that moves it into place, which is invisible without JavaScript. The loop throws if it does not settle.
+- **`CascadeItem` starts at `opacity: 0` and is revealed from JS**, so the prerender script adds a `<noscript>` style that reveals it. Without it a no-JS visitor would get the whole page and see none of it.
+- **A prerender failure fails the build**, deliberately. Check with a throttled run, not just a fast local one: the article bug above was invisible until the network was slowed.
+
 ## Notes (`/notes`)
 
 A changelog of engineering decisions made on this site. Entries live in [src/data/notes.ts](src/data/notes.ts); `/notes` is the index, `/notes/<slug>` is a single entry.
@@ -191,6 +212,7 @@ A changelog of engineering decisions made on this site. Entries live in [src/dat
 - **A note is for an interesting or substantial change, not for every change.** Run `/note` before writing one. The bar is whether a stranger who works on the web would get something out of it: a measurement that contradicted an assumption, a wrong turn worth describing, a constraint that turned out to be arithmetic rather than taste, a fix whose obvious version made things worse. Routine work does not qualify, and a section padded with filler stops being worth reading. **Don't add an entry just because a task finished** — ask if it isn't clear.
 - **Voice: personal, collected, technical where the detail earns it.** First person, past tense, specific numbers over adjectives, and name what went wrong before what fixed it. Beyond the em dash ban below, the things that make prose read as machine-written are worth avoiding too: tricolons in every sentence, "it's not just X, it's Y", restating the heading in the first line of the paragraph, and summarising at the end what was just said.
 - **Most notes about something visual should carry a screenshot.** `npm run shots` drives Playwright from [scripts/notes-shots.config.mjs](scripts/notes-shots.config.mjs) into `assets-source/notes/`, and `npm run images` globs that directory to emit the variants into `public/note-shots/`. Reference one from a body as `![Alt](/note-shots/<name> "Caption.")` — a base path with no width and no extension; `noteMdComponents` derives the `<picture>`, the srcSets and the `<figcaption>`. **Alt and caption do different jobs and must not be the same sentence**: alt is what the image shows for someone who cannot see it, the caption is what it means. If a shot is of fixture data rather than real traffic, the caption has to say so.
+- **Nothing under `src/` may import a value from `notes.ts`** (ESLint enforces it). It is one array holding every body, so any client chunk that imports it ships all of them — the index and every article were each downloading the full set, 36KB gzipped. The browser reads [src/data/notes-index.ts](src/data/notes-index.ts) instead: entries minus `body`, plus `noteBody(slug)`, which fetches that one body as its own chunk. Both come from the `notesData()` plugin in `vite.config.ts`, generated from the same array, so the workflow below is unchanged.
 - **Adding an entry to `notes.ts` is the entire workflow.** Everything the five-item route checklist above demands is derived from that array by `notesEntries()` in `vite.config.ts`: the HTML document, the Vite input, and the `sitemap.xml` line. The `vercel.json` rewrite (`/notes/:slug`) and the `getRoute()` case are written once and cover every slug. **Don't hand-write a document under `notes/`** — it is gitignored and will be overwritten.
 - **`notes/*.html` and `public/sitemap.xml` are generated and gitignored.** They are derived from `notes.ts`; a committed copy is a second source of truth waiting to disagree with the first. `sitemap.xml` therefore no longer exists in the repo — it is written at config-evaluation time, which is why both `vite dev` and `vite build` see it. Static routes carry a hand-declared `lastmod` in `STATIC_ROUTES`; `/notes` derives its own from the newest entry.
 - **Generation runs while the config is evaluated, not in a plugin hook** — `rollupOptions.input` resolves real paths from disk before any hook fires. `writeIfChanged` exists because rewriting identical bytes on every dev restart bumps mtimes and produces a full-reload loop.
@@ -229,7 +251,8 @@ A password-gated admin page at `/dashboard` (sign-in at `/login`, both served fr
 - **`api/` is one function below the Hobby plan's 12-function cap.** Adding a file under `api/` fails the production deploy *after* a green build, with the reason visible only in the Vercel REST API. Free a slot first — run `/crm`.
 - **`page_views` / `visitor_sessions` are pruned on a schedule** — [api/cron/prune.ts](api/cron/prune.ts), daily at 04:00 UTC via the `crons` block in `vercel.json`, 6-month window matching [db/schema.sql](db/schema.sql). Requires `CRON_SECRET`; **absent → it 503s and never runs**, deliberately, since the endpoint deletes data.
 - **The contact notification email links to the visitor's CRM row**, which is why `contact.ts` resolves `upsertVisitor()` before the Resend send. Don't upsert twice, and keep the link's try/catch — a DB outage must cost the link, not the email.
-- **Every close path for the visitor drawer is guarded against unsaved Notes** (`handleSelect` in VisitorList, fed by `onDirtyChange`). Escape closes it and inherits the same guard. New close paths must route through `handleSelect`.
+- **Every close path for the visitor drawer is guarded against unsaved Notes.** The flag lives in [src/admin/lib/unsavedEdits.ts](src/admin/lib/unsavedEdits.ts) (module scope, set per drawer by `onDirtyChange`), because the close paths span three components: `handleSelect` / `goToPage` in VisitorList (X, Escape, another row, a page turn), `changeQuery` in VisitorsPanel (a search that stops matching the open row), `mayFilter` in Dashboard (timeframe and the two chips), `logout`, and a `beforeunload` listener for reload / tab close / the 401 redirect. A new way of removing the open row must call `confirmDiscard()` first.
+- **The visitor list's page follows the open row** (`currentPage` in VisitorList, derived during render). The drawer is rendered inside its row, so a row that leaves the page takes the drawer and its unsaved text with it; a poll or a sort used to do exactly that. Only `resetKey` (search / timeframe / chips) sends the pager to page 1 — never the `visitors` prop, whose identity changes on every poll.
 
 ## Images
 
@@ -243,6 +266,8 @@ A password-gated admin page at `/dashboard` (sign-in at `/login`, both served fr
 ## Deployment
 
 Static site + serverless functions on Vercel. `npm run build` produces `dist/` (with `index.html`, `resume.html`, `privacy.html`, and `dashboard.html` entries) plus the `api/` functions. Final target: **eric.sh**.
+
+- **The deploy must run `npm run build`, not bare `vite build`** — the prerender is the last step of that script. A deploy that skips it still works (the pages client-render) but ships empty documents again. The build log line to look for is `prerendered N documents`.
 
 - **`public/` assets are cached by explicit `headers` rules in `vercel.json`** — Vercel's default for them is `max-age=0, must-revalidate`, so every repeat visit was revalidating ~8MB of photography. `/fonts/*` is a year + `immutable`; `/hero`, `/posts`, `/contact` get 30 days + `stale-while-revalidate` rather than `immutable`, because those filenames are stable across regeneration and `immutable` would pin a stale image until the name changed. Hashed `/assets/*` is handled by Vercel already.
 

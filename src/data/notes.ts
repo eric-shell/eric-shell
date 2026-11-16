@@ -23,6 +23,14 @@
  *
  * Beyond that: first person, specific numbers over adjectives, and name the
  * thing that went wrong before the thing that fixed it.
+ *
+ * ## Build-time only
+ *
+ * Nothing under `src/` may import a VALUE from this file. It holds every body
+ * in one array, so a client chunk that imports it ships all of them. The
+ * browser reads `src/data/notes-index.ts` instead, which is generated from this
+ * array with the bodies split out one per chunk. This file's readers are
+ * vite.config.ts and that plugin. Type imports are erased and are fine.
  */
 
 export interface Note {
@@ -43,11 +51,6 @@ export interface Note {
   /** Markdown body, rendered through `noteMdComponents`. */
   body: string
 }
-
-/** Public source for this site. Every note's `commit` resolves against it. */
-export const repoUrl = 'https://github.com/eric-shell/eric-shell'
-
-export const commitUrl = (sha: string) => `${repoUrl}/commit/${sha}`
 
 /**
  * Entries in authored order. Not the render order, and not what anything
@@ -1247,22 +1250,7 @@ A selection that only changed the sort order is recorded and then never surfaced
  *
  * Everything reads from this: the index, both sort directions, the prev/next
  * pager, the sitemap, and the Blog JSON-LD. One order, derived once, so a
- * mis-slotted entry can't disagree with itself across four surfaces.
+ * mis-slotted entry can't disagree with itself across four surfaces. (The
+ * browser reads it through `notes-index.ts`, which keeps this order.)
  */
 export const notes: Note[] = [...entries].sort((a, b) => b.date.localeCompare(a.date))
-
-/** Lookup for the detail route. Returns undefined for an unknown slug. */
-export function noteBySlug(slug: string): Note | undefined {
-  return notes.find((n) => n.slug === slug)
-}
-
-/**
- * Adjacent entries for the prev/next pager, in the array's authored order.
- * `previous` is the older note and `next` the newer one, reading order rather
- * than array order, which is why they look inverted against the indices.
- */
-export function noteNeighbours(slug: string): { previous?: Note; next?: Note } {
-  const i = notes.findIndex((n) => n.slug === slug)
-  if (i === -1) return {}
-  return { previous: notes[i + 1], next: notes[i - 1] }
-}

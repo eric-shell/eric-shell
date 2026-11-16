@@ -2,9 +2,15 @@ import { useSyncExternalStore } from 'react'
 import { createPortal } from 'react-dom'
 import Toast from './Toast'
 import { subscribe, getToasts } from './toastStore'
+import { useHydrated } from '@/lib/hydration'
 
 export default function Toaster() {
-  const items = useSyncExternalStore(subscribe, getToasts)
+  const items = useSyncExternalStore(subscribe, getToasts, getToasts)
+  // The portal target is `document.body`, which the build-time prerender does
+  // not have. There is nothing to prerender here anyway: the queue is empty
+  // until something in the browser raises a toast.
+  const hydrated = useHydrated()
+  if (!hydrated) return null
 
   return createPortal(
     <div

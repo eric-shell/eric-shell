@@ -138,11 +138,13 @@ export default function Login({ onSuccess }: LoginProps) {
                 value={code}
                 // Strip anything that isn't a digit as it's typed — pasting a
                 // code out of an email frequently brings a space with it.
+                // The `slice` is the length cap, and there is deliberately no
+                // `maxLength`: the browser applies that to a paste BEFORE this
+                // runs, so " 123456" was cut to " 12345" and then stripped to
+                // five digits, one short of enabling Verify.
                 onChange={v => { setCode(v.replace(/\D/g, '').slice(0, 6)); setError('') }}
                 inputMode="numeric"
                 autoComplete="one-time-code"
-                maxLength={6}
-                showCount={false}
                 placeholder="000000"
                 className="text-center text-lg tracking-[0.4em]"
                 autoFocus

@@ -1,6 +1,6 @@
 // Type-only, so it is erased at build time and pulls no runtime with it. The
-// only value import of react-markdown in the app is the lazy() inside
-// components/ui/Markdown — keep it that way, or the parser lands back in the
+// only value import of react-markdown in the app is the dynamic one inside
+// `loadMarkdown` below — keep it that way, or the parser lands back in the
 // initial bundle.
 import type { Components } from 'react-markdown'
 import NoteFigure from './NoteFigure'
@@ -155,6 +155,31 @@ export const adminMdComponents: Components = {
   ),
 }
 
+let markdownModule: Promise<typeof import('react-markdown')> | undefined
+
+/**
+ * The react-markdown module, as ONE promise shared by everything that needs it.
+ *
+ * `<Markdown>` reads it with React's `use()`, and that is why it has to be the
+ * same promise object every time rather than a fresh `import()` per call: React
+ * records on the promise itself that it has settled, and only a promise it has
+ * already seen settle can be read without suspending.
+ *
+ * That property is load-bearing on the note pages. They are prerendered and
+ * hydrated, and the article sits inside a `CascadeGroup`, whose context changes
+ * the moment it scrolls into view. React answers a context change above a
+ * not-yet-hydrated Suspense boundary by hydrating it immediately, and if
+ * anything inside suspends at that instant it gives up on the prerendered HTML
+ * and shows the fallback instead: the article collapsed to one paragraph of raw
+ * markdown and re-expanded, a layout shift of 0.47. `NoteArticle` therefore
+ * waits on this promise before it renders anything, so by the time `<Markdown>`
+ * reads it underneath, it cannot suspend. `React.lazy` could not give that
+ * guarantee, because a lazy component only starts loading when first rendered.
+ */
+export function loadMarkdown() {
+  return (markdownModule ??= import('react-markdown'))
+}
+
 /**
  * Warm the react-markdown chunk without blocking anything.
  *
@@ -165,14 +190,13 @@ export const adminMdComponents: Components = {
  * assistant reply (which is gated on a network round trip to Groq anyway).
  *
  * Lives here rather than beside the component so that file exports nothing but
- * a component (react-refresh/only-export-components). Same module specifier, so
- * it resolves to the same chunk.
+ * a component (react-refresh/only-export-components).
  *
- * Safe to call repeatedly: the module registry dedupes, so extra calls are free.
+ * Safe to call repeatedly: `loadMarkdown` hands back the same promise.
  */
 export function prefetchMarkdown() {
   if (typeof window === 'undefined') return
-  const load = () => { void import('react-markdown') }
+  const load = () => { void loadMarkdown() }
   // Typed as possibly-undefined on purpose. lib.dom declares
   // requestIdleCallback as always present, so an `in` check narrows the else
   // branch to `never` and the Safari fallback stops compiling — while older

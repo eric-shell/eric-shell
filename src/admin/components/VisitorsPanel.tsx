@@ -6,6 +6,7 @@ import { SURFACE, SURFACE_HOVER } from '../../components/ui/variants'
 import VisitorList from './VisitorList'
 import { VisitorTableSkeleton } from './Skeleton'
 import { resolveLocation } from '../lib/location'
+import { confirmDiscard, unsavedVisitorId } from '../lib/unsavedEdits'
 import { TIMEFRAMES, type Timeframe } from '../lib/timeframe'
 import type { BurstMap } from '../lib/classify'
 import type { VisitorSummary } from '@/../api/_lib/types'
@@ -195,6 +196,21 @@ function fold(s: string | null | undefined): string {
   return (s ?? '').normalize('NFD').replace(/\p{Diacritic}/gu, '').toLowerCase()
 }
 
+/** Does this row match an already-folded, non-empty search? */
+function matchesSearch(v: VisitorSummary, q: string): boolean {
+  return (
+    v.id.startsWith(q) ||
+    fold(v.contact_name).includes(q) ||
+    fold(v.contact_email).includes(q) ||
+    fold(resolveLocation(v).label).includes(q) ||
+    // Notes are the only text here you wrote yourself, which makes them the
+    // thing you're most likely to come back looking for — "the agency guy",
+    // "quoted in March". Everything else in this predicate is data about the
+    // visitor; this is the one field that's data about your own thinking.
+    fold(v.notes).includes(q)
+  )
+}
+
 interface VisitorsPanelProps {
   /** Already narrowed by the bot/engaged filters; null while loading. */
   visitors: VisitorSummary[] | null
@@ -251,17 +267,23 @@ export default function VisitorsPanel({
   const sectionRef = useRef<HTMLElement>(null)
 
   const q = fold(query.trim())
-  const filteredVisitors = !q || !visitors ? visitors : visitors.filter(v =>
-    v.id.startsWith(q) ||
-    fold(v.contact_name).includes(q) ||
-    fold(v.contact_email).includes(q) ||
-    fold(resolveLocation(v).label).includes(q) ||
-    // Notes are the only text here you wrote yourself, which makes them the
-    // thing you're most likely to come back looking for — "the agency guy",
-    // "quoted in March". Everything else in this predicate is data about the
-    // visitor; this is the one field that's data about your own thinking.
-    fold(v.notes).includes(q)
-  )
+  const filteredVisitors = !q || !visitors ? visitors : visitors.filter(v => matchesSearch(v, q))
+
+  /**
+   * Typing can close a drawer: a search that stops matching the open row takes
+   * the row, and the drawer inside it, off the page. If that drawer is holding
+   * unsaved edits, ask first — and refuse the keystroke on a "no", which is the
+   * only way to keep the row, since the field is the thing doing the filtering.
+   *
+   * Checked against the row's own match rather than on every keystroke, so
+   * narrowing a search that still includes the open visitor never prompts.
+   */
+  const changeQuery = (next: string) => {
+    const nextQ = fold(next.trim())
+    const editing = nextQ ? visitors?.find(v => v.id === unsavedVisitorId()) : undefined
+    if (editing && !matchesSearch(editing, nextQ) && !confirmDiscard()) return
+    setQuery(next)
+  }
 
   return (
     // `scroll-mt-4` keeps the heading off the very top edge when the pager
@@ -314,7 +336,7 @@ export default function VisitorsPanel({
           <input
             type="search"
             value={query}
-            onChange={e => setQuery(e.target.value)}
+            onChange={e => changeQuery(e.target.value)}
             placeholder="Search by name, email, location, notes, or visitor ID…"
             aria-label="Search visitors"
             className="h-7 min-w-0 flex-1 bg-transparent text-sm text-white placeholder:text-white/70 outline-none"
@@ -464,6 +486,7 @@ export default function VisitorsPanel({
               newSince={newSince}
               onVisitorDeleted={onVisitorDeleted}
               scrollTargetRef={sectionRef}
+              resetKey={`${q}|${timeframe}|${hideBots}|${engagedOnly}`}
             />
           )}
         </div>

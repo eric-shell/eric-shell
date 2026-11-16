@@ -1,7 +1,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 import { Resend } from 'resend'
 import { sql } from './_lib/db.js'
-import { upsertVisitor } from './_lib/visitor.js'
+import { readVisitorGeo, upsertVisitor } from './_lib/visitor.js'
 import { checkRateLimit, send429 } from './_lib/ratelimit.js'
 
 type ContactPayload = {
@@ -85,10 +85,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
   const { name, email, message } = result
 
   try {
-    const rawCity = req.headers['x-vercel-ip-city']
-    const rawCountry = req.headers['x-vercel-ip-country']
-    const city = typeof rawCity === 'string' ? decodeURIComponent(rawCity) : null
-    const country = typeof rawCountry === 'string' ? rawCountry : null
+    // Through the shared reader, not a local `decodeURIComponent`. Vercel
+    // percent-encodes non-ASCII city names, and a malformed sequence makes a
+    // bare decode throw — which landed in the catch at the bottom of this
+    // handler and answered a perfectly good submission with a 500, the message
+    // never sent. `readVisitorGeo` degrades to the raw value instead.
+    const { city, country } = readVisitorGeo(req)
     const locationLine = [city, country].filter(Boolean).join(', ')
 
     // Resolved BEFORE the send so the notification can carry a link straight to
