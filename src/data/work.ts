@@ -76,7 +76,7 @@ export const workImageSrcSet = (id: string) =>
 
 export const workItems: WorkItem[] = [
   { url: "https://www.colorado.com/", title: "Colorado Tourism", solution: "Official State Tourism Website", tags: ["AI", "DMO", "Drupal", "Next.js", "Horizon"], image: 'photo-1464822759023-fed622ff2c3b' },
-  { url: "https://street-scene.vercel.app/", title: "Street Scene", solution: "Music Festival Marketing Website", tags: ["Three.js", "Game", "Project"], image: 'photo-1470229722913-7c0e2dbbafd3' },
+  { url: "https://street-scene.vercel.app/", title: "Street Scene", solution: "Tuner Racing Game - Built by day, raced by night", tags: ["Game", "Three.js", "Project"], image: 'photo-1470229722913-7c0e2dbbafd3' },
   { url: "https://www.fws.gov/", title: "U.S. Fish & Wildlife Service", solution: "Species management and tracking applications", tags: ["Drupal", "Government"], image: 'photo-1611689342806-0863700ce1e4' },
   { url: "https://isaiah.app.link/", title: "Ask Isaiah", solution: "Faith-based AI assistant for connection, scripture and guidance", tags: ["AI", "React Native", "Expo", "Chatbot"], image: 'photo-1450558415837-1f5e21a17709' },
   { url: "https://localfoodie.io/", title: "Local Foodie", solution: "Discover the best places to eat in San Luis Obispo, California", tags: ["React", "Three.js", "Vite", "Regional", "Project"], image: 'photo-1511690656952-34342bb7c2f2' },
