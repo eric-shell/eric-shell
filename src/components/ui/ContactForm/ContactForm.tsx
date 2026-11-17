@@ -39,8 +39,11 @@ interface ContactFormProps {
 
 export default function ContactForm({
   className,
-  defaultTheme = 'dark',
-  showThemeToggle = true,
+  // White and no switch by default: the frosted-glass form this toggled away
+  // from is gone with the rest of the site's glass. `dark` remains for the
+  // flat tint on a dark canvas (Storybook covers it).
+  defaultTheme = 'white',
+  showThemeToggle = false,
   onSuccess,
 }: ContactFormProps) {
   const [name, setName] = useState('')
@@ -128,32 +131,52 @@ export default function ContactForm({
     }
   }
 
+  const borderClass = isWhite ? 'border-blue-950/10' : 'border-white/20'
+  const mutedClass = isWhite ? 'text-blue-950/50' : 'text-white/60'
+
+  // Same chrome as the hero's chat panel, so the page opens and closes on one
+  // object: a header strip with the icon tile, a body, and a footer bar holding
+  // the action and a one-line disclosure. Fields are the chat composer's pill.
   return (
-    <Panel variant={isWhite ? 'white' : 'glass-light'} className={twMerge('relative rounded-2xl p-8', className)}>
-      {showThemeToggle && (
-        <button
-          role="switch"
-          aria-checked={isWhite}
-          aria-label="Toggle high-contrast mode"
-          onClick={() => setIsWhite(v => !v)}
-          className={twMerge(
-            'absolute top-3 left-3 z-10 flex items-center gap-1.5 rounded-full px-2 py-1 transition-colors',
-            isWhite ? 'text-blue-950' : 'text-white'
-          )}
-        >
-          <span className={twMerge(
-            'relative inline-flex h-4 w-7 items-center rounded-full cursor-pointer transition-colors',
-            isWhite ? 'bg-success hover:bg-success-hover' : 'bg-black/20 hover:bg-black/50'
-          )}>
-            <span className={twMerge(
-              'inline-block h-2.5 w-2.5 rounded-full bg-white shadow transition-transform',
-              isWhite ? 'translate-x-3.5' : 'translate-x-0.5'
-            )} />
+    <Panel
+      variant={isWhite ? 'white' : 'glass-light'}
+      className={twMerge('relative flex flex-col rounded-2xl border overflow-hidden', borderClass, className)}
+    >
+      <header className={twMerge('flex items-center justify-between gap-2 px-3 py-2.5 border-b', borderClass)}>
+        <span className={twMerge('flex items-center gap-2 pl-1 font-sans text-sm font-semibold', isWhite ? 'text-blue-950' : 'text-white')}>
+          <span aria-hidden="true" className="grid place-items-center w-7 h-7 rounded-lg bg-lum">
+            <img src="/icon.svg" alt="" className="w-3.5" />
           </span>
-          <span className="font-sans text-xs font-semibold tracking-wide">ADA / WCAG</span>
-        </button>
-      )}
-      <form ref={formRef} onSubmit={handleSubmit} className="flex flex-col pt-5 gap-2" noValidate>
+          Send me a message
+        </span>
+        {showThemeToggle ? (
+          <button
+            type="button"
+            role="switch"
+            aria-checked={isWhite}
+            aria-label="Toggle high-contrast mode"
+            onClick={() => setIsWhite(v => !v)}
+            className={twMerge(
+              'flex items-center gap-1.5 rounded-full px-2 py-1 transition-colors',
+              isWhite ? 'text-blue-950' : 'text-white'
+            )}
+          >
+            <span className={twMerge(
+              'relative inline-flex h-4 w-7 items-center rounded-full cursor-pointer transition-colors',
+              isWhite ? 'bg-success hover:bg-success-hover' : 'bg-black/20 hover:bg-black/50'
+            )}>
+              <span className={twMerge(
+                'inline-block h-2.5 w-2.5 rounded-full bg-white shadow transition-transform',
+                isWhite ? 'translate-x-3.5' : 'translate-x-0.5'
+              )} />
+            </span>
+            <span className="font-sans text-xs font-semibold tracking-wide">ADA / WCAG</span>
+          </button>
+        ) : (
+          <span className={twMerge('pr-1 font-sans text-xs', mutedClass)}>Replies within a day or two</span>
+        )}
+      </header>
+      <form ref={formRef} onSubmit={handleSubmit} className="flex flex-col" noValidate>
         <div aria-hidden="true" className="sr-only">
           <label htmlFor="contact-website">Website</label>
           <input
@@ -166,59 +189,78 @@ export default function ContactForm({
             onChange={e => setWebsite(e.target.value)}
           />
         </div>
-        <Input
-          id="contact-name"
-          label="Name"
-          theme={isWhite ? 'white' : 'dark'}
-          value={name}
-          onChange={handleFieldChange('name', setName)}
-          placeholder="Sam Miller"
-          maxLength={100}
-          disabled={isSubmitting}
-          required
-          valid={nameValid}
-          error={errorField === 'name'}
-          autoComplete="name"
-        />
-        <Input
-          id="contact-email"
-          label="Email"
-          theme={isWhite ? 'white' : 'dark'}
-          type="email"
-          value={email}
-          onChange={handleFieldChange('email', setEmail)}
-          placeholder="smiller@example.com"
-          maxLength={100}
-          disabled={isSubmitting}
-          required
-          valid={emailValid}
-          error={errorField === 'email'}
-          autoComplete="email"
-          inputMode="email"
-        />
-        <Textarea
-          id="contact-message"
-          label="Message"
-          theme={isWhite ? 'white' : 'dark'}
-          value={message}
-          onChange={handleFieldChange('message', setMessage)}
-          placeholder={typedPlaceholder ?? MESSAGE_PLACEHOLDER_FALLBACK}
-          rows={6}
-          maxLength={2000}
-          disabled={isSubmitting}
-          required
-          valid={messageValid}
-          error={errorField === 'message'}
-        />
-        <Button
-          type="submit"
-          disabled={isSubmitting}
-          variant="primary"
-          className="shadow-md self-end mt-4"
-          rightIcon={<Send size={14} strokeWidth={2.5} aria-hidden="true" />}
-        >
-          {isSubmitting ? 'Sending…' : 'Send Message'}
-        </Button>
+        <div className="flex flex-col gap-2 px-4 pt-4 pb-2">
+          <Input
+            id="contact-name"
+            label="Name"
+            theme={isWhite ? 'white' : 'dark'}
+            value={name}
+            onChange={handleFieldChange('name', setName)}
+            placeholder="Sam Miller"
+            maxLength={100}
+            disabled={isSubmitting}
+            required
+            valid={nameValid}
+            error={errorField === 'name'}
+            autoComplete="name"
+            className="rounded-full px-5 py-3.5 text-base"
+          />
+          <Input
+            id="contact-email"
+            label="Email"
+            theme={isWhite ? 'white' : 'dark'}
+            type="email"
+            value={email}
+            onChange={handleFieldChange('email', setEmail)}
+            placeholder="smiller@example.com"
+            maxLength={100}
+            disabled={isSubmitting}
+            required
+            valid={emailValid}
+            error={errorField === 'email'}
+            autoComplete="email"
+            inputMode="email"
+            className="rounded-full px-5 py-3.5 text-base"
+          />
+          <Textarea
+            id="contact-message"
+            label="Message"
+            theme={isWhite ? 'white' : 'dark'}
+            value={message}
+            onChange={handleFieldChange('message', setMessage)}
+            placeholder={typedPlaceholder ?? MESSAGE_PLACEHOLDER_FALLBACK}
+            rows={5}
+            maxLength={2000}
+            disabled={isSubmitting}
+            required
+            valid={messageValid}
+            error={errorField === 'message'}
+            className="rounded-[24px] px-5 py-4 text-base"
+          />
+        </div>
+        {/* Disclosure on the left, the action on the right; on a phone the action sits above it. */}
+        <div className={twMerge('flex flex-col gap-3 border-t px-4 py-3 sm:flex-row sm:items-center sm:justify-between', borderClass)}>
+          <Button
+            type="submit"
+            disabled={isSubmitting}
+            variant={isWhite ? 'luminous' : 'primary'}
+            className="self-end sm:order-last"
+            rightIcon={<Send size={14} strokeWidth={2.5} aria-hidden="true" />}
+          >
+            {isSubmitting ? 'Sending…' : 'Send Message'}
+          </Button>
+          <div className={twMerge('px-1 font-sans text-[11px] leading-none flex items-center justify-center sm:justify-start gap-2', mutedClass)}>
+            <p>
+              <span className="hidden sm:inline">Prefer email? </span>
+              <a href="mailto:ericjshell@gmail.com" className="underline underline-offset-2 hover:opacity-80 transition-opacity">Email</a>
+            </p>
+            <span aria-hidden="true" className="h-3 w-px bg-current opacity-40" />
+            <p>
+              <span className="hidden sm:inline">Messages are saved so I can reply. </span>
+              <a href="/privacy" className="underline underline-offset-2 hover:opacity-80 transition-opacity">Privacy</a>
+            </p>
+          </div>
+        </div>
       </form>
     </Panel>
   )

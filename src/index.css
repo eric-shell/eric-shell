@@ -153,6 +153,21 @@
   --color-green-900: oklch(0.298 0.085 145.00);
   --color-green-950: oklch(0.210 0.060 145.00);
 
+  /*
+   * Luminous — the home page's palette. One saturated blue (WGSN's 2027
+   * colour, and the sky in the hero photo) against white and a deep ink.
+   *   lum       section fields, primary fills. White text on it is 5.5:1.
+   *   lum-deep  text and tags on ice/white (7.0:1 on white).
+   *   ink       dark sections and the scrolled header.
+   *   ice       tag and input fills on white.
+   *   glow      non-text accents on ink and blue: underlines, progress.
+   */
+  --color-lum:      #2B54FF;
+  --color-lum-deep: #1D3FD6;
+  --color-ink:      #0A1033;
+  --color-ice:      #EAF0FF;
+  --color-glow:     #8FE8FF;
+
   --font-sans: 'Google Sans', system-ui, sans-serif;
   --font-display: 'Display', system-ui, sans-serif;
 }
@@ -271,8 +286,148 @@
   animation: detail-collapse 260ms cubic-bezier(0.4, 0, 1, 1) forwards;
 }
 
-@utility glass-blur {
-  @apply backdrop-blur-md;
+/* Even tracking for every Display heading. RiseText applies the same value as
+   a per-letter margin (see src/lib/displayKerning.ts), so split and unsplit
+   headings set identically. */
+@utility tracking-display {
+  letter-spacing: -0.02em;
+}
+
+/* One letter of a RiseText heading. Every heading on the page enters this way:
+   letters rise and settle on a spring, in order. `data-out` is the pre-entrance
+   state; RiseText removes it when its CascadeGroup comes into view. */
+@utility rise-ch {
+  display: inline-block;
+  transition: transform 900ms cubic-bezier(0.3, 1.45, 0.5, 1), opacity 500ms cubic-bezier(0.2, 0.8, 0.2, 1), translate 450ms cubic-bezier(0.3, 1.45, 0.5, 1);
+
+  /* Lifted under the pointer (the hero wordmark). `translate`, so it stacks on
+     the entrance's `transform` rather than replacing it. */
+  &.is-lifted {
+    translate: 0 -8%;
+  }
+
+  &[data-out] {
+    opacity: 0;
+    transform: translateY(60%) rotate(8deg);
+  }
+}
+
+/* The hero as it scrolls away: the wordmark sinks and grows a touch while the
+   photo, subject and wordmark dim toward ink, so Work's blue sheet rises over a
+   receding poster. Scroll-driven where supported; elsewhere the hero just
+   scrolls. The timeline is the hero's own view timeline (`hero-timeline`). */
+@keyframes hero-drift {
+  to { transform: translateY(90px) scale(1.05); }
+}
+
+@keyframes hero-dim {
+  from { opacity: 0; }
+  to   { opacity: 0.55; }
+}
+
+.hero-timeline {
+  view-timeline-name: --hero;
+}
+
+.hero-exit-drift {
+  transform-origin: 0 100%;
+}
+
+.hero-exit-dim {
+  opacity: 0;
+}
+
+@supports (animation-timeline: view()) {
+  .hero-exit-drift,
+  .hero-exit-dim {
+    animation-timeline: --hero;
+    animation-range: exit 0% exit 100%;
+    animation-fill-mode: both;
+    animation-timing-function: linear;
+  }
+  .hero-exit-drift { animation-name: hero-drift; }
+  .hero-exit-dim { animation-name: hero-dim; }
+}
+
+/* The hero's opening wipe: a solid Luminous Blue field that lifts away. */
+@keyframes lu-wipe {
+  to { clip-path: inset(0 0 100% 0); }
+}
+
+@utility lu-flash {
+  animation: lu-wipe 1050ms cubic-bezier(0.7, 0, 0.2, 1) 150ms forwards;
+}
+
+/* Hero subject rising into place. `translate`, not `transform`: transform is
+   owned by the pointer parallax. */
+@keyframes lu-rise-in {
+  from { opacity: 0; translate: 0 90px; }
+}
+
+@utility lu-wipe-in {
+  animation: lu-rise-in 1300ms cubic-bezier(0.2, 0.8, 0.2, 1) 600ms backwards;
+}
+
+/* A testimonial's words rising in one after another, and the highlighter
+   sweeping its key phrase once they have landed. */
+@keyframes lu-word {
+  from { opacity: 0; transform: translateY(0.45em); }
+}
+
+@keyframes lu-mark {
+  from { background-size: 0% 42%; }
+}
+
+/* The chat panel opening from its docked button, growing out of the bottom right. */
+@keyframes dock-in {
+  from { opacity: 0; transform: translateY(24px) scale(0.92); }
+}
+
+@utility animate-dock-in {
+  animation: dock-in 420ms cubic-bezier(0.3, 1.3, 0.5, 1);
+}
+
+/* Fill animation for progress segments (testimonials, visuals accordion). */
+@keyframes lu-progress {
+  from { transform: scaleX(0); }
+  to   { transform: scaleX(1); }
+}
+
+/* The Work grid's wave (see useWaveGrid): each item drifts by its column's
+   `--cv` as the grid crosses the viewport (`--wp`, 0 → 1), and the grid leans
+   with scroll speed (`--skew`). `translate` on the items, because CascadeItem's
+   flip entrance owns their `transform`. */
+@utility wave-grid {
+  transform: skewY(var(--skew, 0deg));
+  transform-origin: 50% 0;
+
+  & > li {
+    translate: 0 calc((var(--wp, 0.5) - 0.5) * var(--cv, 0) * 1px);
+  }
+}
+
+/* The blue Work sheet widens to full bleed as it rises over the hero.
+   Scroll-driven where supported; elsewhere it simply sits at full width. */
+@keyframes work-sheet {
+  from { transform: scaleX(0.9); }
+  to   { transform: scaleX(1); }
+}
+
+@utility work-sheet {
+  transform-origin: 50% 0;
+
+  @supports (animation-timeline: view()) {
+    animation: work-sheet linear both;
+    animation-timeline: view();
+    animation-range: entry 0% entry 70%;
+  }
+}
+
+/* Duotone for a photo: grayscale pushed through sepia and rotated to Luminous
+   Blue. A filter rather than an overlay with mix-blend-mode, so the image keeps
+   compositing on its own layer while the pointer parallax moves it. */
+@utility duotone-lum {
+  filter: grayscale(1) sepia(1) saturate(3.4) hue-rotate(188deg) brightness(0.8) contrast(1.12);
 }
 
 @utility animate-genie-out {
@@ -515,18 +670,6 @@
     view-transition-name: site-header;
   }
 
-  /* Display headings land a touch heavy, then relax as their cascade item
-     fades in. transition-delay: inherit picks up the item's stagger delay. */
-  .cascade-item :is(h1, h2, h3) {
-    transition: font-variation-settings 900ms cubic-bezier(0.16, 1, 0.3, 1);
-    transition-delay: inherit;
-    font-variation-settings: 'wght' 700;
-  }
-
-  .cascade-item.opacity-0 :is(h1, h2, h3) {
-    transition: none;
-    font-variation-settings: 'wght' 860;
-  }
 
   /* The canvas — what fills the rubber-band gutter past either end of the
      document. The root's background is the one that extends there, and its
@@ -536,8 +679,8 @@
   html {
     background-image: linear-gradient(
       to bottom,
-      var(--color-black) 0 50%,
-      var(--color-blue-900) 50% 100%
+      var(--color-ink) 0 50%,
+      var(--color-ink) 50% 100%
     );
   }
 
@@ -635,9 +778,9 @@
       opacity: 1 !important;
       transform: none !important;
     }
-    .cascade-item :is(h1, h2, h3) {
-      transition: none !important;
-      font-variation-settings: normal !important;
+    .rise-ch {
+      opacity: 1 !important;
+      transform: none !important;
     }
 
     /* ─────────────────────────────────────────────
@@ -1003,8 +1146,21 @@
     .animate-ambient-b,
     .animate-ambient-c,
     .animate-ambient-hue,
-    .animate-ambient-parallax {
+    .animate-ambient-parallax,
+    .work-sheet,
+    .hero-exit-drift,
+    .hero-exit-dim {
       animation: none !important;
+    }
+
+    .hero-exit-dim {
+      opacity: 0 !important;
+    }
+
+    .wave-grid,
+    .wave-grid > li {
+      transform: none !important;
+      translate: none !important;
     }
 
     ::view-transition-group(*),
@@ -1013,9 +1169,15 @@
       animation: none !important;
     }
 
-    .cascade-item :is(h1, h2, h3) {
+    .rise-ch, .lu-flash, .lu-wipe-in {
+      animation: none !important;
       transition: none !important;
-      font-variation-settings: normal !important;
+      opacity: 1 !important;
+      transform: none !important;
+    }
+
+    .lu-flash {
+      display: none !important;
     }
 
     .cascade-item {
@@ -1026,13 +1188,8 @@
 
     #hero img {
       transform: none !important;
-    }
-
-    .glass-blur {
+      translate: none !important;
       animation: none !important;
-      opacity: 1 !important;
-      backdrop-filter: blur(12px) !important;
-      -webkit-backdrop-filter: blur(12px) !important;
     }
 
     .animate-glass-in,
@@ -1047,6 +1204,10 @@
       opacity: 1 !important;
       clip-path: none !important;
       transform: none !important;
+    }
+
+    .animate-dock-in {
+      animation: none !important;
     }
 
     .toast-item {

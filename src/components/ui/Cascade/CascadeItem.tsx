@@ -1,7 +1,7 @@
-import { useEffect, useState, type CSSProperties, type ElementType } from 'react'
+import { useEffect, useState, type CSSProperties, type ElementType, type HTMLAttributes } from 'react'
 import { useCascade } from './CascadeContext'
 
-interface CascadeItemProps {
+interface CascadeItemProps extends Omit<HTMLAttributes<HTMLElement>, 'children'> {
   children: React.ReactNode
   className?: string
   as?: ElementType
@@ -16,9 +16,16 @@ interface CascadeItemProps {
    * children should fade themselves — see `animate-glass-in`.
    */
   slideOnly?: boolean
+  /**
+   * `rise` (default): fade up 6px. `flip`: the card stands up from lying flat,
+   * hinged at its bottom edge, on a spring — the Work grid's wave. Flip uses
+   * `transform` only, so the `translate` property stays free for a caller's
+   * own motion (the grid's column drift).
+   */
+  effect?: 'rise' | 'flip'
 }
 
-export default function CascadeItem({ children, className, as: Tag = 'div', index = 0, delayMs, slideOnly = false }: CascadeItemProps) {
+export default function CascadeItem({ children, className, as: Tag = 'div', index = 0, delayMs, slideOnly = false, effect = 'rise', style: styleProp, ...props }: CascadeItemProps) {
   const { inView: groupInView, stagger } = useCascade()
   const delay = delayMs ?? Math.min(index, 7) * stagger
 
@@ -35,16 +42,24 @@ export default function CascadeItem({ children, className, as: Tag = 'div', inde
 
   const isVisible = groupInViewOnMount ? selfVisible : groupInView
 
-  return (
-    <Tag
-      className={`cascade-item duration-500 ease-out ${
+  const motion = effect === 'flip'
+    ? `origin-bottom transition-[opacity,transform] duration-1000 ease-[cubic-bezier(0.3,1.3,0.5,1)] ${
+        isVisible ? 'opacity-100 [transform:none]' : 'opacity-0 [transform:perspective(900px)_rotateX(-80deg)_translateY(50px)]'
+      }`
+    : `duration-500 ease-out ${
         slideOnly ? 'transition-transform' : 'transition-[opacity,transform]'
       } ${
         isVisible
           ? `translate-y-0${slideOnly ? '' : ' opacity-100'}`
           : `translate-y-[6px]${slideOnly ? '' : ' opacity-0'}`
-      }${className ? ` ${className}` : ''}`}
+      }`
+
+  return (
+    <Tag
+      className={`cascade-item ${motion}${className ? ` ${className}` : ''}`}
+      {...props}
       style={{
+        ...styleProp,
         transitionDelay: isVisible ? `${delay}ms` : '0ms',
         // Inherited by descendants so a `cascade-fade` element can fade itself.
         // Custom properties form no backdrop root, so this reaches glass that

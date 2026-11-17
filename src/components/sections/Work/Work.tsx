@@ -1,8 +1,8 @@
 import { useLayoutEffect, useRef, useState } from 'react'
 import { ArrowDownAZ, ArrowUpRight, ArrowUpZA, CalendarDays, Plus, RotateCcw } from 'lucide-react'
-import { WORK_IMAGE_SIZES, workImageSrc, workImageSrcSet, workItems } from '@/data'
-import { useFilterTelemetry } from '@/hooks'
-import { Backdrop, Button, Card, CascadeGroup, CascadeItem, Container, Dropdown, MultiSelect, SectionHeader } from '../../ui'
+import { workItems } from '@/data'
+import { useCountUp, useFilterTelemetry, useWaveGrid } from '@/hooks'
+import { Button, Card, CascadeGroup, CascadeItem, Container, Dropdown, MultiSelect, SectionTitle, descDelay, useCascade } from '../../ui'
 
 type SortOrder = 'chronological' | 'asc' | 'desc'
 
@@ -23,13 +23,47 @@ const TAG_OPTIONS = [...new Set(workItems.flatMap(item => item.tags))]
   .sort((a, b) => a.localeCompare(b))
   .map(tag => ({ value: tag, label: tag }))
 
-const INITIAL_COUNT = 8
+/**
+ * Which tags name a platform or framework, as opposed to an industry or kind of
+ * work. This is the one hand-kept list here: the tags themselves don't say
+ * which is which. A new framework tag needs adding to it to be counted.
+ */
+const PLATFORM_TAGS = new Set(['Drupal', 'React', 'React Native', 'Expo', 'Vite', 'Angular', 'TeamSite', 'Backbone', 'Custom Framework'])
+
+/**
+ * Counted from the data, never typed: the numbers change when `work.ts` does.
+ * "Food and drink brands" is the QSR tag, which also covers Kroger (in-store
+ * ordering) and the coffee chains, hence the wider label.
+ */
+const STATS = [
+  { value: workItems.length, suffix: '', label: 'Projects' },
+  { value: 15, suffix: '+', label: 'Years' },
+  { value: workItems.filter(item => item.tags.includes('QSR')).length, suffix: '', label: 'Food and drink brands' },
+  { value: new Set(workItems.flatMap(item => item.tags.filter(t => PLATFORM_TAGS.has(t)))).size, suffix: '', label: 'Platforms and frameworks' },
+]
+
+const INITIAL_COUNT = 12
+
+/** A stat's label and number. Counts up once its header group comes into view. */
+function Stat({ value, suffix, label }: { value: number; suffix: string; label: string }) {
+  const { inView } = useCascade()
+  const n = useCountUp(value, inView)
+  return (
+    <>
+      <dt className="font-sans text-xs font-semibold uppercase tracking-[0.14em] text-white/90 max-w-[18ch]">{label}</dt>
+      <dd className="font-display font-bold tracking-display text-[clamp(46px,5.4vw,80px)] leading-[0.95] tabular-nums">
+        {n}{suffix}
+      </dd>
+    </>
+  )
+}
 
 export default function Work() {
   const [sort, setSort] = useState<SortOrder>('chronological')
   const [activeTags, setActiveTags] = useState<string[]>([])
   const [showAll, setShowAll] = useState(false)
   const scrollYBeforeReveal = useRef<number | null>(null)
+  const gridRef = useRef<HTMLElement | null>(null)
 
   useFilterTelemetry({ section: 'work', tags: activeTags, sort, defaultSort: 'chronological' })
 
@@ -68,49 +102,55 @@ export default function Work() {
   const visibleItems = isExpanded ? items : items.slice(0, INITIAL_COUNT)
   const hasMore = !isExpanded && items.length > INITIAL_COUNT
 
+  const cols = useWaveGrid(gridRef, visibleItems.map(i => i.title).join('|'))
+
   return (
-    <section id="work" className="relative bg-gradient-to-br from-white to-blue-50 skew-section z-50" style={{ marginTop: '-4rem' }}>
-      <Backdrop tone="light" />
-      <Container className="unskew-inner">
-
-        <CascadeGroup threshold={0.15} className='z-[50]'>
-          <CascadeItem index={0}>
-            <SectionHeader
-              eyebrow="Selected Work and Projects"
-              title="Work"
-              eyebrowClassName="text-blue-900"
-              titleClassName="text-blue-950"
-              action={
-                <Button
-                  href="https://www.linkedin.com/in/ericshell/details/experience/"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  variant="primary"
-                  size="md"
-                  className="shrink-0"
-                  rightIcon={<ArrowUpRight size={15} strokeWidth={2.5} aria-hidden="true" />}
-                >
-                  View Work History
-                </Button>
-              }
-            />
-          </CascadeItem>
-
-          <CascadeItem index={1}>
-            <div className="flex flex-col gap-5 font-sans text-base leading-relaxed text-blue-900 pb-10">
+    // Rises over the hero's lower edge as a rounded blue sheet that widens to
+    // full bleed (`work-sheet`). z-10 so the sheet covers the hero it overlaps.
+    // `overflow-x-clip`: before their entrance, the cards lie flat in 3D
+    // perspective, which projects wider than their column and scrolled phones
+    // sideways. Clip, not hidden, so this doesn't become a scroll container.
+    <section id="work" className="relative z-10 -mt-14 pt-24 md:pt-32 pb-24 md:pb-36 text-white overflow-x-clip">
+      <div aria-hidden="true" className="work-sheet absolute inset-0 -z-10 rounded-t-[48px] bg-lum" />
+      <Container>
+        <SectionTitle
+          eyebrow="Selected Work and Projects"
+          title="Work"
+          eyebrowClassName="text-white"
+          action={
+            <Button
+              href="https://www.linkedin.com/in/ericshell/details/experience/"
+              target="_blank"
+              rel="noopener noreferrer"
+              variant="white"
+              className="border-0"
+              rightIcon={<ArrowUpRight size={15} strokeWidth={2.5} aria-hidden="true" />}
+            >
+              View Work History
+            </Button>
+          }
+        >
+          <CascadeItem delayMs={descDelay(0)}>
+            <div className="flex flex-col gap-5 pt-8 font-sans text-base md:text-lg leading-relaxed text-white/90 max-w-3xl">
               <p>
-                Over 15 years of practice spanning Fortune 500 brands, financial institutions, federal agencies, DMOs, QSRs and more I have built web-based applications that performs, ships, scales, and outlasts the engagement that built it. Each product demanded a different caliber of contextual understanding, technical leadership and creative solutioning which all culminated into an extensive portfolio that I am very proud of.
-              </p>
-              <p>
-                What follows is a historical record of my contributions and completed projects. Each piece reflects the same standard of precision and accountability I bring to every engagement, regardless of its discipline, size or scope.
+                Fifteen years of web and mobile applications for Fortune 500 brands, financial institutions, federal agencies, tourism boards and national restaurant chains. Every project here shipped, and every one was held to the same standard of precision and accountability, whatever its size.
               </p>
             </div>
           </CascadeItem>
 
-          <CascadeItem index={2}>
-            <div className="relative z-10 flex items-center justify-between gap-4 mb-8 flex-wrap">
+          <dl className="grid grid-cols-2 lg:grid-cols-4 gap-x-5 gap-y-8 pt-12 pb-12">
+            {STATS.map((stat, i) => (
+              <CascadeItem key={stat.label} delayMs={descDelay(1 + i)} className="relative flex flex-col-reverse justify-end gap-2 pt-5 before:absolute before:inset-x-0 before:top-0 before:h-0.5 before:bg-white/40 before:origin-left before:scale-x-0 before:transition-transform before:duration-[1100ms] before:ease-[cubic-bezier(0.2,0.8,0.2,1)] [&.opacity-100]:before:scale-x-100 motion-reduce:before:scale-x-100">
+                <Stat {...stat} />
+              </CascadeItem>
+            ))}
+          </dl>
+
+          <CascadeItem delayMs={descDelay(5)}>
+            <div className="relative z-20 flex items-center justify-between gap-4 mb-8 flex-wrap">
               <div className="flex items-center gap-2 flex-wrap">
                 <Dropdown
+                  variant="white"
                   options={SORT_OPTIONS}
                   value={sort}
                   onChange={(v) => setSort(v as SortOrder)}
@@ -125,6 +165,7 @@ export default function Work() {
                   on the cards can only ever surface the tags already on screen.
                 */}
                 <MultiSelect
+                  variant="white"
                   options={TAG_OPTIONS}
                   values={activeTags}
                   onChange={setActiveTags}
@@ -138,6 +179,7 @@ export default function Work() {
                 <Button
                   variant="white"
                   size="md"
+                  className="border-0"
                   onClick={resetFilters}
                   leftIcon={<RotateCcw size={15} strokeWidth={2.5} aria-hidden="true" />}
                 >
@@ -146,27 +188,42 @@ export default function Work() {
               )}
             </div>
           </CascadeItem>
-        </CascadeGroup>
+        </SectionTitle>
 
-        <div className="relative">
-          <CascadeGroup as="ul" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 z-[40]" threshold={0.05}>
-            {visibleItems.map(({ url, title, solution, tags, image }, i) => (
-              // Items revealed by "View All Work" get an explicit rolling delay —
-              // the default index stagger caps at 7 steps, which would make
-              // everything past the 8th revealed item appear at once.
+        {/* While collapsed, the grid fades out through a mask rather than a
+            gradient laid over it. The columns drift (useWaveGrid), so the middle
+            one hangs below this box; an overlay pinned to the box left that card's
+            foot solid white under the fade. A mask fades the last 14rem and hides
+            anything past the edge, whichever column it belongs to. A mask also
+            hides everything outside the box on every side, so the box is grown
+            with padding (and pulled back with negative margin, so the layout
+            doesn't move): room above for the columns' upward drift and a hovered
+            card's lift, and to the sides for its tilt and shadow. Without it the
+            top of a drifting card was cut off. */}
+        <div
+          // The grown box overlaps the controls above; only the grid takes the pointer.
+          className={`relative -mx-6 px-6 -mt-20 pt-20 pointer-events-none [&>ul]:pointer-events-auto ${hasMore ? '[mask-image:linear-gradient(to_bottom,black_calc(100%-14rem),transparent)] [-webkit-mask-image:linear-gradient(to_bottom,black_calc(100%-14rem),transparent)]' : ''}`}
+          ref={el => { gridRef.current = el?.querySelector('ul') ?? null }}
+        >
+          <CascadeGroup as="ul" className="wave-grid grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5" threshold={0.05}>
+            {visibleItems.map(({ url, title, solution, tags }, i) => (
               <CascadeItem
                 as="li"
                 key={title}
-                index={i}
-                delayMs={showAll && i >= INITIAL_COUNT ? (i - INITIAL_COUNT) * 60 : undefined}
+                data-key={title}
+                effect="flip"
+                // Items revealed by "View All Work" roll in after the first set;
+                // the rest flip up in a diagonal wave, staggered by column with
+                // alternate rows offset.
+                delayMs={showAll && i >= INITIAL_COUNT
+                  ? (i - INITIAL_COUNT) * 60
+                  : (i % cols) * 90 + (Math.floor(i / cols) % 2) * 45}
               >
                 <Card
                   href={url}
                   title={title}
+                  label={String(workItems.findIndex(w => w.title === title) + 1).padStart(2, '0')}
                   description={solution}
-                  image={workImageSrc(image)}
-                  imageSrcSet={workImageSrcSet(image)}
-                  imageSizes={WORK_IMAGE_SIZES}
                   tags={tags}
                   activeTags={activeTags}
                   onTagClick={toggleTag}
@@ -177,11 +234,6 @@ export default function Work() {
             ))}
           </CascadeGroup>
 
-          <div
-            className={`absolute bottom-0 left-0 right-0 h-48 bg-gradient-to-t from-blue-50 to-transparent pointer-events-none z-10 transition-opacity duration-700 motion-reduce:transition-none ${
-              hasMore ? 'opacity-100' : 'opacity-0'
-            }`}
-          />
         </div>
 
         <div
@@ -191,13 +243,14 @@ export default function Work() {
           }`}
         >
           <Button
-            variant="primary"
+            variant="white"
             size="md"
+            className="border-0"
             onClick={revealAll}
             tabIndex={hasMore ? undefined : -1}
             rightIcon={<Plus size={15} strokeWidth={2.5} aria-hidden="true" />}
           >
-            View All Work
+            View All {workItems.length} Projects
           </Button>
         </div>
 

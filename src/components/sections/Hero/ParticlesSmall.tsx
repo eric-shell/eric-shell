@@ -8,6 +8,8 @@ const COUNT = 220
 
 interface ParticlesSmallProps {
   mode?: ParticlesMode
+  /** Overrides the mode's palette. Pass a module-level constant: it is an effect dependency. */
+  palette?: RGB[]
 }
 
 // Alpha ramp of the soft round sprite (offset, alpha).
@@ -39,7 +41,7 @@ const PALETTE_TOWARD: RGB[] = [
   [0.97, 0.85, 0.62], // pale gold
 ]
 
-export default function ParticlesSmall({ mode = 'fall-across' }: ParticlesSmallProps = {}) {
+export default function ParticlesSmall({ mode = 'fall-across', palette: paletteProp }: ParticlesSmallProps = {}) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
 
   useEffect(() => {
@@ -75,7 +77,7 @@ export default function ParticlesSmall({ mode = 'fall-across' }: ParticlesSmallP
     const wobbleY = new Float32Array(COUNT)
     const radiusMax = Math.max(W, H) * 0.35
 
-    const palette = mode === 'fall-toward' ? PALETTE_TOWARD : PALETTE_ACROSS
+    const palette = paletteProp ?? (mode === 'fall-toward' ? PALETTE_TOWARD : PALETTE_ACROSS)
     const sprites = palette.map((rgb) => makeSprite(128, SPRITE_STOPS, rgb))
 
     function rerollToward(i: number) {
@@ -191,7 +193,7 @@ export default function ParticlesSmall({ mode = 'fall-across' }: ParticlesSmallP
       stopLoop()
       window.removeEventListener('resize', onResize)
     }
-  }, [mode])
+  }, [mode, paletteProp])
 
   return (
     <canvas

@@ -2,11 +2,18 @@ export type Variant =
   | 'primary'
   | 'secondary'
   | 'ghost'
+  /**
+   * Translucent tints for a photo or dark canvas. The names are historical: as of
+   * the Luminous redesign nothing on the site uses backdrop blur, so these are
+   * flat tints. Prefer `luminous` / `white` / `raised-dark` for new work.
+   */
   | 'glass-light'
   | 'glass-dark'
   | 'error-glass'
   | 'success-glass'
   | 'white'
+  /** Solid Luminous Blue with a white label (5.5:1). The home page's primary fill. */
+  | 'luminous'
   /**
    * Raised surface for a dark canvas — the inverse of `white`. Unlike the
    * `glass-*` variants it applies no backdrop blur, so it is safe to use on
@@ -41,11 +48,12 @@ export const SURFACE: Record<Variant, string> = {
   primary:   'text-white bg-gradient-to-br from-blue-600 to-blue-700 border border-transparent shadow-[inset_0_1px_0_0_rgba(255,255,255,0.16)]',
   secondary: 'text-blue-800 bg-gradient-to-br from-white to-blue-50 border border-transparent',
   ghost:     'text-blue-950/60 border border-transparent',
-  'glass-light': 'text-white glass-blur bg-white/10 border border-white/20 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.20)]',
-  'glass-dark':  'text-white glass-blur bg-blue-950/20 border border-blue-950/20 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.10)]',
-  'error-glass':   'text-white glass-blur bg-red-950/85 border border-red-400/50',
-  'success-glass': 'text-white glass-blur bg-green-950/85 border border-green-400/50',
+  'glass-light': 'text-white bg-white/12 border border-white/25',
+  'glass-dark':  'text-white bg-blue-950/40 border border-white/10',
+  'error-glass':   'text-white bg-red-950 border border-red-400/50',
+  'success-glass': 'text-white bg-green-950 border border-green-400/50',
   white:     'bg-white border border-blue-950/10 text-blue-950',
+  luminous:  'text-white bg-lum border border-transparent',
   'raised-dark': 'text-white bg-white/[0.055] border border-white/10',
   info:      'text-white bg-blue-600 border border-transparent shadow-[inset_0_1px_0_0_rgba(255,255,255,0.16)]',
   success:   'text-white bg-success border border-transparent shadow-[inset_0_1px_0_0_rgba(255,255,255,0.16)]',
@@ -68,6 +76,7 @@ export const SURFACE_ICON: Record<Variant, string> = {
   'error-glass':   'bg-red-950/50',
   'success-glass': 'bg-green-950/50',
   white:     'bg-blue-950/6',
+  luminous:  'bg-ink/25',
   'raised-dark': 'bg-white/10',
   info:      'bg-blue-950/25',
   success:   'bg-blue-950/25',
@@ -87,6 +96,7 @@ export const SURFACE_ICON_HOVER: Record<Variant, string> = {
   'error-glass':   'group-hover:bg-red-950/40',
   'success-glass': 'group-hover:bg-green-950/40',
   white:     'group-hover:bg-blue-950/10',
+  luminous:  'group-hover:bg-ink/40',
   'raised-dark': 'group-hover:bg-white/20',
   // Status variants deepen the slab further than the rest (/25 -> /45). Their
   // surface deliberately holds its lightness on hover, so the slab carries the
@@ -166,6 +176,8 @@ export const SURFACE_HOVER: Record<Variant, string> = {
   'error-glass':   'hover:bg-red-700/40 hover:border-red-300/60',
   'success-glass': 'hover:bg-green-800/40 hover:border-green-300/60',
   white:     'hover:bg-blue-50',
+  /** Darkens one step to lum-deep: 7.0:1 against the white label. */
+  luminous:  'hover:bg-lum-deep',
   'raised-dark': 'hover:bg-white/[0.09] hover:border-white/20',
   /**
    * Status hovers gain chroma at a fixed lightness rather than darkening — see

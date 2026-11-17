@@ -1,8 +1,9 @@
-import { lazy, Suspense } from 'react'
-import { ChevronDown } from 'lucide-react'
-import { Backdrop, Button, CascadeGroup, CascadeItem, Chat, Container, Eyebrow } from '../../ui'
+import { lazy, Suspense, useEffect, useState } from 'react'
+import { ArrowRight, Mail } from 'lucide-react'
+import { Button, CascadeGroup, CascadeItem, Chat, Container, Eyebrow, RiseText } from '../../ui'
 import { useChat, useParallax } from '@/hooks'
 import { useHydrated } from '@/lib/hydration'
+import type { RGB } from './particleSprite'
 
 const ParticlesSmall = lazy(() => import('./ParticlesSmall'))
 const ParticlesLarge = lazy(() => import('./ParticlesLarge'))
@@ -10,19 +11,54 @@ const ParticlesLarge = lazy(() => import('./ParticlesLarge'))
 /**
  * Height of the chat panel with no conversation in it, in px.
  *
- * Measured, not designed: 430 at every width from 320 to 1920, because the
- * thread has a fixed minimum height and the empty state never outgrows it. The
+ * Measured, not designed: 432 from 1024 up, where the hero shows it beside
+ * the copy (on narrower screens the panel is below the fold and the
+ * suggestions wrap, 394 to 486). The thread has a fixed minimum height and the
+ * empty state never outgrows it. The
  * placeholder that stands in for the chat until hydration is this tall, so the
  * panel replaces it without moving anything. If the chat's resting layout
  * changes, re-measure `.genie-panel` and update this.
  */
-const CHAT_RESTING_HEIGHT = 430
+const CHAT_RESTING_HEIGHT = 432
 
 /**
  * A 1x1 transparent GIF, for the `<source>` that keeps the subject photo off
  * small screens. See the comment on that `<picture>`.
  */
 const EMPTY_IMAGE = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7'
+
+/** The light motes, retinted cyan to sit in the blue duotone. Module-level: they are effect dependencies. */
+const MOTES_SMALL: RGB[] = [[0.86, 0.97, 1.0], [1, 1, 1], [0.73, 0.93, 1.0], [0.62, 0.9, 1.0]]
+const MOTES_LARGE: RGB = [0.78, 0.95, 1.0]
+
+/**
+ * The wordmark spans the content width. `ERIC SHELL` set by RiseText (the
+ * font's kerning plus -0.02em tracking) measures 5.53em in the browser, so the
+ * content width divided by a hair more than that fills the line. Container's
+ * padding is 2 × 24px and it stops growing at 1440px.
+ */
+const WORDMARK_SIZE = 'text-[calc((min(100vw,1440px)-48px)/5.6)]'
+const WORDMARK = `block whitespace-nowrap font-display font-bold uppercase leading-[0.8] ${WORDMARK_SIZE}`
+
+/**
+ * A duotone poster. The forest is pushed into Luminous Blue, "ERIC SHELL" runs
+ * the full width behind the subject, and the subject stands in front of it in
+ * full colour. An outlined copy of the wordmark is drawn over the subject so the
+ * letters his head covers still read.
+ *
+ * Layering is the whole design, so z-order is explicit: photo 0, tint 1,
+ * wordmark 8, subject 10, outline 11, motes 12, copy and chat 20, opening wipe
+ * 40. The wordmark is deliberately NOT inside a CascadeItem: a CascadeItem's
+ * transform makes it a stacking context, which would pin the wordmark to one
+ * layer and lose the overlap. It animates its own letters from the group's
+ * mount flag instead.
+ */
+/** Lifts (or settles) one wordmark letter in every copy inside `root`. */
+function liftLetter(root: HTMLElement, target: EventTarget, lift: boolean) {
+  const letter = (target as Element).closest?.('.rise-ch') as HTMLElement | null
+  if (!letter) return
+  root.querySelectorAll(`.rise-ch[data-i="${letter.dataset.i}"]`).forEach(el => el.classList.toggle('is-lifted', lift))
+}
 
 export default function Hero() {
   const { messages, input, setInput, send, isLoading, reset } = useChat()
@@ -34,13 +70,27 @@ export default function Hero() {
     lerpFactor: 0.08,
   })
 
+  // Once the whole hero has scrolled away above, the chat docks to a floating
+  // button at the bottom right (see Chat's `docked`), so it is always one click
+  // away. Below the hero only: a hero not yet scrolled to doesn't count.
+  const [docked, setDocked] = useState(false)
+  useEffect(() => {
+    const el = sectionRef.current
+    if (!el || !hydrated) return
+    const io = new IntersectionObserver(([entry]) => {
+      setDocked(!entry.isIntersecting && entry.boundingClientRect.top < 0)
+    })
+    io.observe(el)
+    return () => io.disconnect()
+  }, [sectionRef, hydrated])
+
   return (
     <section
       id="hero"
       ref={sectionRef}
       onMouseMove={handleMouseMove}
       onMouseLeave={handleMouseLeave}
-      className="relative min-h-screen overflow-hidden flex items-center"
+      className="hero-timeline relative isolate min-h-screen overflow-hidden bg-ink text-white"
     >
       <picture>
         <source
@@ -62,15 +112,20 @@ export default function Hero() {
           aria-hidden="true"
           fetchPriority="high"
           style={{ transform: 'scale(1.04) translate(0px, 0px)' }}
-          className="absolute inset-0 w-full h-full object-cover z-0"
+          className="absolute inset-0 w-full h-full object-cover z-0 duotone-lum"
         />
       </picture>
+      <div
+        ref={gradientRef}
+        aria-hidden="true"
+        className="absolute -inset-4 z-[1] pointer-events-none bg-[radial-gradient(60%_55%_at_72%_28%,rgba(143,232,255,0.28),transparent_70%),linear-gradient(180deg,rgba(10,16,51,0.5)_0%,transparent_26%,transparent_52%,rgba(10,16,51,0.82)_100%)]"
+      />
       {/* Mounted after hydration, never prerendered. A canvas has nothing to
           show until its effect draws on it, so there is no markup worth
           shipping — and a prerendered one would sit behind a Suspense boundary
           that this component re-renders past (the `hydrated` flip itself),
           which makes React discard and rebuild it with a logged error. */}
-      {hydrated && <Suspense fallback={null}><ParticlesSmall /></Suspense>}
+      {hydrated && <Suspense fallback={null}><ParticlesSmall palette={MOTES_SMALL} /></Suspense>}
       <picture>
         {/* The subject is `hidden lg:block`, and `display: none` does not stop
             an `<img>` downloading: every phone was fetching a 101KB cutout it
@@ -98,94 +153,105 @@ export default function Hero() {
           aria-hidden="true"
           fetchPriority="high"
           style={{ bottom: '-30px' }}
-          className="hidden lg:block absolute right-0 h-[85vh] max-h-[900px] w-auto object-bottom object-contain pointer-events-none select-none z-10"
+          className="hidden lg:block absolute right-[3%] h-[90vh] max-h-[880px] w-auto object-bottom object-contain pointer-events-none select-none z-10 lu-wipe-in"
         />
       </picture>
-      {hydrated && <Suspense fallback={null}><ParticlesLarge /></Suspense>}
-      <div
-        ref={gradientRef}
-        className="absolute inset-0 z-[5] pointer-events-none mix-blend-multiply"
-        style={{ background: 'radial-gradient(ellipse 65% 85% at 28% 55%, rgba(0,0,0,0.8) 0%, transparent 70%)' }}
-      />
-      <Backdrop tone="photo" className="z-6" />
-      <Container className="relative z-20 w-full py-24 grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+      {hydrated && <Suspense fallback={null}><ParticlesLarge color={MOTES_LARGE} /></Suspense>}
 
-        {/* Left: text content */}
-        <CascadeGroup mountOnly className="flex flex-col gap-6">
-          <CascadeItem index={0}>
-            <Eyebrow size="lg" className="text-white text-shadow-md pb-2">What's up! My name is <span className="sr-only">Eric Shell.</span></Eyebrow>
+      <Container className="relative min-h-screen flex flex-col pt-28 pb-20">
+        <h1 className="sr-only">Eric Shell | AI Design Systems Engineer and Software Developer</h1>
+        <CascadeGroup mountOnly className="flex flex-col flex-1">
+          <CascadeItem index={6} className="relative z-[21]">
+            <Eyebrow size="lg" className="text-white text-shadow-md ml-6">What's up! My name is</Eyebrow>
           </CascadeItem>
 
-          <CascadeItem index={1}>
-            <h1 className="sr-only">Eric Shell | AI Design Systems Engineer and Software Developer</h1>
-            {/* width/height are the SVG's own viewBox, rounded. The class sets
-                the rendered width; these give the browser the aspect ratio
-                before the file arrives, so the line below it does not jump
-                down when it does. */}
-            <img src="/logo.svg" alt="" aria-hidden="true" width={563} height={308} className="w-125 hover:scale-[105%] hover:rotate-2 transition" />
-          </CascadeItem>
-
-          <CascadeItem index={2}>
-            <p className="font-sans text-2xl md:text-3xl text-white leading-relaxed text-shadow-lg pt-3">
-              I'm an AI Design Systems Engineer with over 15 years of professional experience developing modern web and mobile applications.
-            </p>
-          </CascadeItem>
-        </CascadeGroup>
-
-        {/* Right: chat interface */}
-        <CascadeGroup mountOnly>
-          {/* slideOnly: the panel's glass fades itself (animate-glass-in) — an
-              opacity fade out here would break its backdrop-filter. */}
-          <CascadeItem index={0} slideOnly>
-            {/* The one part of the page that is not prerendered. What the chat
-                first shows depends on things only the browser knows (a thread
-                saved in localStorage, reduced motion, whether there is speech
-                recognition), so its build-time markup could not match and
-                React would throw the whole hero away to recover. It mounts in
-                the first render after hydration instead; until then an empty
-                box holds its place so the column beside it does not move. */}
-            {!hydrated ? <div aria-hidden="true" style={{ height: CHAT_RESTING_HEIGHT }} /> : (
-            <Chat
-              value={input}
-              onChange={setInput}
-              onSubmit={send}
-              onPrompt={send}
-              suggestions={[
-                'What is your experience with design systems?',
-                'Have you led teams?',
-                'What stack do you work in?',
-              ]}
-              placeholders={[
-                'Ask me anything…',
-                'What are you working on now?',
-                'How do you use AI day to day?',
-                'Tell me about your design system work.',
-                'Are you available for contract work?',
-              ]}
-              messages={messages}
-              isLoading={isLoading}
-              onClear={reset}
-              welcomeMessage="Ask me anything about my work, skills, or experience!"
+          {/* The drift is on each copy, not this wrapper: a transform here would
+              make it a stacking context and put both copies on one side of the subject. */}
+          {/* Letters lift under the pointer. The handler lifts the same letter in
+              both copies (matched by RiseText's `data-i`), so the outline over the
+              subject stays in register with the solid letter behind him. */}
+          <div
+            aria-hidden="true"
+            className="relative self-start mt-3 -ml-[0.03em] text-white"
+            onPointerOver={(e) => liftLetter(e.currentTarget, e.target, true)}
+            onPointerOut={(e) => liftLetter(e.currentTarget, e.target, false)}
+          >
+            <RiseText
+              text="Eric Shell"
+              delayMs={550}
+              stagger={45}
+              className={`${WORDMARK} hero-exit-drift relative z-[8] [text-shadow:0_18px_60px_rgba(5,10,60,0.35)]`}
             />
-            )}
-          </CascadeItem>
-        </CascadeGroup>
+            <RiseText
+              text="Eric Shell"
+              delayMs={550}
+              stagger={45}
+              className={`${WORDMARK} hero-exit-drift absolute left-0 top-0 z-[11] text-transparent [-webkit-text-stroke:2px_rgba(255,255,255,0.92)] pointer-events-none`}
+            />
+          </div>
 
+          <div className="relative z-20 mt-auto pt-10 grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_minmax(0,560px)] gap-8 lg:gap-16 items-end">
+            <CascadeItem index={7} className="flex flex-col gap-6">
+              <p className="font-sans text-xl md:text-2xl leading-relaxed text-white text-shadow-lg max-w-[32ch]">
+                I'm an AI Design Systems Engineer with over 15 years of professional experience developing modern web and mobile applications.
+              </p>
+              <div className="flex flex-wrap gap-2.5">
+                <Button href="#work" variant="white" className="border-0" rightIcon={<ArrowRight size={15} strokeWidth={2.5} aria-hidden="true" />}>
+                  See the work
+                </Button>
+                <Button href="#contact" variant="luminous" rightIcon={<Mail size={15} strokeWidth={2.5} aria-hidden="true" />}>
+                  Get in touch
+                </Button>
+              </div>
+            </CascadeItem>
+
+            {/* Holds its resting height while the panel is docked away, so the
+                hero above the visitor doesn't shrink under them. */}
+            <CascadeItem index={6} className="lg:justify-self-end w-full lg:max-w-[560px]" style={docked ? { minHeight: CHAT_RESTING_HEIGHT } : undefined}>
+              {/* The one part of the page that is not prerendered. What the chat
+                  first shows depends on things only the browser knows (a thread
+                  saved in localStorage, reduced motion, whether there is speech
+                  recognition), so its build-time markup could not match and
+                  React would throw the whole hero away to recover. It mounts in
+                  the first render after hydration instead; until then an empty
+                  box holds its place so the column beside it does not move. */}
+              {!hydrated ? <div aria-hidden="true" style={{ height: CHAT_RESTING_HEIGHT }} /> : (
+              <Chat
+                value={input}
+                onChange={setInput}
+                onSubmit={send}
+                onPrompt={send}
+                suggestions={[
+                  'What is your experience with design systems?',
+                  'Have you led teams?',
+                  'What stack do you work in?',
+                ]}
+                placeholders={[
+                  'Ask me anything…',
+                  'What are you working on now?',
+                  'How do you use AI day to day?',
+                  'Tell me about your design system work.',
+                  'Are you available for contract work?',
+                ]}
+                messages={messages}
+                isLoading={isLoading}
+                onClear={reset}
+                welcomeMessage="Ask me anything about my work, skills, or experience!"
+                docked={docked}
+              />
+              )}
+            </CascadeItem>
+          </div>
+        </CascadeGroup>
       </Container>
 
-      <CascadeGroup mountOnly className="hidden lg:block absolute bottom-24 left-1/2 -translate-x-1/2 z-30">
-        <CascadeItem index={0}>
-          <Button
-            href="#work"
-            variant="glass-light"
-            shape="square"
-            aria-label="Scroll to work"
-            className="rounded-full shadow-md animate-bounce"
-          >
-            <ChevronDown size={20} strokeWidth={2.5} aria-hidden="true" />
-          </Button>
-        </CascadeItem>
-      </CascadeGroup>
+      {/* Dims the photo and wordmark (not the copy) as Work rises over the hero. */}
+      <div aria-hidden="true" className="hero-exit-dim absolute inset-0 z-[19] bg-ink pointer-events-none" />
+
+      {/* The opening wipe: a solid Luminous Blue field that lifts off the photo.
+          Pure CSS, so it plays on the prerendered page before hydration; hidden
+          entirely under reduced motion and with scripts off. */}
+      <div aria-hidden="true" className="lu-flash absolute inset-0 z-40 bg-lum pointer-events-none" />
     </section>
   )
 }

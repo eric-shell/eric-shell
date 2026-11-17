@@ -2,6 +2,7 @@ import { useState, useRef, useEffect, useId } from 'react'
 import { createPortal } from 'react-dom'
 import { ChevronDown } from 'lucide-react'
 import Button from '../Button'
+import type { Variant } from '../variants'
 
 export interface DropdownOption {
   value: string
@@ -15,6 +16,8 @@ interface DropdownProps {
   onChange: (value: string) => void
   placeholder?: string
   className?: string
+  /** The trigger's surface. `white` on a blue or dark field. */
+  variant?: Variant
 }
 
 export default function Dropdown({
@@ -23,6 +26,7 @@ export default function Dropdown({
   onChange,
   placeholder = 'Select…',
   className = '',
+  variant = 'primary',
 }: DropdownProps) {
   const [open, setOpen] = useState(false)
   const [focusedIndex, setFocusedIndex] = useState(-1)
@@ -119,7 +123,7 @@ export default function Dropdown({
       <Button
         ref={triggerRef}
         type="button"
-        variant="primary"
+        variant={variant}
         size="md"
         onClick={() => setOpen((o) => !o)}
         aria-haspopup="listbox"

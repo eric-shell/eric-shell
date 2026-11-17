@@ -22,7 +22,7 @@ Key config files:
 src/
 ├── components/
 │   ├── layout/            # Site chrome shared across routes
-│   │   ├── Header/        # Fixed nav bar with cascade entrance + icon echo animation
+│   │   ├── Header/        # Floating capsule (logo + menu button naming the current section) + left sidebar with every footer link; icon echo easter egg
 │   │   ├── Footer/        # Social links, nav, copyright, privacy link
 │   │   └── index.ts
 │   ├── sections/          # Full-width page sections — each in its own directory with index.ts barrel
@@ -40,7 +40,7 @@ src/
 │       ├── Button/        # Polymorphic button/anchor — consumes variants.ts; size (sm|md|lg), shape (pill|square)
 │       ├── Card/          # <a> + Panel(white) + Pill composition for project/work-grid cards
 │       ├── Cascade/       # CascadeGroup + CascadeItem + CascadeContext (scroll/mount entrance animation)
-│       ├── Chat/          # Genie-style panel with glass overlay, textarea, submit
+│       ├── Chat/          # Genie-style panel (solid white card), textarea, submit
 │       ├── Colors/        # Storybook-only palette reference (not exported from the barrel)
 │       ├── Container/     # 1440px max-width + horizontal padding wrapper
 │       ├── ContactForm/   # Name/email/message form w/ validation + toast feedback — used by Contact section
@@ -53,7 +53,9 @@ src/
 │       ├── Panel/         # Div-only wrapping surface — consumes variants.ts
 │       ├── Pill/          # Tag/filter chip — active state, optional dismiss X
 │       ├── Post/          # Instagram-grid tile — responsive <picture> + LQIP blur-up
-│       ├── SectionHeader/ # Eyebrow + H2 pair, optional action button slot
+│       ├── RiseText/      # Display heading whose letters rise in order; kerned from src/lib/displayKerning.ts
+│       ├── SectionHeader/ # Eyebrow + H2 pair, optional action button slot (non-home pages)
+│       ├── SectionTitle/  # Home section header: eyebrow + RiseText H2 + description, one entrance rhythm (descDelay)
 │       ├── Textarea/      # Multiline text input primitive
 │       ├── Toast/         # Imperative toast queue — toast.success/error/info() + <Toaster/>
 │       ├── variants.ts    # Shared SURFACE + SURFACE_HOVER maps (single source of truth)
@@ -63,7 +65,7 @@ src/
 │   ├── hooks/             # useVisitorDetail (fetch + notes/location save + delete + dirty flag)
 │   └── lib/               # api.ts (apiCall helper), dateFormat.ts, location.ts (resolveLocation), lastVisit.ts, userAgent.ts
 ├── data/                  # Typed data files (work.ts, testimonials.ts, instagram.ts, navigation.ts, resume.ts, notes.ts, chat-context.ts)
-├── hooks/                 # useChat, useCarousel, useIntersectionObserver, useParallax, useTitleCycle
+├── hooks/                 # useChat, useCarousel, useIntersectionObserver, useParallax, useTitleCycle, useWaveGrid, useCountUp
 ├── lib/                   # Browser-side helpers (visitorId.ts, telemetry.ts, markdown.tsx)
 ├── App.tsx                # Root component — assembles sections, routes /resume and /privacy
 ├── main.tsx               # React entry point
@@ -106,12 +108,16 @@ Path alias: `@/*` → `src/*` is configured in `vite.config.ts` and `tsconfig.ap
 
 ### CSS Utilities
 
-- `.glass-blur` — defined in `src/index.css`. Applies `backdrop-filter: blur(12px)`. Under `prefers-reduced-motion`, the animation is suppressed and blur is applied statically. Used by the `glass-light` / `glass-dark` variants and the Hero glass panel. Not a Tailwind utility — cannot be overridden with `backdrop-blur-*` classes.
+- **No glassmorphism.** Nothing on the site uses `backdrop-filter` (decision 2026-11, Luminous redesign). The `glass-*` variant names survive as flat translucent tints; `.glass-blur` is gone. The Chat and ContactForm are always the solid white card, so their old "ADA / WCAG" glass-to-white switch is gone too (the `ada_toggle` event type stays so the CRM can show past counts). Don't reintroduce blur.
+- **Luminous palette** (`index.css` `@theme`): `lum` #2B54FF (fields, primary fills; white text 5.5:1), `lum-deep`, `ink` (dark sections, scrolled header), `ice`, `glow` (non-text accents only). The `luminous` variant is the solid blue button.
+- `.tracking-display` — the −0.02em tracking every Display heading uses (`H1`/`H2`/`H3` apply it). `RiseText` splits headings into per-letter inline-blocks, which switches off the font's kerning, so it re-applies the font's own pair values plus the same tracking as margins from **`src/lib/displayKerning.ts` — generated, run `npm run kerning` after changing the font**. Don't hand-tune per-pair spacing: an optical pass was tried and made LL touch.
+- `.rise-ch` — one RiseText letter; `data-out` is its pre-entrance state. The prerender's `<noscript>` style reveals it, like `.cascade-item`.
+- `.duotone-lum` (hero photo), `.lu-flash` (hero opening wipe), `.lu-wipe-in` (subject rise, on `translate` because the parallax owns `transform`), `.wave-grid` + `.work-sheet` (Work grid drift/lean and the blue sheet widening) — all off under reduced motion.
 - `.animate-ambient-a/b/c` + `.animate-ambient-hue` — slow transform-only blob drift (26/34/42s) and a 48s hue-rotate sweep, consumed by the `Backdrop` ui component. Frozen (static, still visible) under `prefers-reduced-motion`.
 - `.bg-noise` / `.noise-overlay` — SVG `feTurbulence` film grain from the shared `--noise-img` data-URI. `bg-noise` tiles it as a background (caller supplies opacity + blend mode); `noise-overlay` renders it as an `::after` film over an already-positioned panel (used by `Card` and the Chat glass panel).
 - `.icon-optical` — optical icon sizing for `Button`. The caller sets `--icon-size`, which fixes every icon's layout box; light geometric glyphs (lucide `arrow*`/`chevron*`/`corner*`/`move*`/`plus*`/`minus*`/`check*`/`x*`, matched on the `lucide-<name>` class lucide stamps on every svg) then get `scale: 1.25` so they don't read undersized next to dense pictograms. The bump is paint-only — it never changes a button's height or width, so icon-only buttons in a row stay identical. CSS beats lucide's `size`/`className` on the icon, so `size={14}` or `h-4 w-4` at a call site inside a Button has no effect.
 - `.animate-ambient-parallax` — scroll-linked blob drift via `animation-timeline: view()` inside an `@supports` guard; no-op (falls back to time-based drift only) where unsupported.
-- `.grad-hover` — optical-weight hover shift on the Google Sans `GRAD` axis (used on footer/contact links). Route changes cross-fade via `@view-transition` (MPA cross-document); the fixed header carries `view-transition-name: site-header` — keep that name unique. Display headings inside a `CascadeItem` settle from `wght` 860→700 as they enter; all of this is disabled under `prefers-reduced-motion` and print.
+- `.grad-hover` — optical-weight hover shift on the Google Sans `GRAD` axis (used on footer/contact links). Route changes cross-fade via `@view-transition` (MPA cross-document); the fixed header carries `view-transition-name: site-header` — keep that name unique. All of this is disabled under `prefers-reduced-motion` and print. (There is no heading weight animation: `display.woff2` is a single static black italic, every weight renders identically.)
 
 ### Scroll animation requirements
 
@@ -136,6 +142,7 @@ npm run lint      # ESLint (src/, api/, scripts/, tests/)
 npm run typecheck # tsc -b across the app, api, node and test projects
 npm test          # Vitest, tests/ only — see below
 npm run lqip      # regenerate src/data/lqip.ts blur-up placeholders (run after `npm run images` adds Instagram posts)
+npm run kerning   # regenerate src/lib/displayKerning.ts from public/fonts/display.woff2 (needs Playwright's Chromium)
 npm run seed:crm  # seed fake CRM visitors/sessions/page views (see /crm); :clean removes, :status counts
 npm run check:crm-ui -- http://localhost:3000 ./out   # screenshot the CRM at 4 widths, report overflow (no DB writes)
 npm run shots     # capture note screenshots into assets-source/notes/ (needs a server; see /note)
@@ -152,7 +159,7 @@ Env vars for `vercel dev` come from the linked Vercel project (cloud), not `.env
 Inherited from the existing site and maintained going forward:
 
 - **Content-first** — the work speaks; don't let chrome compete with it
-- **Professional restraint** — no gratuitous animations or decorative noise
+- **Motion with one rhythm** — the Luminous redesign (2026-11) chose more motion, but every section header enters the same way: eyebrow, then the heading's letters (RiseText, the hero wordmark's spring), then the description from 340ms (`descDelay`). Use `SectionTitle`; don't invent a per-section entrance.
 - **Scannable** — tech tags on project cards, clear section hierarchy
 - **Fixed palette, no theme switching** — the site is intentionally light-first with deliberate dark sections (Testimonials, Footer, photo sections); there is no dark mode and no `dark:` variants. Decision made 2026-07 — don't reintroduce.
 - **Responsive** — mobile-first, 4xl max container width
@@ -174,16 +181,17 @@ Routing is handled by `App.tsx` reading `window.location.pathname`:
 - **`useTitleCycle` runs on the homepage only, and holds the static `<title>` for 15s first.** It used to run everywhere and start at 500ms by blanking the title — which meant JS-rendering crawlers could snapshot a half-typed title, and `/resume` never showed a resume title at all. `PHRASES[0]` must stay byte-identical to `index.html`'s `<title>`; the cycle opens by *erasing* it, so a mismatch makes the first frame jump.
 
 Home section order in `App.tsx`:
-1. `Hero` — name, title, brief tagline, CTAs, Canvas 2D particle effects (`ParticlesSmall`/`ParticlesLarge`, no WebGL/Three.js) ✓
-2. `Work` — filterable/sortable grid of work and projects ✓
-3. `Testimonials` — two-column: context copy + auto-advancing carousel ✓
-4. `Visuals` — 4-col layout: editorial copy + Instagram photo grid (static data in `src/data/instagram.ts`) ✓
-5. `Contact` — contact form ✓
+1. `Hero` — duotone poster: forest in Luminous Blue, full-width RiseText wordmark *behind* the subject cutout plus an outlined copy in front of it, cyan particles, CTAs, white chat card. Layering is by z-index across siblings, so the wordmark must stay outside any `CascadeItem` (its transform is a stacking context) ✓
+2. `Work` — blue sheet rising over the hero, four stats counted from `work.ts`, sort + tag filter, type-only cards in a wave grid (`useWaveGrid`) ✓
+3. `Testimonials` — white field, segmented progress, quote words rise in and a highlighter sweeps `highlight` (must be an exact substring — `tests/testimonials.test.ts`) ✓
+4. `Visuals` — Instagram accordion; ≥1024px with motion it is pinned and opens with a scroll-driven zoom from full screen into the open slice. Decided after hydration, so the prerender is always the plain accordion ✓
+5. `Contact` — solid blue field, white contact card ✓
 
-- **Every particle canvas runs through `visibleRafLoop`** ([src/components/sections/Hero/visibleRafLoop.ts](src/components/sections/Hero/visibleRafLoop.ts)) and paints only while it is on screen. The homepage mounts four of them (Hero and Contact each get a `ParticlesSmall` + `ParticlesLarge`), and the cost is fill rate, not particle count: a full-viewport `clearRect` plus additive `lighter` blending at up to 2x DPR, with Large's sprites drawn at ~half the viewport width. rAF stops itself in a background *tab*; nothing stops it for a canvas merely scrolled past. Verified at 0 draws when scrolled away.
+- **Every particle canvas runs through `visibleRafLoop`** ([src/components/sections/Hero/visibleRafLoop.ts](src/components/sections/Hero/visibleRafLoop.ts)) and paints only while it is on screen. The homepage mounts two of them (the Hero's `ParticlesSmall` + `ParticlesLarge`; Contact had two more until the Luminous redesign), and the cost is fill rate, not particle count: a full-viewport `clearRect` plus additive `lighter` blending at up to 2x DPR, with Large's sprites drawn at ~half the viewport width. rAF stops itself in a background *tab*; nothing stops it for a canvas merely scrolled past. Verified at 0 draws when scrolled away.
 - **Both sims are delta-timed.** `visibleRafLoop` hands `frame` a delta in 60fps units (1 at 60Hz, ~0.5 at 120Hz) and every per-frame increment in the tick functions is multiplied by it. They were fixed-step and therefore ran at literally double speed on a 120Hz display. Two guards make delta-time safe to pause, and removing either reintroduces a real bug: `MAX_DELTA` caps a step at 3 frames so a stalled tab or a slept machine can't teleport every particle, and `last` is re-baselined on every `start()` so the first frame after an off-screen pause is charged as one frame rather than the whole time spent scrolled away. Verified refresh-rate independent at 60/120/144Hz.
 - **The work grid's `ItemList` JSON-LD is generated at build time** by the `workSchema()` plugin in `vite.config.ts`, from `src/data/work.ts`, into `index.html` only. Hand-copying 39 entries into the HTML would be stale within a release, and a stale ItemList is worse than none. It deliberately omits `image` (the cards hotlink Unsplash stock that has nothing to do with the projects — asserting that as a project's image tells a crawler something false) and uses `contributor` rather than `author` (client and agency work; Eric contributed front-end architecture, he did not author these properties). Add `image` back when the cards carry real screenshots.
-- **Work card images are responsive off Unsplash's own CDN.** `WorkItem.image` holds a photo *id*, not a URL; `workImageSrc` / `workImageSrcSet` / `WORK_IMAGE_SIZES` in [work.ts](src/data/work.ts) derive the rest, and `Card` stays generic via `imageSrcSet` / `imageSizes` props. Before this every device downloaded a flat `w=800` into a 339px slot. 1x displays now transfer 68–76% less; **no device transfers more**, which is a property two things enforce and both are easy to break:
+- **Work cards are type-only since the Luminous redesign** — the grid passes no `image`, so the Unsplash stock is no longer requested. The helpers below still exist in `work.ts` for whenever real screenshots arrive; the notes stand for that day.
+- **Work card images were responsive off Unsplash's own CDN.** `WorkItem.image` holds a photo *id*, not a URL; `workImageSrc` / `workImageSrcSet` / `WORK_IMAGE_SIZES` in [work.ts](src/data/work.ts) derive the rest, and `Card` stays generic via `imageSrcSet` / `imageSizes` props. Before this every device downloaded a flat `w=800` into a 339px slot. 1x displays now transfer 68–76% less; **no device transfers more**, which is a property two things enforce and both are easy to break:
   - **`sizes` must be exact, `calc()` and all.** Plain `50vw` ignores Container's 48px padding and the 12px grid gaps — at 834px it claims 417px for a 387px card, and that 8% overestimate was enough to push tablets onto a bigger candidate and make them *worse* than before the srcSet existed. An inaccurate `sizes` doesn't degrade gracefully, it inverts the optimisation. Keep it in step with Work.tsx's `grid-cols-*` chain.
   - **`CARD_WIDTHS` is capped at 800.** A 3x phone wants 936px and will take a 1024 candidate — 51% more than the old flat `w=800`, on the most likely-metered device class. These are decorative thumbnails. Don't extend the ladder without re-measuring high-DPI mobile.
 - **No `twitter:creator` / `twitter:site`** — there is no X/Twitter account in `navigation.ts` or the JSON-LD `sameAs`. Don't add one speculatively; the Twitter card works without it.
@@ -203,6 +211,7 @@ Every public document is rendered to HTML at build time and hydrated in the brow
 - **A Suspense boundary must not sit under a `CascadeGroup` unless everything inside it is already loaded.** `CascadeGroup` is a context provider whose value changes when it scrolls into view, and React answers a context change above a not-yet-hydrated boundary by hydrating it on the spot; if anything inside still suspends, it discards the prerendered HTML and shows the fallback. On a note page that was the article collapsing to one paragraph of raw markdown and re-expanding: CLS 0.47. `NoteArticle` ([Note.tsx](src/components/sections/Notes/Note.tsx)) is the worked example — the boundary wraps the group, and it waits on `loadMarkdown()` before rendering. For the same reason, don't let a component re-render past a boundary it prerendered.
 - **`entry-server.tsx` renders until nothing suspends, with `progressiveChunkSize` maxed.** Either one missing and React emits the section as a hidden `<div>` plus an inline script that moves it into place, which is invisible without JavaScript. The loop throws if it does not settle.
 - **`CascadeItem` starts at `opacity: 0` and is revealed from JS**, so the prerender script adds a `<noscript>` style that reveals it. Without it a no-JS visitor would get the whole page and see none of it.
+- **The server build's scratch dir lives in `node_modules/.cache/prerender-ssr`, not the project root.** `vercel dev` watches the whole tree, and a `dist-ssr/` that appeared and vanished mid-scan crashed it (`ENOENT: scandir dist-ssr`) whenever a build ran beside the dev server. Don't move it back.
 - **A prerender failure fails the build**, deliberately. Check with a throttled run, not just a fast local one: the article bug above was invisible until the network was slowed.
 
 ## Notes (`/notes`)
