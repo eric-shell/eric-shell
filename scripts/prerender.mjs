@@ -10,10 +10,16 @@
  * loaded, run, and rendered an `<img>` for the preload scanner to find.
  *
  * Runs last in `npm run build`, after `vite build` has written dist/. It builds
- * the same app a second time for Node (src/entry-server.tsx -> dist-ssr/), and
+ * the same app a second time for Node (src/entry-server.tsx -> a scratch dir), and
  * for each document in dist/ asks that build to render the matching route, then
  * writes the result into `#root`. The browser hydrates it — see src/main.tsx.
- * dist-ssr/ is scratch space and is deleted afterwards, pass or fail.
+ * The scratch dir is deleted afterwards, pass or fail.
+ *
+ * It lives in node_modules/.cache/, not the project root, because `vercel dev`
+ * watches the whole project tree: a folder that appears and is deleted a moment
+ * later, mid-scan, crashed it with ENOENT (scandir dist-ssr) whenever a build
+ * ran beside a dev server. The watcher ignores node_modules/, and Node still
+ * resolves the bundle's bare imports (react, react-dom/server) from there.
  *
  * The server build is started from here rather than as a second `vite build`
  * in package.json so that its three settings live beside the code that depends
@@ -37,7 +43,7 @@ import { build } from 'vite'
 
 const root = resolve(import.meta.dirname, '..')
 const dist = resolve(root, 'dist')
-const ssr = resolve(root, 'dist-ssr')
+const ssr = resolve(root, 'node_modules/.cache/prerender-ssr')
 
 const EMPTY_ROOT = '<div id="root"></div>'
 
@@ -51,7 +57,7 @@ const EMPTY_ROOT = '<div id="root"></div>'
  * ancestor's opacity would break their backdrop-filter), so it needs the same
  * treatment. `!important` because both are set inline on the element.
  */
-const NOSCRIPT = '<noscript><style>.cascade-item{opacity:1!important;translate:none!important;transform:none!important;--cascade-fade:1!important}</style></noscript>'
+const NOSCRIPT = '<noscript><style>.cascade-item,.rise-ch{opacity:1!important;translate:none!important;transform:none!important;--cascade-fade:1!important}.lu-flash{display:none!important}</style></noscript>'
 
 /** [file under dist/, the pathname it is served at] */
 const documents = [

@@ -20,7 +20,8 @@
     "check:crm-ui": "node scripts/crm-ui-check.mjs",
     "shots": "node scripts/capture-note-shots.mjs",
     "storybook": "storybook dev -p 6006",
-    "build-storybook": "storybook build"
+    "build-storybook": "storybook build",
+    "kerning": "node scripts/display-kerning.mjs"
   },
   "dependencies": {
     "@neondatabase/serverless": "^1.1.0",

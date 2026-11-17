@@ -32,6 +32,14 @@ interface ChatProps {
   placeholders?: string[]
   welcomeMessage?: string
   className?: string
+  /**
+   * The panel's home (the hero) is scrolled out of view. The panel tucks itself
+   * into the floating "Start a Chat" button at the bottom right; clicking that
+   * opens the panel right there, fixed, rather than scrolling back. When the
+   * home comes back into view, a panel that was tucked away by docking returns
+   * to it. One the visitor closed themselves stays closed.
+   */
+  docked?: boolean
 }
 
 const TEXTAREA_MAX_HEIGHT = 160
@@ -114,13 +122,32 @@ export default function Chat({
   placeholders = [],
   welcomeMessage,
   className,
+  docked = false,
 }: ChatProps) {
   const [isOpen, setIsOpen] = useState(true)
   const [isClosing, setIsClosing] = useState(false)
-  const [isWhite, setIsWhite] = useState(false)
+  // Docking, adjusted during render (not in an effect) so the panel and the
+  // button never both show for a frame. `autoDocked` remembers that it was the
+  // scroll, not the visitor, that put the panel away.
+  const [prevDocked, setPrevDocked] = useState(docked)
+  const [autoDocked, setAutoDocked] = useState(false)
+  if (docked !== prevDocked) {
+    setPrevDocked(docked)
+    if (docked && isOpen && !isClosing) {
+      setIsOpen(false)
+      setAutoDocked(true)
+    } else if (!docked && autoDocked) {
+      setIsOpen(true)
+      setAutoDocked(false)
+    }
+  }
+  // The panel is always the solid white card. It used to default to frosted
+  // glass with an "ADA / WCAG" switch to this high-contrast surface; with
+  // glass gone from the site the high-contrast surface is simply the surface.
+  // (The `ada_toggle` event type is kept so the CRM can still show past counts.)
+  const isWhite = true
   const threadRef = useRef<HTMLDivElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
-  const adaFirstMount = useRef(true)
   const wasClosedRef = useRef(false)
 
   // Pull the markdown parser down on idle rather than at first paint. See
@@ -205,11 +232,6 @@ export default function Chat({
     el.style.height = Math.min(el.scrollHeight, TEXTAREA_MAX_HEIGHT) + 'px'
   }, [value])
 
-  useEffect(() => {
-    if (adaFirstMount.current) { adaFirstMount.current = false; return }
-    sendEvent('ada_toggle', { enabled: isWhite })
-  }, [isWhite])
-
   // Dictation composes onto whatever is already in the field — see the hook,
   // which keeps these callbacks in a ref so a session started mid-sentence
   // still reads the current text.
@@ -271,9 +293,12 @@ export default function Chat({
       <Button
         onClick={() => {
           setIsOpen(true)
-          document.getElementById('hero')?.scrollIntoView({ behavior: 'smooth' })
+          setAutoDocked(false)
+          // Docked, the panel opens where the button is. Otherwise its home is
+          // on screen or nearby, so take the visitor to it.
+          if (!docked) document.getElementById('hero')?.scrollIntoView({ behavior: 'smooth' })
         }}
-        variant="primary"
+        variant="luminous"
         size="md"
         className="genie-button fixed bottom-6 right-6 z-50 shadow-xl animate-genie-button-in z-[900]"
         rightIcon={<MessagesSquare size={15} strokeWidth={2.5} aria-hidden="true" />}
@@ -288,10 +313,10 @@ export default function Chat({
   const showTypingDots = isLoading && (!lastMessage || lastMessage.role === 'user')
   const submitDisabled = isLoading || !value.trim()
 
-  const assistantBubbleClass = 'self-start max-w-[85%] rounded-2xl px-4 py-2.5 font-sans text-sm text-blue-800 bg-gradient-to-br from-white to-blue-50 shadow-md'
+  const assistantBubbleClass = 'self-start max-w-[85%] rounded-2xl px-4 py-2.5 font-sans text-sm text-blue-950 bg-ice'
   const borderClass = isWhite ? 'border-blue-950/10' : 'border-white/20'
 
-  return (
+  const panel = (
     <div
       className={twMerge(
         'genie-panel relative flex flex-col rounded-2xl overflow-hidden border',
@@ -319,30 +344,12 @@ export default function Chat({
             borderClass
           )}
         >
-          <button
-            role="switch"
-            aria-checked={isWhite}
-            aria-label="Toggle high-contrast mode"
-            onClick={() => setIsWhite(v => !v)}
-            className={twMerge(
-              'flex items-center gap-1.5 rounded-full px-2 py-1 cursor-pointer transition-colors',
-              isWhite ? 'text-blue-950' : 'text-white'
-            )}
-          >
-            {/* On = the semantic `success` fill, not primary blue: the switch
-                reports a state that is now satisfied, and green separates it
-                from the blue CTAs sharing the panel. */}
-            <span className={twMerge(
-              'relative inline-flex h-4 w-7 items-center rounded-full transition-all',
-              isWhite ? 'bg-success hover:bg-success-hover' : 'bg-black/20 hover:bg-black/50'
-            )}>
-              <span className={twMerge(
-                'inline-block h-2.5 w-2.5 rounded-full bg-white shadow transition-transform',
-                isWhite ? 'translate-x-3.5' : 'translate-x-0.5'
-              )} />
+          <span className="flex items-center gap-2 pl-1 font-sans text-sm font-semibold text-blue-950">
+            <span aria-hidden="true" className="grid place-items-center w-7 h-7 rounded-lg bg-lum">
+              <img src="/icon.svg" alt="" className="w-3.5" />
             </span>
-            <span className="font-sans text-xs font-semibold tracking-wide">ADA / WCAG</span>
-          </button>
+            Ask me anything
+          </span>
           <div className="flex items-center gap-1.5">
             {hasMessages && onClear && (
               <Button
@@ -370,35 +377,11 @@ export default function Chat({
         </header>
         <div
           ref={threadRef}
-          className="relative z-0 flex-1 min-h-[280px] max-h-[400px] overflow-y-auto p-3 flex flex-col gap-3"
+          className="relative z-0 flex-1 min-h-[200px] max-h-[400px] overflow-y-auto p-3 flex flex-col gap-3"
         >
           {welcomeMessage && !hasMessages && (
             <div className={assistantBubbleClass} aria-label="Welcome message">
               <Markdown components={mdComponents}>{typedWelcome}</Markdown>
-            </div>
-          )}
-          {onPrompt && suggestions.length > 0 && !hasMessages && (
-            <div
-              className={twMerge(
-                'flex flex-wrap gap-2 transition-[opacity,transform] duration-500 ease-out motion-reduce:transition-none',
-                welcomeDone ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-[6px]'
-              )}
-              role="group"
-              aria-label="Suggested questions"
-            >
-              {suggestions.map((s) => (
-                <Button
-                  key={s}
-                  type="button"
-                  size="sm"
-                  variant={'primary'}
-                  className="rounded-full"
-                  disabled={isLoading || !welcomeDone}
-                  onClick={() => handlePrompt(s)}
-                >
-                  {s}
-                </Button>
-              ))}
             </div>
           )}
           {hasMessages && messages.map((m, i) => (
@@ -406,7 +389,7 @@ export default function Chat({
               key={i}
               className={
                 m.role === 'user'
-                  ? 'self-end max-w-[85%] rounded-2xl px-4 py-2.5 font-sans text-sm whitespace-pre-wrap text-white bg-gradient-to-br from-blue-600 to-blue-700 shadow-sm'
+                  ? 'self-end max-w-[85%] rounded-2xl px-4 py-2.5 font-sans text-sm whitespace-pre-wrap text-white bg-lum'
                   : assistantBubbleClass
               }
             >
@@ -433,6 +416,31 @@ export default function Chat({
           'relative z-10 border-t px-3 py-3',
           borderClass
         )}>
+          {/* Suggestions sit directly above the composer they fill in. */}
+          {onPrompt && suggestions.length > 0 && !hasMessages && (
+            <div
+              className={twMerge(
+                'flex flex-wrap gap-2 pb-3 transition-[opacity,transform] duration-500 ease-out motion-reduce:transition-none',
+                welcomeDone ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-[6px]'
+              )}
+              role="group"
+              aria-label="Suggested questions"
+            >
+              {suggestions.map((s) => (
+                <Button
+                  key={s}
+                  type="button"
+                  size="sm"
+                  variant="luminous"
+                  className="rounded-full"
+                  disabled={isLoading || !welcomeDone}
+                  onClick={() => handlePrompt(s)}
+                >
+                  {s}
+                </Button>
+              ))}
+            </div>
+          )}
           <div className="relative">
             <textarea
               ref={textareaRef}
@@ -515,7 +523,7 @@ export default function Chat({
                   if (e.detail === 0) textareaRef.current?.focus({ preventScroll: true })
                 }}
                 disabled={submitDisabled}
-                variant="primary"
+                variant="luminous"
                 shape="square"
                 size="md"
                 className="rounded-full shadow-md [--icon-size:1.125rem] disabled:opacity-50 disabled:cursor-not-allowed"
@@ -560,4 +568,19 @@ export default function Chat({
       <div role="status" className="sr-only">{announcement}</div>
     </div>
   )
+
+  // Docked and opened from the button: the same panel, fixed at the bottom
+  // right over whatever the visitor is reading. Portalled because the panel's
+  // home sits inside transformed ancestors (the hero's CascadeItems), which
+  // would otherwise be what `fixed` positions it against.
+  if (docked) {
+    return createPortal(
+      <div className="fixed bottom-5 right-5 z-[900] w-[min(420px,calc(100vw-40px))] origin-bottom-right animate-dock-in shadow-[0_30px_80px_-30px_rgba(5,10,60,0.6)] rounded-2xl">
+        {panel}
+      </div>,
+      document.body,
+    )
+  }
+
+  return panel
 }

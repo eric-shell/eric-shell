@@ -75,7 +75,7 @@ export default function Privacy() {
                   </div>
                   <div>
                     <dt className="font-semibold">Chat interface actions</dt>
-                    <dd className="text-blue-950/80">A count of a few deliberate actions in the chat panel: turning high-contrast mode on or off, clearing a conversation, and starting voice input. Voice input is worth spelling out — dictation runs through your own browser's speech recognition, which on Chrome sends the audio to Google and on Safari to Apple, under their privacy policies rather than mine. No audio, and no transcript beyond the message you choose to send, ever reaches this site. All that's recorded here is that the microphone button was pressed.</dd>
+                    <dd className="text-blue-950/80">A count of a few deliberate actions in the chat panel: clearing a conversation and starting voice input. Voice input is worth spelling out — dictation runs through your own browser's speech recognition, which on Chrome sends the audio to Google and on Safari to Apple, under their privacy policies rather than mine. No audio, and no transcript beyond the message you choose to send, ever reaches this site. All that's recorded here is that the microphone button was pressed.</dd>
                   </div>
                   <div>
                     <dt className="font-semibold">Contact form submissions</dt>

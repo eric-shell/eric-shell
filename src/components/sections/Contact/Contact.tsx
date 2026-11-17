@@ -1,106 +1,42 @@
-import { lazy, Suspense } from 'react'
-import { Backdrop, CascadeGroup, CascadeItem, ContactForm, Container, Eyebrow, H2 } from '../../ui'
-import { useParallax } from '@/hooks'
-import { useHydrated } from '@/lib/hydration'
+import { CascadeGroup, CascadeItem, ContactForm, Container, SectionTitle, descDelay } from '../../ui'
 
-const ParticlesSmall = lazy(() => import('../Hero/ParticlesSmall'))
-const ParticlesLarge = lazy(() => import('../Hero/ParticlesLarge'))
-
+/**
+ * A full Luminous Blue field with the white contact card. The photo, particles
+ * and frosted form this replaced are gone: the hero is the page's one
+ * photographic moment, and the blue carries the close.
+ */
 export default function Contact() {
-  // Canvases are client-only, for the reason given on the Hero's.
-  const hydrated = useHydrated()
-  const { sectionRef, bgRef, gradientRef, handleMouseMove, handleMouseLeave } = useParallax({
-    bgStrength: 15,
-    gradientStrength: 8,
-    subjectStrength: 0,
-    lerpFactor: 0.08,
-  })
-
   return (
-    <section
-      id="contact"
-      ref={sectionRef}
-      onMouseMove={handleMouseMove}
-      onMouseLeave={handleMouseLeave}
-      className="relative min-h-screen overflow-hidden flex items-center"
-    >
-      <picture>
-        {/* No 2560 candidate: the source is 2048px wide, so that variant was a
-            clamped 2048 advertising itself as 2560 and getting picked over the
-            1920 on high-DPI displays for pixels it did not have. */}
-        <source
-          type="image/avif"
-          srcSet="/contact/EJS01845-640.avif 640w, /contact/EJS01845-1280.avif 1280w, /contact/EJS01845-1920.avif 1920w"
-          sizes="100vw"
-        />
-        <source
-          type="image/webp"
-          srcSet="/contact/EJS01845-640.webp 640w, /contact/EJS01845-1280.webp 1280w, /contact/EJS01845-1920.webp 1920w"
-          sizes="100vw"
-        />
-        <img
-          ref={bgRef}
-          src="/contact/EJS01845-1920.jpg"
-          srcSet="/contact/EJS01845-640.jpg 640w, /contact/EJS01845-1280.jpg 1280w, /contact/EJS01845-1920.jpg 1920w"
-          sizes="100vw"
-          alt="Eric looking up toward the sky"
-          aria-hidden="true"
-          loading="lazy"
-          decoding="async"
-          style={{ transform: 'scale(1.04) translate(0px, 0px)' }}
-          className="absolute inset-0 w-full h-full object-cover z-0"
-        />
-      </picture>
+    <section id="contact" className="relative bg-lum text-white py-24 md:py-36 overflow-hidden">
+      <Container className="grid grid-cols-1 lg:grid-cols-2 gap-14 lg:gap-24 items-center">
+        <SectionTitle eyebrow="Say What's up" title="Get in Touch" eyebrowClassName="text-white">
+          <div className="flex flex-col gap-5 pt-8 font-sans text-lg leading-relaxed max-w-lg">
+            <CascadeItem delayMs={descDelay(0)}>
+              <p>
+                Have a project in mind, a role to fill, or just want to connect?
+                Drop me a message and I'll get back to you.
+              </p>
+            </CascadeItem>
+            <CascadeItem delayMs={descDelay(1)}>
+              <p className="text-white/90 text-base">
+                I read every message and usually reply within a day or two.
+                A little context goes a long way!  The more you can share, the better I can respond.
+              </p>
+            </CascadeItem>
+            <CascadeItem delayMs={descDelay(2)}>
+              <p className="text-white/90 text-base">
+                Prefer to skip the form? Here's my email:<br/><a href="mailto:ericjshell@gmail.com" className="grad-hover underline underline-offset-4 decoration-white/50 hover:decoration-white">ericjshell@gmail.com</a>
+              </p>
+            </CascadeItem>
+          </div>
+        </SectionTitle>
 
-      {hydrated && <Suspense fallback={null}><ParticlesSmall mode="fall-toward" /></Suspense>}
-
-      <div
-        ref={gradientRef}
-        className="absolute inset-0 z-[5] pointer-events-none mix-blend-multiply"
-        style={{ background: 'radial-gradient(ellipse 45% 70% at 25% 50%, rgba(0,0,0,0.75) 0%, rgba(0,0,0,0.35) 50%, transparent 80%)' }}
-      />
-      <Backdrop tone="photo" className="z-6" />
-
-      {hydrated && <Suspense fallback={null}><ParticlesLarge mode="fall-toward" /></Suspense>}
-
-      <Container className="relative z-20 w-full py-24 grid grid-cols-1 lg:grid-cols-2 gap-16 lg:gap-24 items-center">
-
-        {/* Left: heading + copy */}
-        <CascadeGroup className="flex flex-col gap-6" threshold={0.15}>
-          <CascadeItem index={0}>
-            <div>
-              <Eyebrow size="lg" className="text-white text-shadow-md pb-2 block">Say What's up</Eyebrow>
-              <H2 className="text-white text-shadow-lg">Get in Touch</H2>
-            </div>
-          </CascadeItem>
-          <CascadeItem index={1}>
-            <p className="font-sans text-lg leading-relaxed text-white text-shadow-md max-w-lg">
-              Have a project in mind, a role to fill, or just want to connect?
-              Drop me a message and I'll get back to you.
-            </p>
-          </CascadeItem>
-          <CascadeItem index={2}>
-            <p className="font-sans text-lg leading-relaxed text-white text-shadow-md max-w-sm">
-              I read every message and usually reply within a day or two.
-              A little context goes a long way!  The more you can share, the better I can respond.
-            </p>
-          </CascadeItem>
-          <CascadeItem index={3}>
-            <p className="font-sans text-lg leading-relaxed text-white text-shadow-md max-w-sm">
-              Prefer to skip the form? Here's my email:<br/><a href="mailto:ericjshell@gmail.com" className="grad-hover underline underline-offset-4 decoration-white/40 hover:decoration-white">ericjshell@gmail.com</a>
-            </p>
+        {/* Its own group (it sits in the other column), on the description's beat. */}
+        <CascadeGroup threshold={0.15}>
+          <CascadeItem delayMs={descDelay(2)}>
+            <ContactForm className="shadow-[0_40px_80px_-40px_rgba(5,10,60,0.6)]" />
           </CascadeItem>
         </CascadeGroup>
-
-        {/* Right: form */}
-        <CascadeGroup className="flex flex-col gap-6" threshold={0.1}>
-          {/* The form's root is a glass Panel — it fades itself via cascade-fade
-              so the item only slides, keeping the blur out of a backdrop root. */}
-          <CascadeItem index={0} slideOnly>
-            <ContactForm className="cascade-fade" />
-          </CascadeItem>
-        </CascadeGroup>
-
       </Container>
     </section>
   )
