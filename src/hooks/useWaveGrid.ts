@@ -17,9 +17,9 @@ const reducedMotion = () => window.matchMedia('(prefers-reduced-motion: reduce)'
  * - lean: the whole grid skews a degree or two with scroll velocity and
  *   relaxes when the page stops (`--skew`);
  * - tilt: the card under the pointer tilts toward it and its glow follows
- *   (`--tx` `--ty` `--mx` `--my` `--ax` `--ay` on the card's link);
+ *   (`--tx` `--ty` `--mx` `--my` `--ax` `--ay` on the card, found by `data-card`);
  * - reflow: when the visible set changes, cards that stay slide from their old
- *   position to their new one rather than jumping (FLIP on each item's link).
+ *   position to their new one rather than jumping (FLIP on each item's card).
  *
  * Returns the column count, for staggering the flip-in entrance by column.
  */
@@ -108,7 +108,7 @@ export function useWaveGrid(gridRef: RefObject<HTMLElement | null>, itemsKey: st
     if (!grid || reducedMotion() || !window.matchMedia('(hover: hover)').matches) return
     const VARS = ['--tx', '--ty', '--ax', '--ay']
     const move = (e: PointerEvent) => {
-      const card = (e.target as Element).closest<HTMLElement>('li > a')
+      const card = (e.target as Element).closest<HTMLElement>('[data-card]')
       if (!card || !grid.contains(card)) return
       const r = card.getBoundingClientRect()
       const x = (e.clientX - r.left) / r.width
@@ -121,7 +121,7 @@ export function useWaveGrid(gridRef: RefObject<HTMLElement | null>, itemsKey: st
       card.style.setProperty('--ay', `${((y - 0.5) * 10).toFixed(1)}px`)
     }
     const out = (e: PointerEvent) => {
-      const card = (e.target as Element).closest<HTMLElement>('li > a')
+      const card = (e.target as Element).closest<HTMLElement>('[data-card]')
       if (card && !card.contains(e.relatedTarget as Node | null)) VARS.forEach(v => card.style.removeProperty(v))
     }
     grid.addEventListener('pointermove', move)

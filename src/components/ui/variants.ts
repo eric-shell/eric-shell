@@ -1,197 +1,138 @@
+/**
+ * Every surface on the site. `Button`, `Panel`, `Pill` and `Toast` read these
+ * maps; nothing outside `components/ui` may (ESLint enforces it), so a surface
+ * is always named, never spelled out in classes at a call site.
+ *
+ * Which one goes where:
+ *
+ *   on a lum field    `white` (the main action), `tint-white` (the second one)
+ *   on an ink field   `luminous` (the main action), `tint-ink`, `raised-dark`
+ *   on white          `luminous` (the main action), `outline` (everything else)
+ *
+ * There is deliberately no default. Each of these is right on one kind of
+ * field and wrong on another, so the call site has to say which it means.
+ */
 export type Variant =
-  | 'primary'
-  | 'secondary'
-  | 'ghost'
-  /**
-   * Translucent tints for a photo or dark canvas. The names are historical: as of
-   * the Luminous redesign nothing on the site uses backdrop blur, so these are
-   * flat tints. Prefer `luminous` / `white` / `raised-dark` for new work.
-   */
-  | 'glass-light'
-  | 'glass-dark'
-  | 'error-glass'
-  | 'success-glass'
-  | 'white'
-  /** Solid Luminous Blue with a white label (5.5:1). The home page's primary fill. */
+  /** Solid Luminous Blue, white label (5.5:1). The main action on white or ink. */
   | 'luminous'
-  /**
-   * Raised surface for a dark canvas — the inverse of `white`. Unlike the
-   * `glass-*` variants it applies no backdrop blur, so it is safe to use on
-   * large, scrolling surfaces (the admin's visitor table) where blur would
-   * repaint on every frame. Used by the admin CRM.
-   */
+  /** Solid white, ink label, no border. The main action on a lum field, and the
+   *  fill of every white card. Invisible on white: use `outline` there. */
+  | 'white'
+  /** White with an ink hairline, for a white control sitting on white. */
+  | 'outline'
+  /** A flat white tint for the second action on a lum field. Label 4.6:1. */
+  | 'tint-white'
+  /** A flat ink tint for a quiet control on a lum field or inside a notice. */
+  | 'tint-ink'
+  /** Raised surface for the ink canvas: the admin's panels. */
   | 'raised-dark'
+  /** Notice panels: a toast, an inline error. Deep fill, bright border, white
+   *  label. Surfaces to read, not buttons to press. */
+  | 'notice-error'
+  | 'notice-success'
+  | 'notice-info'
   /**
-   * Semantic status fills. Solid, not gradients: a gradient has two different
-   * contrast values and only one of them tends to get checked. Each fill is
-   * validated for a white label AND for its boundary against both the light and
-   * dark canvases — see the derivation note in index.css.
-   *
-   * The four are one family, not four independent picks: all share `primary`'s
-   * lightness (blue-600 base / blue-700 hover) and sit at the same fraction of
-   * their hue's available chroma, so they read at matching contrast and
-   * vibrance and differ only in hue.
-   *
-   * `info` has no token of its own — it *is* the primary blue, flat rather than
-   * gradient. It differs from `primary` in intent, not looks: `primary` is
-   * "this is the main action here", `info` is "this action carries
-   * neutral/informational status". Reach for `primary` for a CTA.
+   * Status buttons. Both share one lightness (L 0.546) and hover by gaining
+   * chroma, never by darkening: they land on white and on ink alike, and a fill
+   * that darkens walks toward the ink canvas at the moment it is pointed at.
+   * See the derivation beside the tokens in index.css.
    */
-  | 'info'
   | 'success'
-  | 'warning'
   | 'error'
 
 export type Size = 'sm' | 'md' | 'lg'
 
 export const SURFACE: Record<Variant, string> = {
-  primary:   'text-white bg-gradient-to-br from-blue-600 to-blue-700 border border-transparent shadow-[inset_0_1px_0_0_rgba(255,255,255,0.16)]',
-  secondary: 'text-blue-800 bg-gradient-to-br from-white to-blue-50 border border-transparent',
-  ghost:     'text-blue-950/60 border border-transparent',
-  'glass-light': 'text-white bg-white/12 border border-white/25',
-  'glass-dark':  'text-white bg-blue-950/40 border border-white/10',
-  'error-glass':   'text-white bg-red-950 border border-red-400/50',
-  'success-glass': 'text-white bg-green-950 border border-green-400/50',
-  white:     'bg-white border border-blue-950/10 text-blue-950',
-  luminous:  'text-white bg-lum border border-transparent',
-  'raised-dark': 'text-white bg-white/[0.055] border border-white/10',
-  info:      'text-white bg-blue-600 border border-transparent shadow-[inset_0_1px_0_0_rgba(255,255,255,0.16)]',
-  success:   'text-white bg-success border border-transparent shadow-[inset_0_1px_0_0_rgba(255,255,255,0.16)]',
-  warning:   'text-white bg-warning border border-transparent shadow-[inset_0_1px_0_0_rgba(255,255,255,0.16)]',
-  error:     'text-white bg-error border border-transparent shadow-[inset_0_1px_0_0_rgba(255,255,255,0.16)]',
+  luminous:         'text-white bg-lum border border-transparent',
+  white:            'text-ink bg-white border border-transparent',
+  outline:          'text-ink bg-white border border-ink/10',
+  'tint-white':     'text-white bg-white/10 border border-white/30',
+  'tint-ink':       'text-white bg-ink/40 border border-white/10',
+  'raised-dark':    'text-white bg-white/[0.055] border border-white/10',
+  'notice-error':   'text-white bg-error-deep border border-error-bright/50',
+  'notice-success': 'text-white bg-success-deep border border-success-bright/50',
+  'notice-info':    'text-white bg-ink border border-glow/40',
+  success:          'text-white bg-success border border-transparent inset-shadow-highlight',
+  error:            'text-white bg-error border border-transparent inset-shadow-highlight',
 }
 
 /**
- * Translucent darkening layer behind a Button's leading/trailing icon.
- * Deliberately alpha-only so it tracks whatever the surface underneath is
- * doing — including the hover gradient — instead of restating each variant's
- * color.
+ * Translucent darkening layer behind a Button's leading or trailing icon.
+ * Alpha only, so it tracks whatever the surface underneath is doing, hover
+ * included, instead of restating each variant's colour.
  */
 export const SURFACE_ICON: Record<Variant, string> = {
-  primary:   'bg-blue-950/25',
-  secondary: 'bg-blue-950/8',
-  ghost:     'bg-blue-950/6',
-  'glass-light': 'bg-blue-950/15',
-  'glass-dark':  'bg-blue-950/25',
-  'error-glass':   'bg-red-950/50',
-  'success-glass': 'bg-green-950/50',
-  white:     'bg-blue-950/6',
-  luminous:  'bg-ink/25',
-  'raised-dark': 'bg-white/10',
-  info:      'bg-blue-950/25',
-  success:   'bg-blue-950/25',
-  warning:   'bg-blue-950/25',
-  error:     'bg-blue-950/25',
+  luminous:         'bg-ink/25',
+  white:            'bg-ink/6',
+  outline:          'bg-ink/6',
+  'tint-white':     'bg-ink/15',
+  'tint-ink':       'bg-ink/25',
+  'raised-dark':    'bg-white/10',
+  'notice-error':   'bg-ink/25',
+  'notice-success': 'bg-ink/25',
+  'notice-info':    'bg-white/10',
+  success:          'bg-ink/25',
+  error:            'bg-ink/25',
 }
 
 export const SURFACE_ICON_HOVER: Record<Variant, string> = {
-  // /45 rather than /35, for the same reason as the status variants below:
-  // primary's surface now holds its lightness on hover, so the slab is what
-  // supplies the sense of depth.
-  primary:   'group-hover:bg-blue-950/45',
-  secondary: 'group-hover:bg-blue-950/20',
-  ghost:     'group-hover:bg-blue-950/10',
-  'glass-light': 'group-hover:bg-blue-950/25',
-  'glass-dark':  'group-hover:bg-blue-950/35',
-  'error-glass':   'group-hover:bg-red-950/40',
-  'success-glass': 'group-hover:bg-green-950/40',
-  white:     'group-hover:bg-blue-950/10',
-  luminous:  'group-hover:bg-ink/40',
-  'raised-dark': 'group-hover:bg-white/20',
-  // Status variants deepen the slab further than the rest (/25 -> /45). Their
-  // surface deliberately holds its lightness on hover, so the slab carries the
-  // depth cue instead — and being alpha over a small region, it costs the
-  // button nothing in contrast against the canvas behind it.
-  info:      'group-hover:bg-blue-950/45',
-  success:   'group-hover:bg-blue-950/45',
-  warning:   'group-hover:bg-blue-950/45',
-  error:     'group-hover:bg-blue-950/45',
+  luminous:         'group-hover:bg-ink/40',
+  white:            'group-hover:bg-ink/10',
+  outline:          'group-hover:bg-ink/10',
+  'tint-white':     'group-hover:bg-ink/25',
+  'tint-ink':       'group-hover:bg-ink/35',
+  'raised-dark':    'group-hover:bg-white/20',
+  'notice-error':   'group-hover:bg-ink/40',
+  'notice-success': 'group-hover:bg-ink/40',
+  'notice-info':    'group-hover:bg-white/20',
+  // The status fills hold their lightness on hover, so the slab deepens
+  // further than the rest to carry the depth cue.
+  success:          'group-hover:bg-ink/45',
+  error:            'group-hover:bg-ink/45',
 }
 
-/** Strengthened top highlight + inset hairline ring, shared by every fill that
- *  holds its lightness on hover. Inset, so it reads against the fill rather
- *  than the canvas and behaves the same on light and dark. Kept faint on
- *  purpose — an early pass at 0.40/0.22 read as a glow/halo rather than an
- *  edge, especially where it stacks with an outer `shadow-*` at the call
- *  site (e.g. the Chat send button's `shadow-md`). */
-const HOVER_LIFT =
-  'hover:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.30),inset_0_0_0_1px_rgba(255,255,255,0.14)]'
-
 /**
- * `shape="square"` counterpart to `HOVER_LIFT`: the strengthened top
- * highlight without the hairline ring. At a tight circular radius (the
- * icon-only square form, frequently `rounded-full`) a ring wraps the entire
- * perimeter uniformly and reads as a halo rather than an edge — the Chat
- * send button (`primary`, `shape="square"`) is the case that surfaced this.
- * Square buttons in the `HOVER_LIFT` family fall back to this plus the
- * fill's own hover chroma shift (e.g. `hover:from-blue-600-vivid`) for the
- * hover cue instead of the ring. Exported so `Button.tsx` can swap it in —
- * see `hoverLiftSquareOverride` below.
+ * A lit top edge plus an inset hairline, for every solid fill. Inset, so it
+ * reads against the fill rather than the canvas and behaves the same on white
+ * and on ink. It is what keeps `luminous` visible when hovered on ink, where
+ * its darker hover fill alone is 2.4:1 against the canvas. Kept faint on
+ * purpose: an early pass at 0.40/0.22 read as a halo rather than an edge.
  */
-const HOVER_LIFT_SQUARE =
-  'hover:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.30)]'
+const HOVER_LIFT = 'hover:inset-shadow-highlight-strong hover:inset-ring hover:inset-ring-white/14'
 
-/** Variants whose `SURFACE_HOVER` entry includes `HOVER_LIFT` — the ones for
- *  which `hoverLiftSquareOverride` has something to swap in. */
-const HOVER_LIFT_FAMILY: readonly Variant[] = ['primary', 'info', 'success', 'warning', 'error']
+/** Variants whose hover includes `HOVER_LIFT`. */
+const HOVER_LIFT_FAMILY: readonly Variant[] = ['luminous', 'success', 'error']
 
 /**
- * For `shape="square"` buttons in the `HOVER_LIFT` family, returns the
- * ring-free hover shadow to override the one baked into `SURFACE_HOVER`.
- * Returns `''` for every other variant, whose `SURFACE_HOVER` has no shadow
- * to override in the first place. Consumed by `Button.tsx`; see
- * `HOVER_LIFT_SQUARE` for why square needs a different treatment than pill.
+ * For `shape="square"` buttons in the `HOVER_LIFT` family: drops the hairline
+ * ring and keeps the top highlight. At a tight circular radius the ring wraps
+ * the whole perimeter and reads as a halo. Returns `''` for every other
+ * variant. Consumed by `Button`.
  */
 export function hoverLiftSquareOverride(variant: Variant): string {
-  return HOVER_LIFT_FAMILY.includes(variant) ? HOVER_LIFT_SQUARE : ''
+  return HOVER_LIFT_FAMILY.includes(variant) ? 'hover:inset-ring-0' : ''
 }
 
 export const SURFACE_HOVER: Record<Variant, string> = {
-  /**
-   * Gains chroma at a fixed lightness rather than darkening. The old hover
-   * (blue-800 -> blue-900) was a light-canvas idiom, but `primary` is also the
-   * dark-canvas CTA: against blue-950 it fell to 1.90:1 and 1.25:1, so the
-   * button dissolved into the panel behind it at the moment it was pointed at.
-   * The `-vivid` steps hold blue-600/700's lightness, keeping the boundary at
-   * 3.76:1 / 3.05:1 while still reading as a clear state change.
-   */
-  primary:   `hover:from-blue-600-vivid hover:to-blue-700-vivid ${HOVER_LIFT}`,
-  /**
-   * Left inverting on purpose. Unlike primary this one does not have the
-   * contrast bug — going white -> blue-600 takes its boundary against the light
-   * canvas from 1.14:1 up to 4.85:1, so the hover is what makes it legible.
-   * Worth knowing before you put the two side by side: the hovered state is
-   * exactly primary's *resting* fill, so hovering a secondary "Cancel" next to
-   * a primary "Save" makes the two momentarily identical. That is a
-   * variant-identity question rather than a contrast one, so it is left as is
-   * — but it is the reason to avoid pairing them in a single button row.
-   */
-  secondary: 'hover:text-white hover:from-blue-600 hover:to-blue-700',
-  /** Tertiary. The text shift alone is the state (4.76:1 -> 18.20:1, both AA);
-   *  the wash just gives the hit area a visible edge without adding a fill that
-   *  would cost it its "barely there" character. */
-  ghost:     'hover:text-blue-950 hover:bg-blue-950/6',
-  'glass-light': 'hover:bg-blue-950/50 hover:border-blue-950/20',
-  'glass-dark':  'hover:bg-blue-950/50 hover:border-blue-950/20',
-  'error-glass':   'hover:bg-red-700/40 hover:border-red-300/60',
-  'success-glass': 'hover:bg-green-800/40 hover:border-green-300/60',
-  white:     'hover:bg-blue-50',
   /** Darkens one step to lum-deep: 7.0:1 against the white label. */
-  luminous:  'hover:bg-lum-deep',
-  'raised-dark': 'hover:bg-white/[0.09] hover:border-white/20',
-  /**
-   * Status hovers gain chroma at a fixed lightness rather than darkening — see
-   * the derivation in index.css. The paired shadow does the rest of the work:
-   * it strengthens the existing top highlight and (on `pill` shape) adds an
-   * inset hairline ring, which is what gives a hover cue to buttons the icon
-   * slab can't reach (no `leftIcon`/`rightIcon` or `iconSlab={false}`).
-   * `shape="square"` gets the highlight only — `Button.tsx` overrides the
-   * ring out via `hoverLiftSquareOverride`, see `HOVER_LIFT_SQUARE` above for
-   * why. Inset, so it reads against the fill and behaves the same on either
-   * canvas.
-   */
-  info:      `hover:bg-blue-600-vivid ${HOVER_LIFT}`,
-  success:   `hover:bg-success-hover ${HOVER_LIFT}`,
-  warning:   `hover:bg-warning-hover ${HOVER_LIFT}`,
-  error:     `hover:bg-error-hover ${HOVER_LIFT}`,
+  luminous:         `hover:bg-lum-deep ${HOVER_LIFT}`,
+  white:            'hover:bg-ice',
+  outline:          'hover:bg-ice',
+  'tint-white':     'hover:bg-ink/40',
+  'tint-ink':       'hover:bg-ink/60',
+  'raised-dark':    'hover:bg-white/[0.09] hover:border-white/20',
+  'notice-error':   'hover:border-error-bright/70',
+  'notice-success': 'hover:border-success-bright/70',
+  'notice-info':    'hover:border-glow/60',
+  success:          `hover:bg-success-hover ${HOVER_LIFT}`,
+  error:            `hover:bg-error-hover ${HOVER_LIFT}`,
+}
+
+/**
+ * The classes for a surface, for the rare element that is neither a `Button`
+ * nor a `Panel` but must look like one (a segmented control's selected
+ * segment). Exported from the ui barrel; the maps above are not.
+ */
+export function surface(variant: Variant, { hover = false }: { hover?: boolean } = {}): string {
+  return hover ? `${SURFACE[variant]} ${SURFACE_HOVER[variant]}` : SURFACE[variant]
 }

@@ -9,59 +9,52 @@ const meta = {
   tags: ['autodocs'],
   args: {
     children: 'Button',
+    variant: 'luminous',
   },
 } satisfies Meta<typeof Button>
 
 export default meta
 type Story = StoryObj<typeof meta>
 
-const variants: Variant[] = ['secondary', 'ghost', 'glass-light', 'glass-dark']
+const sizes: Size[] = ['sm', 'md', 'lg']
 
 /**
- * Solid status fills. Each is validated for a white label AND for its boundary
- * against both the light and dark canvases, so they are safe on either — see
- * the derivation note in index.css.
+ * Which variant goes on which field. A variant is right on one kind of field
+ * and wrong on another, which is why `variant` has no default.
  */
-const semanticVariants: Variant[] = ['info', 'success', 'warning', 'error']
-const sizes: Size[] = ['sm', 'md', 'lg']
+const FIELDS: { label: string; field: string; variants: Variant[] }[] = [
+  { label: 'on white', field: 'bg-white', variants: ['luminous', 'outline', 'success', 'error'] },
+  { label: 'on a lum field', field: 'bg-lum focus-on-field', variants: ['white', 'tint-white', 'tint-ink'] },
+  { label: 'on an ink field', field: 'bg-ink focus-on-field', variants: ['luminous', 'white', 'tint-ink', 'raised-dark', 'success', 'error'] },
+]
+
+const Row = ({ children }: { children: React.ReactNode }) => (
+  <span className="w-8 font-mono text-xs uppercase text-ink-mute">{children}</span>
+)
 
 export const Default: Story = {
   args: {
     children: 'Button',
-    variant: 'secondary',
+    variant: 'luminous',
     size: 'md',
     shape: 'pill',
   },
 }
 
-export const AllVariants: Story = {
-  parameters: {
-    controls: { disable: true },
-  },
-  render: () => (
-    <div className="flex flex-col gap-4">
-      {variants.map((variant) => (
-        <Button key={variant} variant={variant}>
-          {variant}
-        </Button>
-      ))}
-    </div>
-  ),
-}
-
-export const SemanticVariants: Story = {
-  parameters: { controls: { disable: true } },
+export const VariantsByField: Story = {
+  parameters: { controls: { disable: true }, layout: 'padded' },
   render: () => (
     <div className="flex flex-col gap-6">
-      {[
-        ['on the light canvas', 'bg-blue-50'],
-        ['on the dark canvas', 'bg-blue-950'],
-      ].map(([label, bg]) => (
+      {FIELDS.map(({ label, field, variants }) => (
         <div key={label} className="flex flex-col gap-2">
-          <p className="text-xs font-semibold uppercase tracking-wide opacity-60">{label}</p>
-          <div className={`flex flex-wrap gap-3 rounded-xl p-4 ${bg}`}>
-            {semanticVariants.map((variant) => (
-              <Button key={variant} variant={variant}>
+          <p className="font-sans text-xs font-bold uppercase tracking-label text-ink-mute">{label}</p>
+          <div className={`flex flex-wrap gap-3 rounded-xl border border-ink/10 p-4 ${field}`}>
+            {variants.map(variant => (
+              <Button
+                key={variant}
+                variant={variant}
+                rightIcon={<ArrowUpRight size={14} strokeWidth={2.5} />}
+              >
                 {variant}
               </Button>
             ))}
@@ -73,32 +66,33 @@ export const SemanticVariants: Story = {
 }
 
 /**
- * `HOVER_LIFT` family variants (`primary`/`info`/`success`/`warning`/`error`)
- * drop the inset hairline ring at `shape="square"` — at a tight circular
- * radius it wraps the full perimeter and reads as a halo rather than an edge.
- * Hover to compare against `SemanticVariants` above (`pill`, ring intact).
+ * Solid fills drop the inset hairline ring at `shape="square"`: at a tight
+ * circular radius it wraps the full perimeter and reads as a halo rather than
+ * an edge. Hover to compare against the pill row.
  */
-export const SquareSemanticVariants: Story = {
+export const SquareSolidFills: Story = {
   parameters: { controls: { disable: true } },
   render: () => (
-    <div className="flex flex-wrap gap-3 rounded-xl p-4 bg-blue-950">
-      {(['primary', ...semanticVariants] as Variant[]).map((variant) => (
-        <Button key={variant} variant={variant} shape="square" aria-label={variant}>
-          <Briefcase size={16} strokeWidth={2.5} />
-        </Button>
+    <div className="flex flex-col gap-3 rounded-xl bg-ink p-4 focus-on-field">
+      {(['pill', 'square'] as const).map(shape => (
+        <div key={shape} className="flex flex-wrap gap-3">
+          {(['luminous', 'success', 'error'] as Variant[]).map(variant => (
+            <Button key={variant} variant={variant} shape={shape} aria-label={variant}>
+              {shape === 'square' ? <Briefcase size={16} strokeWidth={2.5} /> : variant}
+            </Button>
+          ))}
+        </div>
       ))}
     </div>
   ),
 }
 
 export const Sizes: Story = {
-  parameters: {
-    controls: { disable: true },
-  },
+  parameters: { controls: { disable: true } },
   render: () => (
-    <div className="flex gap-4 items-center">
-      {sizes.map((size) => (
-        <Button key={size} size={size} variant="secondary">
+    <div className="flex items-center gap-4">
+      {sizes.map(size => (
+        <Button key={size} size={size} variant="luminous">
           {size}
         </Button>
       ))}
@@ -108,7 +102,7 @@ export const Sizes: Story = {
 
 export const Square: Story = {
   args: {
-    variant: 'secondary',
+    variant: 'outline',
     size: 'md',
     shape: 'square',
     children: <Briefcase size={16} strokeWidth={2.5} />,
@@ -119,7 +113,6 @@ export const WithLeftIcon: Story = {
   args: {
     children: 'Learn More',
     leftIcon: <ArrowUpRight size={14} strokeWidth={2.5} />,
-    variant: 'secondary',
   },
 }
 
@@ -131,61 +124,31 @@ export const WithRightIcon: Story = {
 }
 
 export const IconSlab: Story = {
-  parameters: {
-    controls: { disable: true },
-    layout: 'padded',
-  },
+  parameters: { controls: { disable: true }, layout: 'padded' },
   render: () => (
     <div className="flex flex-col gap-6">
-      {sizes.map((size) => (
-        <div key={size} className="flex gap-4 items-center">
-          <span className="w-8 text-xs font-mono text-blue-950/60 uppercase">{size}</span>
-          <Button size={size} leftIcon={<Briefcase size={14} strokeWidth={2.5} />}>
+      {sizes.map(size => (
+        <div key={size} className="flex items-center gap-4">
+          <Row>{size}</Row>
+          <Button variant="luminous" size={size} leftIcon={<Briefcase size={14} strokeWidth={2.5} />}>
             Left icon
           </Button>
-          <Button size={size} rightIcon={<ArrowUpRight size={14} strokeWidth={2.5} />}>
+          <Button variant="luminous" size={size} rightIcon={<ArrowUpRight size={14} strokeWidth={2.5} />}>
             Right icon
           </Button>
           <Button
+            variant="outline"
             size={size}
             leftIcon={<Briefcase size={14} strokeWidth={2.5} />}
             rightIcon={<ArrowUpRight size={14} strokeWidth={2.5} />}
           >
             Both
           </Button>
-          <Button
-            size={size}
-            leftIcon={<Briefcase size={14} strokeWidth={2.5} />}
-            iconSlab={false}
-          >
+          <Button variant="outline" size={size} leftIcon={<Briefcase size={14} strokeWidth={2.5} />} iconSlab={false}>
             No slab
           </Button>
         </div>
       ))}
-    </div>
-  ),
-}
-
-export const IconSlabVariants: Story = {
-  parameters: {
-    controls: { disable: true },
-    layout: 'padded',
-    backgrounds: { default: 'blue-950' },
-  },
-  render: () => (
-    <div className="flex flex-wrap gap-4 items-center">
-      {(['primary', 'secondary', 'white', 'ghost', 'glass-light', 'glass-dark'] as Variant[]).map(
-        (variant) => (
-          <Button
-            key={variant}
-            variant={variant}
-            leftIcon={<Briefcase size={14} strokeWidth={2.5} />}
-            rightIcon={<ArrowUpRight size={14} strokeWidth={2.5} />}
-          >
-            {variant}
-          </Button>
-        ),
-      )}
     </div>
   ),
 }
@@ -196,20 +159,17 @@ export const IconSlabVariants: Story = {
  * and plus render larger than the briefcase and chat marks, but read the same.
  */
 export const OpticalIconSizing: Story = {
-  parameters: {
-    controls: { disable: true },
-    layout: 'padded',
-  },
+  parameters: { controls: { disable: true }, layout: 'padded' },
   render: () => (
     <div className="flex flex-col gap-6">
-      {sizes.map((size) => (
-        <div key={size} className="flex gap-4 items-center flex-wrap">
-          <span className="w-8 text-xs font-mono text-blue-950/60 uppercase">{size}</span>
-          <Button size={size} leftIcon={<ArrowUpRight strokeWidth={2.5} />}>Arrow</Button>
-          <Button size={size} leftIcon={<ChevronDown strokeWidth={2.5} />}>Chevron</Button>
-          <Button size={size} leftIcon={<Plus strokeWidth={2.5} />}>Plus</Button>
-          <Button size={size} leftIcon={<Briefcase strokeWidth={2.5} />}>Briefcase</Button>
-          <Button size={size} leftIcon={<MessagesSquare strokeWidth={2.5} />}>Messages</Button>
+      {sizes.map(size => (
+        <div key={size} className="flex flex-wrap items-center gap-4">
+          <Row>{size}</Row>
+          <Button variant="luminous" size={size} leftIcon={<ArrowUpRight strokeWidth={2.5} />}>Arrow</Button>
+          <Button variant="luminous" size={size} leftIcon={<ChevronDown strokeWidth={2.5} />}>Chevron</Button>
+          <Button variant="luminous" size={size} leftIcon={<Plus strokeWidth={2.5} />}>Plus</Button>
+          <Button variant="luminous" size={size} leftIcon={<Briefcase strokeWidth={2.5} />}>Briefcase</Button>
+          <Button variant="luminous" size={size} leftIcon={<MessagesSquare strokeWidth={2.5} />}>Messages</Button>
         </div>
       ))}
     </div>
@@ -220,21 +180,16 @@ export const AsAnchor: Story = {
   args: {
     href: 'https://example.com',
     children: 'External Link',
-    variant: 'secondary',
   },
 }
 
-export const Primary: Story = {
+/** `as="span"`: the button's look on a non-interactive element, for inside a whole-card link. */
+export const AsSpan: Story = {
   args: {
-    variant: 'secondary',
-    children: 'Primary Action',
-  },
-}
-
-export const Ghost: Story = {
-  args: {
-    variant: 'ghost',
-    children: 'Ghost Button',
+    as: 'span',
+    size: 'sm',
+    children: 'Read the note',
+    rightIcon: <ArrowUpRight size={14} strokeWidth={2.5} />,
   },
 }
 
@@ -245,37 +200,22 @@ export const Disabled: Story = {
   },
 }
 
-export const Glass: Story = {
-  parameters: {
-    backgrounds: { default: 'blue-950' },
-  },
-  render: () => (
-    <div className="flex gap-3">
-      <Button variant="glass-light">Glass Light</Button>
-      <Button variant="glass-dark">Glass Dark</Button>
-    </div>
-  ),
-}
-
 export const SizeShapeMatrix: Story = {
-  parameters: {
-    controls: { disable: true },
-    layout: 'padded',
-  },
+  parameters: { controls: { disable: true }, layout: 'padded' },
   render: () => (
-    <div className="grid grid-cols-[auto_1fr_1fr] gap-4 items-center">
+    <div className="grid grid-cols-[auto_1fr_1fr] items-center gap-4">
       <span />
-      <span className="text-xs font-mono text-blue-950/60 uppercase">pill</span>
-      <span className="text-xs font-mono text-blue-950/60 uppercase">square</span>
+      <Row>pill</Row>
+      <Row>square</Row>
 
-      {sizes.map((size) => (
+      {sizes.map(size => (
         <div key={size} className="contents">
-          <span className="text-xs font-mono text-blue-950/60 uppercase">{size}</span>
+          <Row>{size}</Row>
           <div>
-            <Button size={size} shape="pill">{size}</Button>
+            <Button variant="luminous" size={size} shape="pill">{size}</Button>
           </div>
           <div>
-            <Button size={size} shape="square">
+            <Button variant="luminous" size={size} shape="square" aria-label={size}>
               <Briefcase size={size === 'sm' ? 12 : size === 'md' ? 16 : 20} strokeWidth={2.5} />
             </Button>
           </div>

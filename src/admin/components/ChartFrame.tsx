@@ -1,4 +1,4 @@
-import { twMerge } from 'tailwind-merge'
+import { cn } from '@/components/ui/cn'
 import { Panel } from '../../components/ui'
 
 /**
@@ -30,7 +30,7 @@ export function ChartFrame({ title, meta, children, className }: {
       // eating the right gutter at 390 and hanging 22px off the screen at 360.
       // Bounding the track here is what lets `truncate` do its job at all —
       // otherwise it truncates into a box that was sized by the full string.
-      className={twMerge('min-w-0 rounded-2xl p-4 shadow-sm transition-shadow hover:shadow-md', className)}
+      className={cn('min-w-0 rounded-2xl p-4 shadow-raised transition-shadow hover:shadow-popover', className)}
     >
       <figure className="flex h-full min-w-0 flex-col gap-3">
         <figcaption className="flex items-baseline justify-between gap-2">

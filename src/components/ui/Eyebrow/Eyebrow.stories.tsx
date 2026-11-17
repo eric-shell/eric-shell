@@ -31,7 +31,7 @@ export const Large: Story = {
 export const WithColor: Story = {
   args: {
     children: 'Custom Color',
-    className: 'text-cyan-500',
+    className: 'text-lum-deep',
   },
 }
 
@@ -50,7 +50,7 @@ export const InHeadingContext: Story = {
 
 export const OnDarkBackground: Story = {
   parameters: {
-    backgrounds: { default: 'blue-950' },
+    backgrounds: { default: 'ink' },
     controls: { disable: true },
   },
   render: () => (

@@ -1,4 +1,4 @@
-import { CascadeGroup, CascadeItem, ContactForm, Container, SectionTitle, descDelay } from '../../ui'
+import { CascadeGroup, CascadeItem, ContactForm, Container, Section, SectionTitle, TextLink, descDelay } from '../../ui'
 
 /**
  * A full Luminous Blue field with the white contact card. The photo, particles
@@ -7,7 +7,7 @@ import { CascadeGroup, CascadeItem, ContactForm, Container, SectionTitle, descDe
  */
 export default function Contact() {
   return (
-    <section id="contact" className="relative bg-lum text-white py-24 md:py-36 overflow-hidden">
+    <Section id="contact" tone="lum" className="overflow-hidden">
       <Container className="grid grid-cols-1 lg:grid-cols-2 gap-14 lg:gap-24 items-center">
         <SectionTitle eyebrow="Say What's up" title="Get in Touch" eyebrowClassName="text-white">
           <div className="flex flex-col gap-5 pt-8 font-sans text-lg leading-relaxed max-w-lg">
@@ -25,7 +25,7 @@ export default function Contact() {
             </CascadeItem>
             <CascadeItem delayMs={descDelay(2)}>
               <p className="text-white/90 text-base">
-                Prefer to skip the form? Here's my email:<br/><a href="mailto:ericjshell@gmail.com" className="grad-hover underline underline-offset-4 decoration-white/50 hover:decoration-white">ericjshell@gmail.com</a>
+                Prefer to skip the form? Here's my email:<br/><TextLink tone="field" href="mailto:ericjshell@gmail.com">ericjshell@gmail.com</TextLink>
               </p>
             </CascadeItem>
           </div>
@@ -34,10 +34,10 @@ export default function Contact() {
         {/* Its own group (it sits in the other column), on the description's beat. */}
         <CascadeGroup threshold={0.15}>
           <CascadeItem delayMs={descDelay(2)}>
-            <ContactForm className="shadow-[0_40px_80px_-40px_rgba(5,10,60,0.6)]" />
+            <ContactForm className="shadow-float" />
           </CascadeItem>
         </CascadeGroup>
       </Container>
-    </section>
+    </Section>
   )
 }

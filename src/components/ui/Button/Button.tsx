@@ -1,5 +1,5 @@
 import type { ComponentPropsWithRef, HTMLAttributes } from 'react'
-import { twMerge } from 'tailwind-merge'
+import { cn } from '../cn'
 import {
   SURFACE,
   SURFACE_HOVER,
@@ -87,7 +87,8 @@ const ICON_BASE = 'icon-optical inline-flex items-center justify-center shrink-0
 const SLAB_BASE = 'self-stretch transition-colors'
 
 type SharedProps = {
-  variant?: Variant
+  /** Required: no surface is right on every field. See `variants.ts`. */
+  variant: Variant
   size?: Size
   shape?: Shape
   className?: string
@@ -105,7 +106,7 @@ type SharedProps = {
    * card's click, so the affordance is real even though the element isn't.
    *
    * This exists so a call site in that position can still say
-   * `variant="primary"` instead of hand-rolling the surface classes, which is
+   * `variant="luminous"` instead of hand-rolling the surface classes, which is
    * the rule everything else in `variants.ts` is built to hold. `Pill` renders
    * a `<span>` for the same reason. Do not use it for anything clickable in
    * its own right — it has no role, no focus, and no keyboard behaviour.
@@ -122,7 +123,7 @@ type ButtonAsAnchor = SharedProps & ComponentPropsWithRef<'a'> & { href: string 
 type ButtonProps = ButtonAsButton | ButtonAsAnchor
 
 export default function Button({
-  variant = 'secondary',
+  variant,
   size = 'md',
   shape = 'pill',
   className = '',
@@ -136,8 +137,8 @@ export default function Button({
 }: ButtonProps) {
   const square = shape === 'square'
   // Square buttons hold a single child, so the gap only matters for pills.
-  const sizeClass = square ? SIZE_SQUARE[size] : twMerge(SIZE_PILL[size], GAP[size])
-  const classes = twMerge(
+  const sizeClass = square ? SIZE_SQUARE[size] : cn(SIZE_PILL[size], GAP[size])
+  const classes = cn(
     BASE,
     SURFACE[variant],
     SURFACE_HOVER[variant],
@@ -155,11 +156,11 @@ export default function Button({
   const slab = iconSlab && !square
 
   const iconClass = (side: 'left' | 'right') =>
-    twMerge(
+    cn(
       ICON_BASE,
       ICON_SIZE[size],
       slab &&
-        twMerge(
+        cn(
           SLAB_BASE,
           SLAB_SIZE[size],
           side === 'left' ? SLAB_LEFT[size] : SLAB_RIGHT[size],

@@ -1,10 +1,10 @@
-import { twMerge } from 'tailwind-merge'
+import { cn } from '@/components/ui/cn'
 import { Panel } from '../../components/ui'
 import { RING_R, RING_STROKE } from '../lib/chartTheme'
 import { VISITOR_COLUMNS } from '../lib/visitorColumns'
 
 export function Skeleton({ className }: { className?: string }) {
-  return <div className={twMerge('rounded bg-white/10', className)} />
+  return <div className={cn('rounded bg-white/10', className)} />
 }
 
 /**
@@ -27,8 +27,8 @@ function Line({ h = 'h-4', bar = 'h-3', w, right, pill, className }: {
   className?: string
 }) {
   return (
-    <div className={twMerge('flex items-center', h, right && 'justify-end', className)}>
-      <Skeleton className={twMerge(pill ? twMerge(h, 'rounded-full') : bar, w)} />
+    <div className={cn('flex items-center', h, right && 'justify-end', className)}>
+      <Skeleton className={cn(pill ? cn(h, 'rounded-full') : bar, w)} />
     </div>
   )
 }
@@ -189,7 +189,7 @@ export function InsightCardSkeleton({ shape }: { shape: InsightShape }) {
             {HOUR_STUBS.map((h, i) => (
               <div
                 key={i}
-                className="min-w-0 flex-1 rounded-t-[3px] bg-white/10"
+                className="min-w-0 flex-1 rounded-t-sm bg-white/10"
                 style={{ height: `${h}%` }}
               />
             ))}
@@ -273,7 +273,7 @@ export function VisitorTableSkeleton({ rows = 6 }: { rows?: number }) {
           <thead>
             <tr className="border-b border-white/10 text-left text-xs uppercase tracking-wide text-white/65">
               {VISITOR_COLUMNS.map(col => (
-                <th key={col.id} scope="col" className={twMerge('py-2 pr-4 font-semibold', col.className)}>
+                <th key={col.id} scope="col" className={cn('py-2 pr-4 font-semibold', col.className)}>
                   {col.label}
                 </th>
               ))}
@@ -283,7 +283,7 @@ export function VisitorTableSkeleton({ rows = 6 }: { rows?: number }) {
             {Array.from({ length: rows }).map((_, i) => (
               <tr key={i} className="border-b border-white/5">
                 {VISITOR_COLUMNS.map(col => (
-                  <td key={col.id} className={twMerge('py-3 pr-4', col.className)}>
+                  <td key={col.id} className={cn('py-3 pr-4', col.className)}>
                     {col.skeleton.map((bar, j) => (
                       <Line
                         key={j}
@@ -314,8 +314,8 @@ export function VisitorTableSkeleton({ rows = 6 }: { rows?: number }) {
  */
 function BubbleSkeleton({ role, height }: { role: 'user' | 'assistant'; height: string }) {
   return (
-    <div className={twMerge('flex flex-col', role === 'user' ? 'items-end' : 'items-start')}>
-      <Skeleton className={twMerge('w-[70%] max-w-[85%] rounded-2xl', height)} />
+    <div className={cn('flex flex-col', role === 'user' ? 'items-end' : 'items-start')}>
+      <Skeleton className={cn('w-[70%] max-w-[85%] rounded-2xl', height)} />
       <Skeleton className="mt-1.5 mx-2 h-3 w-28" />
     </div>
   )
@@ -330,7 +330,7 @@ export function DetailSkeleton() {
       <div className="mb-4 flex border-b border-white/10">
         {['w-16', 'w-20', 'w-20'].map((w, i) => (
           <div key={i} className="px-4 py-2 border-b-2 border-transparent -mb-px">
-            <Skeleton className={twMerge('h-4', w)} />
+            <Skeleton className={cn('h-4', w)} />
           </div>
         ))}
       </div>

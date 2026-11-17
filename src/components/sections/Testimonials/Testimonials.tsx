@@ -1,7 +1,7 @@
 import { useState, type CSSProperties } from 'react'
 import { ArrowLeft, ArrowRight, ArrowUpRight, Pause, Play } from 'lucide-react'
 import { testimonials } from '@/data'
-import { Button, CascadeGroup, CascadeItem, Container, SectionTitle, descDelay } from '../../ui'
+import { Button, CascadeGroup, CascadeItem, Container, Section, SectionTitle, descDelay } from '../../ui'
 import { useCarousel } from '@/hooks'
 
 const INTERVAL_MS = 7000
@@ -20,7 +20,7 @@ function Quote({ review, highlight }: { review: string; highlight?: string }) {
   const words = (text: string) => text.split(/(\s+)/).map((w, i) => (
     !w || /^\s+$/.test(w)
       ? w
-      : <span key={i} className="inline-block motion-safe:animate-[lu-word_700ms_cubic-bezier(0.2,0.8,0.2,1)_backwards]" style={{ animationDelay: `${n++ * 16}ms` }}>{w}</span>
+      : <span key={i} className="inline-block motion-safe:animate-[lu-word_700ms_var(--ease-settle)_backwards]" style={{ animationDelay: `${n++ * 16}ms` }}>{w}</span>
   ))
   return (
     <>
@@ -28,7 +28,7 @@ function Quote({ review, highlight }: { review: string; highlight?: string }) {
         ? (
           <mark
             key={i}
-            className="text-inherit bg-transparent bg-[linear-gradient(#C6D3FF,#C6D3FF)] bg-no-repeat [background-position:0_90%] [background-size:100%_42%] [box-decoration-break:clone] motion-safe:animate-[lu-mark_1s_cubic-bezier(0.2,0.8,0.2,1)_550ms_backwards]"
+            className="text-inherit bg-transparent bg-linear-to-r from-lum/25 to-lum/25 bg-no-repeat [background-position:0_90%] [background-size:100%_42%] [box-decoration-break:clone] motion-safe:animate-[lu-mark_1s_var(--ease-settle)_550ms_backwards]"
           >
             {words(text)}
           </mark>
@@ -53,30 +53,30 @@ export default function Testimonials() {
   const [name, role] = author.split(' — ')
 
   return (
-    <section id="testimonials" className="relative bg-white text-ink py-24 md:py-36">
+    <Section id="testimonials" tone="white">
       <Container>
         <SectionTitle eyebrow="Feedback from the Team" title="Testimonials" eyebrowClassName="text-lum-deep" />
 
-        <CascadeGroup className="grid grid-cols-1 lg:grid-cols-[minmax(0,4fr)_minmax(0,8fr)] gap-12 lg:gap-20 pt-12">
-          <CascadeItem delayMs={descDelay(0)} className="flex flex-col gap-5 font-sans text-base leading-relaxed text-blue-900">
+        <CascadeGroup className="grid-split gap-12 lg:gap-20 pt-12">
+          <CascadeItem delayMs={descDelay(0)} className="flex flex-col gap-5 font-sans text-base leading-relaxed text-ink-soft">
             <p>
               Written independently on LinkedIn by the team leads, product managers, designers and producers who worked alongside me, from QSR brands and federal agencies to banks and entertainment companies. This is how the people who depended on me describe the work.
             </p>
 
             <div className="flex items-center gap-2 pt-3" role="region" aria-label="Testimonial Controls">
-              <Button shape="square" variant="white" onClick={step(prev)} aria-label="Previous testimonial" className="rounded-full">
+              <Button shape="square" variant="outline" onClick={step(prev)} aria-label="Previous testimonial" className="rounded-full">
                 <ArrowLeft size={18} strokeWidth={2.5} aria-hidden="true" />
               </Button>
               <Button
                 shape="square"
-                variant="white"
+                variant="outline"
                 onClick={step(togglePlaying)}
                 aria-label={isPlaying ? 'Pause testimonial slider' : 'Play testimonial slider'}
                 className="rounded-full"
               >
                 {isPlaying ? <Pause size={18} strokeWidth={2.5} aria-hidden="true" /> : <Play size={18} strokeWidth={2.5} aria-hidden="true" />}
               </Button>
-              <Button shape="square" variant="white" onClick={step(next)} aria-label="Next testimonial" className="rounded-full">
+              <Button shape="square" variant="outline" onClick={step(next)} aria-label="Next testimonial" className="rounded-full">
                 <ArrowRight size={18} strokeWidth={2.5} aria-hidden="true" />
               </Button>
             </div>
@@ -125,7 +125,7 @@ export default function Testimonials() {
                   </span>
                   <span>
                     <span className="block font-semibold text-ink">{name}</span>
-                    <span className="block text-sm text-blue-900">{role}</span>
+                    <span className="block text-sm text-ink-soft">{role}</span>
                   </span>
                 </footer>
               </blockquote>
@@ -133,6 +133,6 @@ export default function Testimonials() {
           </CascadeItem>
         </CascadeGroup>
       </Container>
-    </section>
+    </Section>
   )
 }

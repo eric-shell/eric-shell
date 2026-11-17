@@ -14,7 +14,7 @@ import type { StatDay } from '@/../api/_lib/types'
 /**
  * Daily visitors. Single series, so there is no legend — the caption names it.
  *
- * Colors are validated against the dark canvas (#111521), not flipped from the
+ * Colors were validated against a dark canvas (see chartTheme.ts), not flipped from the
  * light theme: `validate_palette.js --mode dark` shows every step of the brand
  * blue ramp falls below the chroma floor and "reads gray", which is exactly why
  * the old chart looked washed out. ACCENT is the same hue family pushed to a
@@ -22,9 +22,9 @@ import type { StatDay } from '@/../api/_lib/types'
  */
 // SVG paint accepts CSS custom properties, so these stay tied to the single
 // definition in index.css rather than re-stating a hex the theme could drift from.
-const ACCENT = 'var(--color-accent)'
-const DEEP = 'var(--color-accent-deep)'
-const SURFACE = 'var(--color-blue-950)'
+const ACCENT = 'var(--color-data)'
+const DEEP = 'var(--color-data-deep)'
+const SURFACE = 'var(--color-ink)'
 
 interface Point {
   date: Date
@@ -129,11 +129,11 @@ function Chart({ days, width, height }: { days: StatDay[]; width: number; height
               likely to be at the top of the plot. */}
           <line
             x1={0} x2={width} y1={yScale(ceiling)} y2={yScale(ceiling)}
-            stroke="#ffffff" strokeOpacity={0.1} strokeWidth={1}
+            stroke="var(--color-white)" strokeOpacity={0.1} strokeWidth={1}
           />
           <text
             x={0} y={yScale(ceiling) + 10}
-            fontSize={9} fill="#ffffff" fillOpacity={0.55}
+            fontSize={9} fill="var(--color-white)" fillOpacity={0.55}
             className="tabular-nums"
           >
             {ceiling}
@@ -142,7 +142,7 @@ function Chart({ days, width, height }: { days: StatDay[]; width: number; height
               area closes, so without it the fill just fades into the card. */}
           <line
             x1={0} x2={width} y1={innerH} y2={innerH}
-            stroke="#ffffff" strokeOpacity={0.15} strokeWidth={1}
+            stroke="var(--color-white)" strokeOpacity={0.15} strokeWidth={1}
           />
 
           <AreaClosed<Point>
@@ -177,7 +177,7 @@ function Chart({ days, width, height }: { days: StatDay[]; width: number; height
               {/* Crosshair, hairline and solid — never dashed. */}
               <line
                 x1={tooltipLeft} x2={tooltipLeft} y1={0} y2={innerH}
-                stroke="#ffffff" strokeOpacity={0.25} strokeWidth={1}
+                stroke="var(--color-white)" strokeOpacity={0.25} strokeWidth={1}
               />
               {/* End-marker with a 2px surface ring so it stays legible where it
                   crosses the line. r >= 4 keeps it above the 8px minimum. */}

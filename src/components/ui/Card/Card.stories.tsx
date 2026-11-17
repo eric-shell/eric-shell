@@ -9,6 +9,14 @@ const meta = {
   parameters: {
     layout: 'padded',
   },
+  // `tone="field"` is a borderless white card: it needs a field to be seen on.
+  decorators: [
+    (Story, { args }) => (
+      <div className={args.tone === 'sheet' ? 'bg-white p-8' : 'bg-lum p-8 focus-on-field'}>
+        <Story />
+      </div>
+    ),
+  ],
   args: {
     href: '#',
     title: 'Card Title',
@@ -173,4 +181,33 @@ export const InGrid: Story = {
       />
     </div>
   ),
+}
+
+/** A project card: Display title and its number in the grid. */
+export const DisplayTitle: Story = {
+  args: {
+    title: 'Colorado Tourism',
+    display: true,
+    index: '01',
+    description: 'Official state tourism website.',
+    tags: ['Drupal', 'Next.js'],
+  },
+  decorators: [(Story) => <div className="w-80"><Story /></div>],
+}
+
+/** On a white sheet (the pager under a note): hairline edge, softer lift, a footer, no arrow. */
+export const OnASheet: Story = {
+  args: {
+    tone: 'sheet',
+    title: 'The largest asset on the site was a sound effect nobody heard',
+    titleAs: 'span',
+    description: 'A module-scope new Audio() meant a 750KB WAV downloaded on every route.',
+    clampDescription: true,
+    arrow: false,
+    bar: 'lum',
+    tags: ['Bundle size', 'Audio'],
+    linkLabel: 'Older note: The largest asset on the site was a sound effect nobody heard',
+    footer: <span className="font-sans text-xs font-bold uppercase tracking-label text-lum-deep">Older</span>,
+  },
+  decorators: [(Story) => <div className="w-96"><Story /></div>],
 }

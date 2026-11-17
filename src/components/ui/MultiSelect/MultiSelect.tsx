@@ -76,7 +76,7 @@ export default function MultiSelect({
   placeholder = 'Select…',
   searchable = false,
   searchPlaceholder = 'Filter…',
-  variant = 'primary',
+  variant = 'white',
   className = '',
 }: MultiSelectProps) {
   const [open, setOpen] = useState(false)
@@ -277,12 +277,12 @@ export default function MultiSelect({
             minWidth: coords.minWidth,
             maxHeight: coords.maxHeight,
           }}
-          className="fixed z-[9999] flex flex-col overflow-hidden rounded-lg border border-blue-950/10 bg-white shadow-lg"
+          className="fixed z-[9999] flex flex-col overflow-hidden focus-on-paper rounded-lg border border-ink/10 bg-white shadow-popover"
         >
           {searchable && (
-            <div className="relative shrink-0 border-b border-blue-950/10">
+            <div className="relative shrink-0 border-b border-ink/10">
               <Search
-                className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-blue-950/40"
+                className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-mute"
                 strokeWidth={2.5}
                 aria-hidden="true"
               />
@@ -300,7 +300,7 @@ export default function MultiSelect({
                 // would point at a different tag than the one it highlighted.
                 onChange={(e) => { setQuery(e.target.value); setFocusedIndex(0) }}
                 placeholder={searchPlaceholder}
-                className="w-full bg-transparent py-2.5 pl-9 pr-3 font-sans text-sm font-semibold text-blue-950 placeholder:font-normal placeholder:text-blue-950/40 focus:outline-none"
+                className="w-full bg-transparent py-2.5 pl-9 pr-3 font-sans text-sm font-semibold text-ink placeholder:font-normal placeholder:text-ink-mute focus:outline-none"
               />
             </div>
           )}
@@ -325,16 +325,16 @@ export default function MultiSelect({
                   aria-selected={isSelected}
                   onClick={() => toggleAt(i)}
                   onMouseEnter={() => setFocusedIndex(i)}
-                  className={`flex cursor-pointer items-center gap-2.5 px-3 py-2 font-sans text-sm font-semibold text-blue-950 transition ${
-                    isFocused ? 'bg-blue-50' : ''
+                  className={`flex cursor-pointer items-center gap-2.5 px-3 py-2 font-sans text-sm font-semibold text-ink transition ${
+                    isFocused ? 'bg-ice' : ''
                   }`}
                 >
                   <span
                     aria-hidden="true"
                     className={`flex h-4 w-4 shrink-0 items-center justify-center rounded border transition ${
                       isSelected
-                        ? 'border-blue-700 bg-blue-700 text-white'
-                        : 'border-blue-950/25 bg-white text-transparent'
+                        ? 'border-lum bg-lum text-white'
+                        : 'border-ink/25 bg-white text-transparent'
                     }`}
                   >
                     <Check className="h-3 w-3" strokeWidth={3} />
@@ -342,19 +342,19 @@ export default function MultiSelect({
                   {option.icon && <span aria-hidden="true">{option.icon}</span>}
                   <span className="truncate">{option.label}</span>
                   {option.count !== undefined && (
-                    <span className="ml-auto pl-4 font-normal tabular-nums text-blue-950/60">{option.count}</span>
+                    <span className="ml-auto pl-4 font-normal tabular-nums text-ink-mute">{option.count}</span>
                   )}
                 </li>
               )
             })}
 
             {filtered.length === 0 && (
-              <li className="px-3 py-3 font-sans text-sm text-blue-950/50">No matches</li>
+              <li className="px-3 py-3 font-sans text-sm text-ink-mute">No matches</li>
             )}
           </ul>
 
           {count > 0 && (
-            <div className="shrink-0 border-t border-blue-950/10">
+            <div className="shrink-0 border-t border-ink/10">
               {/*
                 Same `px-3` inset, `gap-2.5`, and 4x4 leading box as an option
                 row, so the X sits in the checkbox column rather than starting a
@@ -374,7 +374,7 @@ export default function MultiSelect({
                   onChange([])
                   ;(searchable ? searchRef : triggerRef).current?.focus()
                 }}
-                className="flex w-full cursor-pointer items-center gap-2.5 px-3 py-2 text-left font-sans text-sm font-semibold text-blue-950/60 transition hover:bg-blue-50 hover:text-blue-950"
+                className="flex w-full cursor-pointer items-center gap-2.5 px-3 py-2 text-left font-sans text-sm font-semibold text-ink-mute transition hover:bg-ice hover:text-ink"
               >
                 <span aria-hidden="true" className="flex h-4 w-4 shrink-0 items-center justify-center">
                   <X className="h-3.5 w-3.5" strokeWidth={2.5} />

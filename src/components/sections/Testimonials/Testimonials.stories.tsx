@@ -22,10 +22,10 @@ export const Default: Story = {
 
 export const OnDarkBackground: Story = {
   parameters: {
-    backgrounds: { default: 'blue-950' },
+    backgrounds: { default: 'ink' },
   },
   render: () => (
-    <div className="bg-blue-950 py-16">
+    <div className="bg-ink py-16">
       <Testimonials />
     </div>
   ),

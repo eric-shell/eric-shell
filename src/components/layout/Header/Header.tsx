@@ -1,6 +1,7 @@
 import { useState, useCallback, useEffect, useRef } from 'react'
-import { ArrowUpRight, Menu, X } from 'lucide-react'
-import { CascadeGroup, CascadeItem, Button, RiseText } from '../../ui'
+import { Menu, X } from 'lucide-react'
+import { CascadeGroup, CascadeItem, Button, Label, RiseText, SocialLink } from '../../ui'
+import DisplayLink from '../DisplayLink'
 import { navLinks, homeLink, connectLinks, socialLinks } from '@/data'
 
 /**
@@ -182,9 +183,9 @@ export default function Header({ isHome }: HeaderProps) {
           launcher diagonally opposite (Chat.tsx, bottom-6 right-6). Always
           visible; at this size it covers little, and the menu stays one tap
           away. The cyan line along its bottom edge is reading progress. */}
-      <header className="site-header fixed z-850 top-6 left-6">
+      <header className="site-header focus-on-field fixed z-850 top-6 left-6">
         <CascadeGroup mountOnly>
-          <div className="relative flex items-center gap-1 overflow-hidden rounded-2xl bg-ink p-1.5 ring-1 ring-inset ring-white/12 shadow-[0_14px_34px_-14px_rgba(5,10,40,0.7)]">
+          <div className="relative flex items-center gap-1 overflow-hidden rounded-2xl bg-ink p-1.5 ring-1 ring-inset ring-white/12 shadow-capsule">
             <CascadeItem index={0}>
               <button
                 type="button"
@@ -192,7 +193,7 @@ export default function Header({ isHome }: HeaderProps) {
                 aria-label="Eric Shell, back to top"
                 className="group grid place-items-center text-white cursor-pointer"
               >
-                <span className="relative grid place-items-center w-9 h-9 rounded-[10px] bg-lum transition-transform duration-500 ease-[cubic-bezier(0.3,1.45,0.5,1)] group-hover:-rotate-12 group-hover:scale-110">
+                <span className="relative grid place-items-center w-9 h-9 rounded-tile bg-lum transition-transform duration-500 ease-spring group-hover:-rotate-12 group-hover:scale-110">
                   {echoes.map(id => (
                     <img
                       key={id}
@@ -216,19 +217,19 @@ export default function Header({ isHome }: HeaderProps) {
                 aria-expanded={menuOpen}
                 aria-controls="site-menu"
                 onClick={() => setMenuOpen(o => !o)}
-                className="group flex items-center gap-2.5 h-9 pl-2.5 pr-3.5 rounded-[10px] text-white cursor-pointer transition-colors hover:bg-white/10"
+                className="group flex items-center gap-2.5 h-9 pl-2.5 pr-3.5 rounded-tile text-white cursor-pointer transition-colors hover:bg-white/10"
               >
                 <Menu size={18} strokeWidth={2.5} aria-hidden="true" className="transition-transform duration-300 group-hover:scale-110" />
                 {/* Keyed by label, so each change replays the rise. Fixed width
                     (the longest label, TESTIMONIALS) so the capsule doesn't
                     resize as you scroll between sections. */}
                 <span className="relative block w-[7.75rem] h-4 overflow-hidden text-left">
-                  <span
+                  <Label
                     key={sectionLabel}
-                    className="absolute inset-0 font-sans text-xs font-bold uppercase leading-4 tracking-[0.14em] motion-safe:animate-[lu-word_450ms_cubic-bezier(0.2,0.8,0.2,1)_backwards]"
+                    className="absolute inset-0 leading-4 motion-safe:animate-[lu-word_450ms_var(--ease-settle)_backwards]"
                   >
                     {sectionLabel}
-                  </span>
+                  </Label>
                 </span>
               </button>
             </CascadeItem>
@@ -263,28 +264,28 @@ export default function Header({ isHome }: HeaderProps) {
         // `aria-hidden` alone only hides it from the accessibility tree; `inert`
         // also takes the links out of the tab order and find-in-page while closed.
         inert={!menuOpen}
-        className={`fixed inset-y-0 left-0 z-[950] w-[min(440px,100vw)] overflow-y-auto bg-lum text-white flex flex-col transition-transform duration-[450ms] ease-[cubic-bezier(0.7,0,0.2,1)] motion-reduce:transition-none ${
-          menuOpen ? 'translate-x-0 shadow-[30px_0_80px_-30px_rgba(5,10,60,0.6)]' : '-translate-x-full'
+        className={`fixed inset-y-0 left-0 z-[950] w-[min(440px,100vw)] overflow-y-auto bg-lum text-white focus-on-field flex flex-col transition-transform duration-[450ms] ease-[cubic-bezier(0.7,0,0.2,1)] motion-reduce:transition-none ${
+          menuOpen ? 'translate-x-0 shadow-drawer' : '-translate-x-full'
         }`}
       >
         <div className="flex items-center gap-3 px-6 pt-5 pb-2">
           <Button
             ref={closeRef}
-            variant="glass-dark"
+            variant="tint-ink"
             shape="square"
             size="sm"
             aria-label="Close menu"
             onClick={closeMenu}
-            className="rounded-[10px] w-9 h-9"
+            className="rounded-tile w-9 h-9"
           >
             <X size={18} strokeWidth={2.5} />
           </Button>
-          <span className="font-sans text-xs font-bold uppercase tracking-[0.16em] text-glow">Menu</span>
+          <Label>Menu</Label>
         </div>
 
         <nav aria-label="Site" className="flex flex-col gap-10 px-6 pt-6 pb-10">
           <div>
-            <p className="mb-3 font-sans text-xs font-bold uppercase tracking-[0.16em] text-glow">Sections</p>
+            <Label as="p" className="mb-3">Sections</Label>
             <ul className="flex flex-col">
               {sections.map(({ label, href, tooltip: note }, i) => {
                 const sectionId = href.split('#')[1]
@@ -301,7 +302,7 @@ export default function Header({ isHome }: HeaderProps) {
                       }}
                       className={`group flex items-baseline gap-4 py-1 transition-colors ${isActive ? 'text-white' : 'text-white/80 hover:text-white'}`}
                     >
-                      <span aria-hidden="true" className="w-5 font-mono text-xs text-glow">{String(i + 1).padStart(2, '0')}</span>
+                      <span aria-hidden="true" className="w-5 font-mono text-xs text-white">{String(i + 1).padStart(2, '0')}</span>
                       <RiseText
                         text={label}
                         inView={menuOpen}
@@ -312,14 +313,14 @@ export default function Header({ isHome }: HeaderProps) {
                         className="font-display font-bold uppercase tracking-display text-[clamp(32px,9vw,44px)] leading-[1]"
                       />
                       {isActive && (
-                        <span aria-hidden="true" className="self-center w-2 h-2 rounded-full bg-glow shadow-[0_0_12px_2px_rgba(143,232,255,0.7)]" />
+                        <span aria-hidden="true" className="self-center w-2 h-2 rounded-full bg-glow shadow-beacon" />
                       )}
                     </a>
                     {isActive && note && (
                       <p
                         role="status"
                         aria-live="polite"
-                        className={`ml-9 font-sans text-sm text-glow transition-opacity duration-200 ${tooltip?.sectionId === sectionId ? 'opacity-100' : 'opacity-0'}`}
+                        className={`ml-9 font-sans text-sm text-white transition-opacity duration-200 ${tooltip?.sectionId === sectionId ? 'opacity-100' : 'opacity-0'}`}
                       >
                         {tooltip?.sectionId === sectionId ? tooltip.text : ''}
                       </p>
@@ -331,23 +332,13 @@ export default function Header({ isHome }: HeaderProps) {
           </div>
 
           <div>
-            <p className="mb-3 font-sans text-xs font-bold uppercase tracking-[0.16em] text-glow">More</p>
+            <Label as="p" className="mb-3">More</Label>
             <ul className="flex flex-col gap-1">
               {connectLinks.map(({ label, href }) => (
                 <li key={label}>
-                  <a
-                    href={href}
-                    onClick={closeMenu}
-                    className="group inline-flex items-center gap-2 font-display font-bold uppercase tracking-display text-2xl leading-[1.15] text-white/80 hover:text-white transition-colors"
-                  >
+                  <DisplayLink href={href} onClick={closeMenu} className="text-2xl leading-[1.15]">
                     {label}
-                    <ArrowUpRight
-                      size={18}
-                      strokeWidth={2.75}
-                      aria-hidden="true"
-                      className="text-glow opacity-0 -translate-x-2 transition-[opacity,translate] duration-300 ease-[cubic-bezier(0.3,1.45,0.5,1)] group-hover:opacity-100 group-hover:translate-x-0 group-focus-visible:opacity-100 group-focus-visible:translate-x-0"
-                    />
-                  </a>
+                  </DisplayLink>
                 </li>
               ))}
             </ul>
@@ -357,21 +348,10 @@ export default function Header({ isHome }: HeaderProps) {
         <div className="mt-auto flex flex-col gap-4 px-6 pb-8">
           <div className="flex gap-2.5">
             {socialLinks.map(({ label, href, path }) => (
-              <a
-                key={label}
-                href={href}
-                target="_blank"
-                rel="noopener noreferrer"
-                aria-label={label}
-                className="w-11 h-11 rounded-full border border-white/35 flex items-center justify-center text-white hover:bg-white hover:text-lum hover:border-white hover:-translate-y-1 transition-[color,background-color,border-color,translate] duration-300 ease-[cubic-bezier(0.3,1.45,0.5,1)]"
-              >
-                <svg viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4" aria-hidden="true">
-                  <path d={path} />
-                </svg>
-              </a>
+              <SocialLink key={label} tone="lum" href={href} label={label} path={path} />
             ))}
           </div>
-          <p className="font-sans text-sm text-white/75">AI Design Systems Engineer</p>
+          <p className="font-sans text-sm text-white/90">AI Design Systems Engineer</p>
         </div>
       </div>
     </>

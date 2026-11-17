@@ -3,7 +3,7 @@ import { ArrowUpRight } from 'lucide-react'
 import { instagramPosts, type InstagramPost } from '@/data'
 import { lqip } from '@/data/lqip'
 import { useHydrated } from '@/lib/hydration'
-import { Button, CascadeGroup, CascadeItem, Container, SectionTitle, descDelay } from '../../ui'
+import { Button, CascadeGroup, CascadeItem, Container, Section, SectionTitle, descDelay } from '../../ui'
 
 function InstagramIcon({ size = 15 }: { size?: number }) {
   return (
@@ -166,10 +166,12 @@ export default function Visuals() {
   const shownIndex = held ? 0 : active
 
   return (
-    <section
+    <Section
       id="visuals"
       ref={sectionRef}
-      className={`relative bg-ink text-white ${pinned ? 'h-[260vh]' : 'py-24 md:py-36'}`}
+      tone="ink"
+      rhythm={pinned ? 'none' : 'section'}
+      className={pinned ? 'h-[260vh]' : undefined}
     >
       <div
         ref={pinRef}
@@ -234,7 +236,7 @@ export default function Visuals() {
                         onClick={() => open(i)}
                         onFocus={() => open(i)}
                         onPointerEnter={(e) => { if (e.pointerType === 'mouse') open(i) }}
-                        className="relative isolate block w-full h-full rounded-3xl overflow-hidden bg-blue-900 cursor-pointer"
+                        className="relative isolate block w-full h-full rounded-3xl overflow-hidden bg-ink-soft cursor-pointer"
                       >
                         <PostPicture
                           post={post}
@@ -261,8 +263,11 @@ export default function Visuals() {
                           />
                         )}
                       </button>
+                      {/* `overflow-hidden`: a closed slice is narrower than this
+                          caption's button, which would otherwise hang out past
+                          the last slice and give the page a sideways scroll. */}
                       <div
-                        className={`absolute left-4 right-4 bottom-4 z-[4] flex items-end justify-between gap-3 rounded-2xl bg-ink/80 px-4 py-3.5 transition-[opacity,translate] duration-500 ${
+                        className={`absolute left-4 right-4 bottom-4 z-[4] flex items-end justify-between gap-3 overflow-hidden rounded-2xl bg-ink/80 px-4 py-3.5 transition-[opacity,translate] duration-500 ${
                           on && !held ? 'opacity-100 translate-y-0 delay-300' : 'opacity-0 translate-y-4 pointer-events-none'
                         }`}
                         aria-hidden={!on || held}
@@ -278,7 +283,7 @@ export default function Visuals() {
                           rel="noopener noreferrer"
                           variant="white"
                           size="sm"
-                          className="shrink-0 border-0"
+                          className="shrink-0"
                           rightIcon={<ArrowUpRight size={15} strokeWidth={2.5} aria-hidden="true" />}
                         >
                           View post
@@ -294,12 +299,12 @@ export default function Visuals() {
 
         {pinned && (
           <div ref={coverRef} aria-hidden="true" className="absolute inset-0 z-[5] grid place-items-center pointer-events-none">
-            <span className="font-display font-bold uppercase tracking-display leading-[0.8] text-white text-[min(calc((100vw-48px)/4.7),300px)] [text-shadow:0_12px_60px_rgba(5,10,40,0.5)]">
+            <span className="font-display font-bold uppercase tracking-display leading-[0.8] text-white text-[min(calc((100vw-48px)/4.7),300px)] text-shadow-poster-strong">
               Visuals
             </span>
           </div>
         )}
       </div>
-    </section>
+    </Section>
   )
 }

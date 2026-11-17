@@ -33,6 +33,17 @@ describe('notes', () => {
     for (const slug of slugs) expect(slug).toMatch(/^[a-z0-9]+(-[a-z0-9]+)*$/)
   })
 
+  it('dates a revision after the entry, never in the future', () => {
+    const latest = new Date(Date.now() + 86_400_000).toISOString().slice(0, 10)
+    for (const n of notes.filter(n => n.updated !== undefined)) {
+      const updated = n.updated as string
+      expect(updated, n.slug).toMatch(/^\d{4}-\d{2}-\d{2}$/)
+      expect(new Date(`${updated}T00:00:00Z`).toISOString().slice(0, 10), n.slug).toBe(updated)
+      expect(updated > n.date, `${n.slug}: updated must be after date`).toBe(true)
+      expect(updated <= latest, `${n.slug}: updated is in the future`).toBe(true)
+    }
+  })
+
   it('dates every entry as a real ISO calendar date', () => {
     for (const n of notes) {
       expect(n.date, n.slug).toMatch(/^\d{4}-\d{2}-\d{2}$/)

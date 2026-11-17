@@ -1,5 +1,5 @@
 import type { ElementType, HTMLAttributes } from 'react'
-import { twMerge } from 'tailwind-merge'
+import { cn } from '../cn'
 
 interface ContainerProps extends HTMLAttributes<HTMLElement> {
   as?: ElementType
@@ -7,7 +7,7 @@ interface ContainerProps extends HTMLAttributes<HTMLElement> {
 
 export default function Container({ as: Tag = 'div', className, children, ...props }: ContainerProps) {
   return (
-    <Tag className={twMerge('max-w-[1440px] mx-auto px-6', className)} {...props}>
+    <Tag className={cn('max-w-[1440px] mx-auto px-6', className)} {...props}>
       {children}
     </Tag>
   )

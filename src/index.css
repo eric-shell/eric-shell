@@ -1,5 +1,15 @@
 @import "tailwindcss";
 
+/* Tailwind scans every file in the project for anything shaped like a class
+   name, and prose counts. The notes, CLAUDE.md, the command docs and the
+   vocabulary test all describe classes rather than use them, including ones
+   this site deliberately does not have: with these scanned, the build emitted a
+   real utility for the blur property the site bans. None of them is markup. */
+@source not "./data/notes.ts";
+@source not "../CLAUDE.md";
+@source not "../.claude";
+@source not "../tests";
+
 @font-face {
   font-family: 'Display';
   src: url('/fonts/display.woff2') format('woff2');
@@ -9,152 +19,51 @@
 }
 
 @theme {
+  /*
+   * The palette is closed. These three lines delete every colour and shadow
+   * Tailwind ships with, so the only ones that exist are the ones declared
+   * below: `bg-slate-500` or `shadow-lg` compiles to nothing, and
+   * tests/ui-vocabulary.test.ts fails on the class before it gets that far.
+   * A new colour, radius or shadow is added here (and in components/ui/cn.ts),
+   * never spelled out at a call site.
+   */
+  --color-*: initial;
+  --shadow-*: initial;
+  --inset-shadow-*: initial;
+
   --color-white: #ffffff;
-  --color-blue-50:  oklch(0.954 0.013 221.34);
-  --color-blue-100: oklch(0.911 0.026 221.55);
-  --color-blue-200: oklch(0.842 0.052 224.00);
-  --color-blue-300: oklch(0.770 0.065 226.00);
-  --color-blue-400: oklch(0.685 0.078 229.00);
-  --color-blue-500: oklch(0.595 0.086 230.50);
-  --color-blue-600: oklch(0.546 0.091 231.50);
-  --color-blue-700: oklch(0.497 0.093 232.07);
-  --color-blue-800: oklch(0.390 0.070 245.00);
-  --color-blue-900: oklch(0.280 0.045 260.00);
-  --color-blue-950: oklch(0.198 0.025 269.84);
+  /* Body canvas behind everything, and the tint of the admin's recessed wells. */
   --color-black: oklch(0.107 0.011 266.51);
 
   /*
-   * Hover steps for blue-600/700. Same lightness as the ramp step each one
-   * shadows, chroma raised to 97% of the sRGB ceiling at that L — the ramp
-   * itself only varies lightness, which is the one axis a hover must not move
-   * (see the status-fill note below for the derivation). Consumed by the
-   * `primary` gradient's hover and by `info`.
-   */
-  --color-blue-600-vivid: oklch(0.546 0.107 231.50);
-  --color-blue-700-vivid: oklch(0.497 0.098 232.07);
-
-  /*
-   * Accent — same hue family as the blue ramp, pushed to a chroma that actually
-   * reads as colour. Every step of blue-50..950 sits below the dataviz chroma
-   * floor (blue-600 is 0.091) and "reads gray" as a data mark, which is exactly
-   * why charts drawn from the ramp looked washed out.
+   * Status fills for the `success` and `error` button variants.
    *
-   * Used by the admin CRM only — the public site keeps the muted ramp.
+   * Both sit at one lightness, L 0.546, in both the resting and hover states,
+   * and at the same fraction of their hue's available chroma (82% of the sRGB
+   * ceiling at rest, 97% on hover), so they read as one family and differ only
+   * in hue. Chroma is matched as a fraction of the gamut rather than as a raw
+   * OKLCH number because raw C is not comparable across hues: an equal-C red
+   * lands far below its ceiling and goes dusty.
    *
-   * NON-TEXT USES ONLY: chart marks, focus rings, the active-tab underline. As a
-   * mark against the blue-950 canvas it is 7.71:1. Do NOT put white text on it
-   * (2.36:1) — an `accent-dark` button variant tried and was removed. A CTA on
-   * the dark canvas uses `primary`, which clears AA in every state.
-   */
-  --color-accent:       oklch(0.720 0.150 225.00);
-  --color-accent-deep:  oklch(0.450 0.130 240.00);
-
-  /*
-   * Semantic status fills for the `success` / `warning` / `error` button
-   * variants. (`info` needs no token of its own: it is blue-600 at rest and
-   * blue-600-vivid on hover, both defined above with the ramp.)
+   * HOVER MOVES CHROMA, NOT LIGHTNESS. The obvious hover, darkening the fill,
+   * is a light-canvas idiom, and these land on white and on ink alike. On ink
+   * a darker fill walks toward its background, so the affordance weakens at
+   * the moment the pointer is on it; lightening instead drops the white label
+   * under AA. There is no headroom in lightness in either direction, so L is
+   * frozen and the button gains saturation instead.
    *
-   * Derived from the primary blue rather than solved per-hue, so the four
-   * status variants read as one family. Both axes are locked:
-   *
-   *   lightness  L 0.546 — blue-600's, identical for every hue AND for both
-   *              the resting and hover states. Nothing here ever moves in
-   *              lightness. See the hover note below for why.
-   *   chroma     82% of the max in-gamut chroma at that L and hue (resting),
-   *              97% (hover) — 82% is the ratio blue-600 itself sits at.
-   *
-   * Chroma is matched as a *fraction of the sRGB gamut*, not as a raw OKLCH
-   * number. Raw C is not comparable across hues here: at L 0.546 the ceiling
-   * is 0.111 at the blue hue but 0.221 at the red one, so an equal-C red
-   * lands at 41% of its ceiling and reads visibly duller than the blue at
-   * 82% (it goes dusty-mauve, #9f5a55). Equal gamut fraction is what actually
-   * looks like equal vibrance. This is also the bug in the previous values:
-   * every one of them was pinned at 100% of its own ceiling, which is why
-   * error (C 0.238) screamed next to info (C 0.110).
-   *
-   * HOVER MOVES CHROMA, NOT LIGHTNESS. The obvious hover — darken the fill —
-   * is a light-canvas idiom, and these variants land on both canvases. On the
-   * dark admin canvas darkening walks the button *toward* its background: the
-   * previous `error` hover fell to 2.72:1 there, so the affordance weakened
-   * exactly when the pointer was on it. Lightening instead fails the other
-   * way — at L 0.585 the white label drops to 3.94 - 4.27:1 on three of the
-   * four hues. There is no headroom in lightness in either direction, because
-   * both gates below are functions of L and they pull opposite ways.
-   *
-   * So L is frozen and hover pushes chroma to 97% of the ceiling instead. The
-   * button gains saturation rather than depth — it reads as "lit up" on a
-   * light canvas and on a dark one alike, and every contrast figure stays put
-   * (the largest swing across all four is 0.05).
-   *
-   * `primary` is fixed the same way and for the same reason — it used to hover
-   * to blue-800/blue-900, which is 1.90:1 and 1.25:1 against the dark canvas,
-   * and primary is the documented dark-canvas CTA. It now hovers to the
-   * `-vivid` steps above. That is also why neither it nor `info` can simply
-   * hover one step down the ramp: the ramp only varies lightness.
-   *
-   * All four clear the three gates in BOTH states, verified:
-   *
-   *   white label on the fill   >= 4.5:1  -> 4.60 - 5.50
-   *   fill vs the light canvas  >= 3:1    -> 4.60 - 5.50
-   *   fill vs the dark canvas   >= 3:1    -> 3.31 - 3.96
-   *
-   * Chroma stops at 97% rather than 100% so no channel sits on the gamut
-   * boundary and clips.
-   *
-   * `warning` has no counterpart in the blue/red/green ramps; hue 75 is new.
-   * It reads bronze rather than amber, and cannot read otherwise: at L 0.546
-   * the sRGB ceiling at this hue is only C 0.115. A vivid amber needs a much
-   * higher L, which would drop the white label below AA. Do not "fix" it by
-   * raising L alone.
+   * Both clear three gates in both states:
+   *   white label on the fill  >= 4.5:1
+   *   fill vs white            >= 3:1
+   *   fill vs ink              >= 3:1   (success 3.98, error 3.42 at rest)
    */
   --color-success:        oklch(0.546 0.141 145.00);
   --color-success-hover:  oklch(0.546 0.167 145.00);
-  --color-warning:        oklch(0.546 0.095 75.00);
-  --color-warning-hover:  oklch(0.546 0.112 75.00);
   --color-error:          oklch(0.546 0.182 25.00);
   --color-error-hover:    oklch(0.546 0.215 25.00);
 
-  --color-red-50:  oklch(0.965 0.014 25.00);
-  --color-red-100: oklch(0.918 0.034 25.00);
-  --color-red-200: oklch(0.852 0.072 25.00);
-  --color-red-300: oklch(0.778 0.115 25.00);
-  --color-red-400: oklch(0.690 0.165 25.00);
-  --color-red-500: oklch(0.605 0.195 25.00);
-  --color-red-600: oklch(0.552 0.205 25.00);
-  --color-red-700: oklch(0.488 0.190 25.00);
-  --color-red-800: oklch(0.402 0.155 25.00);
-  --color-red-900: oklch(0.305 0.115 25.00);
-  --color-red-950: oklch(0.215 0.080 25.00);
-
-  /**
-   * Hue 75 — the same hue as `--color-warning` above, given one ramp step light
-   * enough to be read as TEXT on the blue-950 canvas. `--color-warning` itself
-   * sits at L 0.546, which is a button surface, not ink on a dark panel.
-   *
-   * Deliberately only one step: the admin's CRM flag badges are the sole
-   * consumer, and red/green carry full ramps because the public site uses them.
-   *
-   * L 0.750 sits ABOVE red-400 (0.690) and green-400 (0.695) on purpose. Hue 75
-   * is intrinsically lighter, and matching their L reads brown rather than amber
-   * on a dark background — 8.00:1 against the canvas here, keeping it in family
-   * with red-400's 6.10:1 and green-400's 7.06:1.
-   */
-  --color-amber-400: oklch(0.750 0.150 75.00);
-
-  --color-green-50:  oklch(0.962 0.020 145.00);
-  --color-green-100: oklch(0.918 0.045 145.00);
-  --color-green-200: oklch(0.855 0.080 145.00);
-  --color-green-300: oklch(0.780 0.110 145.00);
-  --color-green-400: oklch(0.695 0.140 145.00);
-  --color-green-500: oklch(0.605 0.150 145.00);
-  --color-green-600: oklch(0.548 0.150 145.00);
-  --color-green-700: oklch(0.488 0.140 145.00);
-  --color-green-800: oklch(0.398 0.115 145.00);
-  --color-green-900: oklch(0.298 0.085 145.00);
-  --color-green-950: oklch(0.210 0.060 145.00);
-
   /*
-   * Luminous — the home page's palette. One saturated blue (WGSN's 2027
+   * Luminous — the site's palette. One saturated blue (WGSN's 2027
    * colour, and the sky in the hero photo) against white and a deep ink.
    *   lum       section fields, primary fills. White text on it is 5.5:1.
    *   lum-deep  text and tags on ice/white (7.0:1 on white).
@@ -168,13 +77,82 @@
   --color-ice:      #EAF0FF;
   --color-glow:     #8FE8FF;
 
+  /*
+   * Ink for running text. `ink` itself is for headings and dark fields; body
+   * copy and meta step down from it so a page of prose is not all one weight.
+   *   ink-soft  body copy. 12.3:1 on white, 10.8:1 on ice.
+   *   ink-mute  dates, captions, placeholders. 6.2:1 on white, 5.5:1 on ice.
+   */
+  --color-ink-soft: #2A3358;
+  --color-ink-mute: #565E8A;
+
+  /*
+   * Status, beyond the two button fills above. One light step and one dark
+   * step per hue, named for the job rather than the ramp position:
+   *   -bright  text and marks on ink (the admin's flags, toast icons).
+   *   -deep    the fill of a notice panel, under a white label.
+   * `warning` has no fill, only the bright step the admin's flags use.
+   */
+  --color-error-bright:   oklch(0.690 0.165 25.00);
+  --color-error-deep:     oklch(0.215 0.080 25.00);
+  --color-success-bright: oklch(0.695 0.140 145.00);
+  --color-success-deep:   oklch(0.210 0.060 145.00);
+  --color-warning-bright: oklch(0.750 0.150 75.00);
+
+  /*
+   * Data marks, admin CRM only: chart series, the active-tab underline, the
+   * live dot. NON-TEXT USES ONLY. As a mark on ink it is 7.86:1, but a white
+   * label on it is 2.36:1, so it must never back text. Named `data` rather
+   * than "accent" so nobody reaches for it as a UI colour.
+   */
+  --color-data:      oklch(0.720 0.150 225.00);
+  --color-data-deep: oklch(0.450 0.130 240.00);
+
+  /*
+   * Radii. Tailwind's own scale covers the round numbers (`rounded-2xl` 16px,
+   * `rounded-3xl` 24px, `rounded-4xl` 32px); these are the site's in-between
+   * sizes, named for what they round.
+   */
+  --radius-tile:     10px;  /* header logo tile and its buttons */
+  --radius-media:    14px;  /* figures and code blocks in a note */
+  --radius-card:     22px;  /* every white card */
+  --radius-composer: 28px;  /* the chat composer */
+  --radius-sheet:    48px;  /* the top of a sheet rising over a field */
+
+  /*
+   * Shadows. All cast in the ink hue rather than black, so a lifted card reads
+   * as lit by the blue field it sits on.
+   */
+  --shadow-raised:    0 1px 3px 0 rgb(5 10 40 / 0.1), 0 1px 2px -1px rgb(5 10 40 / 0.1);
+  --shadow-popover:   0 12px 24px -8px rgb(5 10 60 / 0.25);
+  --shadow-card:      0 30px 50px -24px rgb(5 10 60 / 0.7);
+  --shadow-card-soft: 0 24px 40px -24px rgb(5 10 60 / 0.45);
+  --shadow-float:     0 30px 80px -30px rgb(5 10 60 / 0.6);
+  --shadow-capsule:   0 14px 34px -14px rgb(5 10 40 / 0.7);
+  --shadow-drawer:    30px 0 80px -30px rgb(5 10 60 / 0.6);
+  --shadow-beacon:    0 0 12px 2px rgb(143 232 255 / 0.7);
+
+  /* The lit top edge of a solid button, and its stronger hover state. */
+  --inset-shadow-highlight:        inset 0 1px 0 0 rgb(255 255 255 / 0.16);
+  --inset-shadow-highlight-strong: inset 0 1px 0 0 rgb(255 255 255 / 0.3);
+
+  /* Depth under poster-size type set over a photo. */
+  --text-shadow-poster:        0 18px 60px rgb(5 10 60 / 0.35);
+  --text-shadow-poster-strong: 0 12px 60px rgb(5 10 40 / 0.5);
+
+  /* Even tracking for every Display heading. RiseText applies the same value
+     as a per-letter margin (see src/lib/displayKerning.ts), so split and
+     unsplit headings set identically. `label` is the uppercase meta label. */
+  --tracking-display: -0.02em;
+  --tracking-label:   0.14em;
+
+  /* The two curves every entrance uses: letters and cards overshoot and settle
+     on `spring`; fades and slides ease out on `settle`. */
+  --ease-spring: cubic-bezier(0.3, 1.45, 0.5, 1);
+  --ease-settle: cubic-bezier(0.2, 0.8, 0.2, 1);
+
   --font-sans: 'Google Sans', system-ui, sans-serif;
   --font-display: 'Display', system-ui, sans-serif;
-}
-
-@keyframes fade-in {
-  from { opacity: 0; transform: translateY(6px); }
-  to   { opacity: 1; transform: translateY(0); }
 }
 
 @keyframes icon-echo {
@@ -182,14 +160,8 @@
   to   { transform: scale(80)  rotate(270deg); opacity: 0;   }
 }
 
-/* Entrance for the chat glass panel. Deliberately opacity-only: tweening the
-   backdrop-filter radius forces a re-blur of everything behind the panel (hero
-   photo, both particle canvases, the ambient blobs) on every frame. Holding the
-   blur at its final 12px and fading the composited result is a cheap, jump-free
-   layer fade. Must be applied to the blurred element itself — an *ancestor*
-   with opacity < 1 forms a backdrop root, so the blur samples nothing until the
-   fade lands on exactly 1 and then snaps. */
-@keyframes glass-in {
+/* The chat panel fading in on mount. Opacity only, so it composites. */
+@keyframes panel-in {
   from { opacity: 0; }
   to   { opacity: 1; }
 }
@@ -208,35 +180,6 @@
   55%  { transform: scale(1.12); opacity: 1; }
   78%  { transform: scale(0.96); }
   100% { transform: scale(1); opacity: 1; }
-}
-
-/* Ambient backdrop blobs — transform-only so they stay composited.
-   Durations are co-prime-ish (26/34/42s) so the three layers never sync. */
-@keyframes ambient-a {
-  from { transform: translate3d(0, 0, 0) scale(1) rotate(0deg); }
-  to   { transform: translate3d(5%, -7%, 0) scale(1.2) rotate(12deg); }
-}
-
-@keyframes ambient-b {
-  from { transform: translate3d(0, 0, 0) scale(1.15); }
-  to   { transform: translate3d(-7%, 5%, 0) scale(0.9); }
-}
-
-@keyframes ambient-c {
-  from { transform: translate3d(0, 0, 0) scale(0.9) rotate(0deg); }
-  to   { transform: translate3d(6%, 6%, 0) scale(1.15) rotate(-10deg); }
-}
-
-@keyframes ambient-hue {
-  from { filter: hue-rotate(-12deg); }
-  to   { filter: hue-rotate(18deg); }
-}
-
-/* Scroll-linked drift for the whole blob layer — progress comes from the
-   section's position in the viewport (animation-timeline: view()), not time. */
-@keyframes ambient-parallax {
-  from { transform: translateY(-5%); }
-  to   { transform: translateY(5%); }
 }
 
 /* MPA route changes (/ ↔ /resume ↔ /privacy) cross-fade instead of hard-cutting. */
@@ -286,11 +229,68 @@
   animation: detail-collapse 260ms cubic-bezier(0.4, 0, 1, 1) forwards;
 }
 
-/* Even tracking for every Display heading. RiseText applies the same value as
-   a per-letter margin (see src/lib/displayKerning.ts), so split and unsplit
-   headings set identically. */
-@utility tracking-display {
-  letter-spacing: -0.02em;
+/*
+ * Focus rings. The base rule (below) draws every ring in `--focus-ring`, which
+ * defaults to Luminous Blue: right on white, invisible on a blue field
+ * (1.4:1). So the field sets the colour for everything inside it, and a white
+ * surface sitting on that field sets it back.
+ *   focus-on-field   on a lum or ink field: white rings.
+ *   focus-on-paper   on a white card or popover inside a field: blue rings.
+ * `Section`, `Sheet` and the white surfaces apply these; a call site rarely
+ * needs to.
+ */
+@utility focus-on-field {
+  --focus-ring: var(--color-white);
+}
+
+@utility focus-on-paper {
+  --focus-ring: var(--color-lum);
+}
+
+/* The ring for a card whose whole surface is one stretched link: the link has
+   no box of its own worth outlining, so the card wears the ring instead. */
+@utility focus-ring-within {
+  &:has(a:focus-visible) {
+    outline: 2px solid var(--focus-ring, var(--color-lum));
+    outline-offset: 4px;
+  }
+
+  & a:focus-visible {
+    outline: none;
+  }
+}
+
+/* The hero photo's scrim: a cyan bloom where the sky is brightest, and ink
+   rising from the bottom edge so the wordmark and CTAs hold their contrast. */
+@utility hero-scrim {
+  background-image:
+    radial-gradient(60% 55% at 72% 28%, --alpha(var(--color-glow) / 28%), transparent 70%),
+    linear-gradient(180deg, --alpha(var(--color-ink) / 50%) 0%, transparent 26%, transparent 52%, --alpha(var(--color-ink) / 82%) 100%);
+}
+
+/* The outlined copy of the hero wordmark that sits in front of the subject. */
+@utility wordmark-outline {
+  color: transparent;
+  -webkit-text-stroke: 2px --alpha(var(--color-white) / 92%);
+}
+
+/* The faint cyan glow a card catches under the pointer. Reads `--mx` / `--my`,
+   which useWaveGrid sets; 8% so it never competes with the text. */
+@utility card-glow {
+  background-image: radial-gradient(280px circle at var(--mx, 50%) var(--my, 50%), --alpha(var(--color-glow) / 8%), transparent 65%);
+}
+
+/* The 4/12 to 8/12 split: a section's heading beside its content. One column
+   until `lg`. The call site supplies the gap. A utility rather than a
+   component because the three places that use it put the grid on three
+   different elements, and the resume's print sheet depends on that depth. */
+@utility grid-split {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+
+  @media (width >= 64rem) {
+    grid-template-columns: minmax(0, 4fr) minmax(0, 8fr);
+  }
 }
 
 /* One letter of a RiseText heading. Every heading on the page enters this way:
@@ -406,20 +406,33 @@
   }
 }
 
-/* The blue Work sheet widens to full bleed as it rises over the hero.
-   Scroll-driven where supported; elsewhere it simply sits at full width. */
-@keyframes work-sheet {
+/* A Sheet that widens to full bleed as it rises over the field above it (the
+   blue Work sheet over the hero). Scroll-driven where supported; elsewhere it
+   simply sits at full width. */
+@keyframes sheet-widen {
   from { transform: scaleX(0.9); }
   to   { transform: scaleX(1); }
 }
 
-@utility work-sheet {
+@utility sheet-widen {
   transform-origin: 50% 0;
 
   @supports (animation-timeline: view()) {
-    animation: work-sheet linear both;
+    animation: sheet-widen linear both;
     animation-timeline: view();
     animation-range: entry 0% entry 70%;
+  }
+}
+
+/* A Card's hover lift, and its tilt toward the pointer when a parent sets
+   `--tx` / `--ty` (see useWaveGrid). One transform, because the two have to
+   compose: the card sets `--lift` on hover, the grid sets the tilt. */
+@utility card-lift {
+  transform: perspective(900px) rotateX(var(--ty, 0deg)) rotateY(var(--tx, 0deg)) translateY(var(--lift, 0px));
+
+  @media (prefers-reduced-motion: reduce) {
+    transform: none;
+    transition: none;
   }
 }
 
@@ -438,43 +451,8 @@
   animation: genie-button-in 350ms cubic-bezier(0.34, 1.56, 0.64, 1) both;
 }
 
-@utility animate-glass-in {
-  animation: glass-in 600ms cubic-bezier(0.16, 1, 0.3, 1) both;
-}
-
-/* Scroll-triggered counterpart to animate-glass-in, for glass that mounts
-   off-screen and can't use a mount animation. A `CascadeItem` publishes
-   --cascade-fade, which inherits down to here — unlike an ancestor's opacity,
-   an inherited custom property forms no backdrop root, so the blur underneath
-   never snaps. Put this on the blurred element itself, alongside `slideOnly`
-   on the CascadeItem so the two don't both fade. */
-@utility cascade-fade {
-  opacity: var(--cascade-fade, 1);
-  transition: opacity 500ms ease-out;
-  transition-delay: var(--cascade-delay, 0ms);
-}
-
-@utility animate-ambient-a {
-  animation: ambient-a 26s ease-in-out infinite alternate;
-}
-
-@utility animate-ambient-b {
-  animation: ambient-b 34s ease-in-out infinite alternate;
-}
-
-@utility animate-ambient-c {
-  animation: ambient-c 42s ease-in-out infinite alternate;
-}
-
-@utility animate-ambient-hue {
-  animation: ambient-hue 48s ease-in-out infinite alternate;
-}
-
-@utility animate-ambient-parallax {
-  @supports (animation-timeline: view()) {
-    animation: ambient-parallax linear both;
-    animation-timeline: view();
-  }
+@utility animate-panel-in {
+  animation: panel-in 600ms cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
 /* Optical icon sizing. Geometric glyphs (arrows, chevrons, plus, x) lay down far
@@ -521,108 +499,9 @@
   }
 }
 
-/* Tiled monochrome SVG grain — fills the element; caller sets opacity + blend. */
-@utility bg-noise {
-  background-image: var(--noise-img);
-  background-size: 128px 128px;
-}
-
-/* Grain as an ::after film over a panel surface. The element (or an ancestor
-   clipping it) must be positioned — this utility does not set `position` so it
-   can't fight `absolute` at call sites. */
-@utility noise-overlay {
-  &::after {
-    content: '';
-    position: absolute;
-    inset: 0;
-    border-radius: inherit;
-    pointer-events: none;
-    background-image: var(--noise-img);
-    background-size: 128px 128px;
-    opacity: 0.05;
-    mix-blend-mode: overlay;
-  }
-}
-
-@utility skew-section {
-  transform: skewY(-1deg);
-  margin-block: -2rem;
-  padding-block: 5rem;
-
-  @media (width >= 768px) {
-    padding-block: 6rem;
-  }
-
-  @media (width >= 1024px) {
-    padding-block: 8rem; /* py-24 (6rem) + 2rem overlap compensation */
-  }
-}
-
-/* The footer closes the page, so it needs the section shear on its top edge
-   and a flat bottom edge that sits square against the window. skewY() can't
-   do that — it tilts both edges, which lifted the bottom-right corner off the
-   page (exposing the black canvas in a wedge) and spilled the bottom-left
-   corner ~13px past it as dead scroll. Clipping the top corner instead leaves
-   the box axis-aligned, so the gradient runs to the true bottom edge and
-   nothing overflows.
-     --shear is the rise of a 1deg slope across the viewport. The negative
-   margin is the old -2rem overlap plus the half-shear the rotation about the
-   element's centre used to contribute, so the visible edge lands where it
-   always did. ::before redraws the hairline the top border used to carry —
-   a border follows the box, not the clip, so it would survive only as a
-   sliver; skewed about its own centre at top: shear/2, the bar traces the
-   clip edge exactly. */
-@utility skew-footer {
-  --shear: calc(100vw * tan(1deg));
-  margin-top: calc(-2rem - var(--shear) / 2);
-  clip-path: polygon(0 var(--shear), 100% 0, 100% 100%, 0 100%);
-
-  &::before {
-    content: '';
-    position: absolute;
-    inset-inline: 0;
-    top: calc(var(--shear) / 2);
-    height: 1px;
-    background: --alpha(var(--color-white) / 10%);
-    transform: skewY(-1deg);
-  }
-}
-
-/* Mirror of skew-footer for a page's opening block (/resume): the bottom
-   edge angles into the content below, matching the cut the home page gets
-   from Work overlapping Hero. The negative top margin pulls the shear's
-   low corner above the viewport edge so it can't expose a sliver of page
-   background — callers add 2rem of top padding to hold content in place. */
-@utility skew-hero {
-  transform: skewY(-1deg);
-  margin-top: -2rem;
-}
-
-@utility unskew-inner {
-  transform: skewY(0.5deg);
-}
-
-/* Counterpart to skew-hero. A page masthead only angles its bottom edge into
-   the content below, so its text has no second shear to split the difference
-   with — it reads as a mistake at the -0.5deg residual sections settle at.
-   +1deg cancels skew-hero exactly (the composed matrix is the identity). */
-@utility unskew-hero {
-  transform: skewY(1deg);
-}
-
-/* Sections settle their content at -0.5deg (a -1deg shear plus unskew-inner's
-   +0.5deg). skew-footer clips instead of shearing, so its content applies that
-   same residual tilt directly. */
-@utility skew-inner {
-  transform: skewY(-0.5deg);
-}
-
 @layer base {
   :root {
-    color-scheme: light dark;
-    /* feColorMatrix saturate(0) keeps the turbulence neutral gray so the grain
-       never tints the surface it sits on. */
-    --noise-img: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='128' height='128'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='128' height='128' filter='url(%23n)'/%3E%3C/svg%3E");
+    color-scheme: light;
   }
 
   /* The Work grid inserts 30+ cards on "View All" — without this, browser
@@ -638,17 +517,17 @@
   }
 
   ::selection {
-    background: var(--color-blue-600);
+    background: var(--color-lum);
     color: var(--color-white);
   }
 
   :root {
-    accent-color: var(--color-blue-600);
+    accent-color: var(--color-lum);
   }
 
   input,
   textarea {
-    caret-color: var(--color-blue-500);
+    caret-color: var(--color-lum);
   }
 
   /* WebKit draws its own clear affordance inside type="search" as a bright blue
@@ -659,8 +538,10 @@
     appearance: none;
   }
 
+  /* One ring for the whole site. `--focus-ring` is set by the field the
+     element sits on; see `focus-on-field` above. */
   :focus-visible {
-    outline: 2px solid var(--color-blue-500);
+    outline: 2px solid var(--focus-ring, var(--color-lum));
     outline-offset: 2px;
   }
 
@@ -773,14 +654,18 @@
       print-color-adjust: exact;
     }
 
-    /* Cascade entrance animations — force the settled state. */
+    /* Cascade entrance animations — force the settled state. `transition:
+       none` too: without it an item that had not scrolled into view fades up
+       over 500ms from the moment print styles apply, and can be caught pale. */
     .cascade-item {
       opacity: 1 !important;
       transform: none !important;
+      transition: none !important;
     }
     .rise-ch {
       opacity: 1 !important;
       transform: none !important;
+      transition: none !important;
     }
 
     /* ─────────────────────────────────────────────
@@ -797,24 +682,16 @@
       padding: 0 0 0.4rem 0 !important;
       /* Borders print even with background graphics disabled. */
       border-bottom: 2.25pt solid var(--print-ink) !important;
-      /* Drop the on-screen skew-hero shear and its offset — the masthead
-         rule has to sit square on the page. */
-      transform: none !important;
       margin: 0 0 0.62rem 0 !important;
       overflow: visible !important;
     }
     .resume-masthead {
-      /* Counters unskew-hero. */
-      transform: none !important;
       display: grid !important;
       grid-template-columns: minmax(0, 1fr) auto;
       column-gap: 1.5rem;
       align-items: end;
       padding: 0 !important;
       max-width: 100% !important;
-    }
-    .resume-identity {
-      gap: 0.28rem !important;
     }
     .resume-name {
       color: var(--print-ink) !important;
@@ -827,7 +704,8 @@
       font-size: var(--print-size-lead) !important;
       line-height: 1.38 !important;
       font-weight: 400 !important;
-      padding: 0 !important;
+      /* The name-to-headline step. */
+      padding: 0.28rem 0 0 !important;
       margin: 0 !important;
       max-width: 34em !important;
     }
@@ -874,6 +752,21 @@
       line-height: 1 !important;
       font-variation-settings: 'GRAD' 150 !important;
     }
+    /* The section head is a SectionTitle, whose head row is a start-aligned
+       column below `md` and a row above it, and Chrome lays the printed page
+       out wide enough to take the `md` row. Either way the h2 shrink-wraps to
+       its own text and takes its rule with it, so the row is set back to a
+       stretched column here. The margin stands in for the flex gap the head
+       used to share with the section's content, before the two became
+       separate groups. */
+    .resume-section-title {
+      margin-bottom: 0.4rem !important;
+    }
+    .resume-section-title > div {
+      flex-direction: column !important;
+      align-items: stretch !important;
+    }
+
     /* Rank 1 — section head: darker ink, full-width rule. */
     .resume-root h2 {
       color: var(--print-ink-muted) !important;
@@ -1142,12 +1035,7 @@
       scroll-behavior: auto !important;
     }
 
-    .animate-ambient-a,
-    .animate-ambient-b,
-    .animate-ambient-c,
-    .animate-ambient-hue,
-    .animate-ambient-parallax,
-    .work-sheet,
+    .sheet-widen,
     .hero-exit-drift,
     .hero-exit-dim {
       animation: none !important;
@@ -1192,8 +1080,7 @@
       animation: none !important;
     }
 
-    .animate-glass-in,
-    .cascade-fade {
+    .animate-panel-in {
       animation: none !important;
       transition: none !important;
       opacity: 1 !important;

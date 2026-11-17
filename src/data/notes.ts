@@ -40,6 +40,14 @@ export interface Note {
   /** ISO `YYYY-MM-DD`. Matches the date of `commit`, not the date of writing. */
   date: string
   /**
+   * ISO `YYYY-MM-DD`, set only when the entry is revised in substance after
+   * it went out: a corrected measurement, a section added. Not for a typo.
+   * Shown as "Updated …" beside the date, and it becomes the entry's
+   * `dateModified`, `article:modified_time` and sitemap `<lastmod>`. The
+   * entry keeps its place in the list, which is ordered by `date`.
+   */
+  updated?: string
+  /**
    * One sentence. Does quadruple duty: the card blurb, the `<meta
    * description>`, the OG/Twitter description, and the JSON-LD `description`.
    * Keep it under ~155 characters so search results don't truncate it.

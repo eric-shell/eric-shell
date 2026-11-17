@@ -7,20 +7,21 @@ import type { CSSProperties } from 'react'
  * the single definition in index.css rather than restating a hex the theme could
  * drift from.
  *
- * WHY THERE IS NO CATEGORICAL PALETTE HERE. Every step of the brand blue ramp
- * sits below the dataviz chroma floor (blue-600 is C 0.091) and "reads gray" as
- * a data mark, so the palette cannot carry a multi-series categorical chart —
- * this is documented in CLAUDE.md and was learned the hard way. Every chart in
+ * WHY THERE IS NO CATEGORICAL PALETTE HERE. The site's palette is one blue and
+ * its neighbours, so it cannot carry a multi-series categorical chart. (The
+ * muted ramp these charts were first drawn from was worse: every step sat below
+ * the dataviz chroma floor and read gray as a data mark, which is why `data`
+ * exists as its own pair of tokens.) Every chart in
  * the insights panel is therefore a **single series** or an **ordinal ramp**,
  * which is exactly what one hue is good at.
  */
 
-/** oklch(0.720 0.150 225) → #03b5e4. 7.71:1 on the blue-950 canvas. */
-export const ACCENT = 'var(--color-accent)'
-/** oklch(0.450 0.130 240) → #005b88. 2.47:1 on the canvas — marks only, always labelled. */
-export const ACCENT_DEEP = 'var(--color-accent-deep)'
+/** oklch(0.720 0.150 225) → #03b5e4. 7.70:1 on the ink canvas. */
+export const ACCENT = 'var(--color-data)'
+/** oklch(0.450 0.130 240) → #005b88. 2.51:1 on the canvas — marks only, always labelled. */
+export const ACCENT_DEEP = 'var(--color-data-deep)'
 /** The canvas the marks sit on; used for surface gaps and mark rings. */
-export const SURFACE = 'var(--color-blue-950)'
+export const SURFACE = 'var(--color-ink)'
 
 /**
  * A step of the ordinal ramp, `t` from 0 (deep) to 1 (bright).
@@ -32,6 +33,12 @@ export const SURFACE = 'var(--color-blue-950)'
  *   3 steps  #005b88,#0087b7,#03b5e4          → ALL PASS
  *
  * (monotone L, adjacent ΔL ≥ 0.06, hue spread 15°, dark end 2.47:1 vs surface).
+ *
+ * That run was against the admin's previous canvas. The canvas is now `ink`
+ * (#0A1033), whose luminance is within a hair of #111521, so the monotone-L,
+ * ΔL and hue checks are unchanged and every contrast figure moved up slightly
+ * (dark end 2.51:1, bright end 7.70:1). The validator itself has not been
+ * re-run with `--surface "#0A1033"`; do that before changing the ramp.
  * The dark end clears the 2.0:1 ordinal floor but not the 3:1 mark floor, so
  * every ramp step in this panel also carries a visible label — never colour
  * alone. `color-mix` in oklch reproduces the same interpolation the validated
@@ -77,10 +84,10 @@ export const MAGNITUDE_FLOOR = 0.2
  * drawing from one vocabulary instead of one flat cyan and one ramp.
  *
  * MAGNITUDE_FLOOR is load-bearing. A raw `value / max` puts a 1-of-40 row at
- * t≈0.02, and the bottom of the ramp is 2.55:1 on the blue-950 canvas — under
+ * t≈0.02, and the bottom of the ramp is 2.51:1 on the ink canvas — under
  * the 3:1 floor for a non-text mark, on exactly the marks that are hardest to
- * find. Starting at 0.2 makes the dimmest bar #006da6 at 3.23:1; the peak is
- * #00b6eb at 7.73:1. Lower the floor and the tail stops being locatable.
+ * find. Starting at 0.2 makes the dimmest bar #006da6 at 3.29:1; the peak is
+ * #00b6eb at 7.83:1. Lower the floor and the tail stops being locatable.
  *
  * Scaled to `max` rather than the total, so a series with one dominant row
  * still shows shape in its tail.
@@ -183,13 +190,13 @@ export const GLOW = glowFor(ACCENT)
  */
 export const TOOLTIP_STYLE: CSSProperties = {
   background: `color-mix(in oklch, ${SURFACE} 92%, transparent)`,
-  border: '1px solid rgba(255,255,255,0.14)',
+  border: '1px solid color-mix(in oklch, var(--color-white) 14%, transparent)',
   borderRadius: 8,
-  color: '#fff',
+  color: 'var(--color-white)',
   padding: '6px 10px',
   fontSize: 11,
   lineHeight: 1.3,
-  boxShadow: '0 8px 24px rgba(0,0,0,0.45)',
+  boxShadow: 'var(--shadow-popover)',
   // The pointer must never be able to land on the readout it just summoned —
   // that flickers the tooltip it is standing on.
   pointerEvents: 'none',

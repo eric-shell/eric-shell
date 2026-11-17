@@ -1,4 +1,4 @@
-import { twMerge } from 'tailwind-merge'
+import { cn } from '@/components/ui/cn'
 import { type LucideIcon, CalendarDays, Clock, Compass, ExternalLink, Eye, Fingerprint, Globe, Languages, Link, Mail, Mic, Monitor, MousePointer2, RotateCcw, User } from 'lucide-react'
 import { formatDuration, formatLong } from '../lib/dateFormat'
 import { resolveLocation } from '../lib/location'
@@ -20,7 +20,7 @@ function MetaField({ icon: Icon, label, value, mono = false, title }: {
       </div>
       <div className="min-w-0">
         <p className="text-[9px] font-semibold uppercase tracking-wider text-white/85 mb-0.5">{label}</p>
-        <p className={twMerge('text-xs font-semibold text-white/90', mono && 'font-mono')}>{value}</p>
+        <p className={cn('text-xs font-semibold text-white/90', mono && 'font-mono')}>{value}</p>
       </div>
     </div>
   )

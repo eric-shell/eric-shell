@@ -67,7 +67,7 @@ export const Interactive: Story = {
           onChange={setSelected}
         />
         {selected && (
-          <p className="text-sm text-blue-950/60">
+          <p className="text-sm text-ink-mute">
             Selected: <span className="font-semibold">{options.find(o => o.value === selected)?.label}</span>
           </p>
         )}
@@ -78,7 +78,7 @@ export const Interactive: Story = {
 
 export const InDarkTheme: Story = {
   parameters: {
-    backgrounds: { default: 'blue-950' },
+    backgrounds: { default: 'ink' },
   },
   args: {
     options,
