@@ -194,8 +194,8 @@ export default function Hero() {
 
           <div className="relative z-20 mt-auto pt-10 grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_minmax(0,560px)] gap-8 lg:gap-16 items-end">
             <CascadeItem index={7} className="flex flex-col gap-6">
-              <p className="font-sans text-xl md:text-2xl leading-relaxed text-white text-shadow-lg max-w-[32ch]">
-                I'm an AI Design Systems Engineer with over 15 years of professional experience developing modern web and mobile applications.
+              <p className="font-sans text-xl md:text-2xl leading-relaxed text-white text-shadow-xl max-w-[450px]">
+                I'm an AI Design Systems Engineer with over 15 years of professional experience leading and developing modern web and mobile applications.
               </p>
               <div className="flex flex-wrap gap-2.5">
                 <Button href="#work" variant="white" className="border-0" rightIcon={<ArrowRight size={15} strokeWidth={2.5} aria-hidden="true" />}>
