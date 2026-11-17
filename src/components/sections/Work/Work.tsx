@@ -16,26 +16,31 @@ const SORT_OPTIONS = [
  * Derived from the items rather than hand-listed, so a tag added to `work.ts` is
  * filterable without a second edit here — and a tag that no item carries can
  * never appear and filter to nothing. Alphabetical because there is no
- * meaningful ranking among them and a stable order is what makes a 24-item list
- * scannable twice.
+ * meaningful ranking among them and a stable order is what makes a long list
+ * scannable twice. Each count is the tag's total across all work, not narrowed
+ * by the current selection: tags combine with OR, so picking one never shrinks
+ * what another would add.
  */
-const TAG_OPTIONS = [...new Set(workItems.flatMap(item => item.tags))]
-  .sort((a, b) => a.localeCompare(b))
-  .map(tag => ({ value: tag, label: tag }))
+const TAG_COUNTS = workItems
+  .flatMap(item => item.tags)
+  .reduce((m, tag) => m.set(tag, (m.get(tag) ?? 0) + 1), new Map<string, number>())
+const TAG_OPTIONS = [...TAG_COUNTS]
+  .sort(([a], [b]) => a.localeCompare(b))
+  .map(([tag, count]) => ({ value: tag, label: tag, count }))
 
 /**
  * Which tags name a platform or framework, as opposed to an industry or kind of
  * work. This is the one hand-kept list here: the tags themselves don't say
  * which is which. A new framework tag needs adding to it to be counted.
  */
-const PLATFORM_TAGS = new Set(['Drupal', 'React', 'React Native', 'Next.js', 'Three.js', 'Expo', 'Vite', 'Angular', 'TeamSite', 'Backbone', 'Custom Framework'])
+const PLATFORM_TAGS = new Set(['Drupal', 'React', 'React Native', 'Next.js', 'Three.js', 'Angular', 'TeamSite', 'Backbone', 'Custom Framework'])
 
 /**
  * Which tags name an industry, as opposed to a platform or a kind of work
- * (Community, Internal, Regional, Project, Game). Hand-kept for the same reason
+ * (Commerce, Community, Internal, Regional, Project, Game). Hand-kept for the same reason
  * as PLATFORM_TAGS: a new industry tag needs adding here to be counted.
  */
-const INDUSTRY_TAGS = new Set(['QSR', 'Government', 'Commerce', 'Entertainment', 'Healthcare', 'Data Hardware', 'DMO', 'Education', 'Charity', 'Landscaping', 'Agency'])
+const INDUSTRY_TAGS = new Set(['QSR', 'Government', 'Finance', 'Retail', 'Entertainment', 'Healthcare', 'Data Hardware', 'DMO', 'Nonprofit', 'Landscaping', 'Agency'])
 
 /** Counted from the data, never typed: the numbers change when `work.ts` does. */
 const STATS = [
