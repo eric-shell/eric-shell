@@ -1,48 +1,120 @@
 #!/usr/bin/env node
 /**
- * Regenerate the PNG icons from public/favicon.svg.
+ * Build the site icon and every raster of it.
  *
  *   npm run icons
  *
- * The mark is composited onto `ink`, read from @theme in src/index.css so the
- * icons cannot drift from the token (it is also the `theme-color` and the web
- * manifest's background, which tests/ui-vocabulary.test.ts holds to the same
- * value). Run this after changing either the mark or the token.
+ * The icon is the white logo mark (public/icon.svg) on a Luminous gradient,
+ * inside a squircle. Nothing here is drawn by hand: the colours are read from
+ * @theme in src/index.css and the mark from public/icon.svg, so changing either
+ * and re-running this is the whole workflow.
  *
- * The SVG's artwork is a disc that fills its viewBox. It is drawn at 76% of the
- * icon and centred, which keeps it inside the 80% safe zone a maskable icon is
- * cropped to and matches the icons this script replaced.
+ * Writes:
+ *   public/favicon.svg             the squircle, transparent corners
+ *   public/icon-192.png, -512.png  the same, for the web manifest (`any`)
+ *   public/icon-maskable-512.png   full-bleed, mark inside the 80% safe zone,
+ *                                  for launchers that crop to their own shape
+ *   public/apple-touch-icon.png    full-bleed: iOS rounds the corners itself,
+ *                                  and would fill transparent ones with black
  */
 import { readFile, writeFile } from 'node:fs/promises'
 import { resolve } from 'node:path'
 import sharp from 'sharp'
 
 const ROOT = resolve(import.meta.dirname, '..')
-const MARK_SHARE = 0.76
+const BOX = 512
 
-const ICONS = [
-  { file: 'icon-192.png', size: 192 },
-  { file: 'icon-512.png', size: 512 },
-  { file: 'apple-touch-icon.png', size: 180 },
-]
+/** Squircle exponent. 2 is a circle, higher is squarer; 5 sits near iOS's icon shape. */
+const SQUIRCLE_N = 5
+/** Mark height as a share of the icon. Large, so the mark survives at 16px. */
+const MARK_SHARE = { squircle: 0.58, fullBleed: 0.5, maskable: 0.42 }
 
 const css = await readFile(resolve(ROOT, 'src/index.css'), 'utf8')
-const ink = /--color-ink:\s*(#[0-9a-fA-F]{6})\s*;/.exec(css)?.[1]
-if (!ink) throw new Error('could not read --color-ink from src/index.css')
+const token = name => {
+  const value = new RegExp(`--color-${name}:\\s*(#[0-9a-fA-F]{6})\\s*;`).exec(css)?.[1]
+  if (!value) throw new Error(`could not read --color-${name} from src/index.css`)
+  return value
+}
+const colours = { deep: token('lum-deep'), lum: token('lum'), glow: token('glow') }
 
-const svg = await readFile(resolve(ROOT, 'public/favicon.svg'))
+const markSvg = await readFile(resolve(ROOT, 'public/icon.svg'), 'utf8')
+const [, vbW, vbH] = /viewBox="0 0 ([\d.]+) ([\d.]+)"/.exec(markSvg) ?? []
+const markPath = /<path[^>]*\sd="([^"]+)"/.exec(markSvg)?.[1]
+if (!vbW || !markPath) throw new Error('could not read the mark from public/icon.svg')
 
-for (const { file, size } of ICONS) {
-  const drawn = Math.round(size * MARK_SHARE)
-  // Rasterise from the vector at the target size rather than scaling a bitmap.
-  const mark = await sharp(svg, { density: (72 * drawn) / 600 * 2 })
-    .resize(drawn, drawn)
-    .png()
-    .toBuffer()
-  const out = await sharp({ create: { width: size, height: size, channels: 4, background: ink } })
-    .composite([{ input: mark, gravity: 'centre' }])
+/** A superellipse filling the box, as a closed polygon fine enough to read as a curve. */
+function squirclePath(size, n = SQUIRCLE_N, points = 160) {
+  const r = size / 2
+  const pts = []
+  for (let i = 0; i < points; i++) {
+    const t = (i / points) * Math.PI * 2
+    const c = Math.cos(t), s = Math.sin(t)
+    const x = r + r * Math.sign(c) * Math.abs(c) ** (2 / n)
+    const y = r + r * Math.sign(s) * Math.abs(s) ** (2 / n)
+    pts.push(`${x.toFixed(2)},${y.toFixed(2)}`)
+  }
+  return `M${pts.join('L')}Z`
+}
+
+/**
+ * The mark, scaled to `share` of the box height and centred. Nudged up 2%:
+ * the mark's weight sits low (the open bowl of the "e" is at the top), so the
+ * geometric centre reads as low.
+ */
+function mark(share) {
+  const h = BOX * share
+  const scale = h / Number(vbH)
+  const w = Number(vbW) * scale
+  const x = (BOX - w) / 2
+  const y = (BOX - h) / 2 - BOX * 0.02
+  return `<path fill="#fff" transform="translate(${x.toFixed(2)} ${y.toFixed(2)}) scale(${scale.toFixed(5)})" d="${markPath}"/>`
+}
+
+/**
+ * Deep blue at the bottom left, through Luminous Blue, to a glint of glow at
+ * the top right. The glow stop is kept to the corner so the white mark always
+ * sits on blue.
+ */
+const gradient = `<linearGradient id="g" x1="0" y1="1" x2="1" y2="0">
+    <stop offset="0" stop-color="${colours.deep}"/>
+    <stop offset="0.55" stop-color="${colours.lum}"/>
+    <stop offset="1" stop-color="${colours.glow}"/>
+  </linearGradient>`
+
+function icon(shape) {
+  const background = shape === 'squircle'
+    ? `<path fill="url(#g)" d="${squirclePath(BOX)}"/>`
+    : `<rect width="${BOX}" height="${BOX}" fill="url(#g)"/>`
+  const share = MARK_SHARE[shape]
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${BOX} ${BOX}">
+  <!-- Generated by scripts/generate-icons.mjs from the tokens in src/index.css
+       and the mark in public/icon.svg. Edit those and run \`npm run icons\`. -->
+  <defs>
+  ${gradient}
+  </defs>
+  ${background}
+  ${mark(share)}
+</svg>
+`
+}
+
+const favicon = icon('squircle')
+await writeFile(resolve(ROOT, 'public/favicon.svg'), favicon)
+console.log(`favicon.svg  ${favicon.length} bytes`)
+
+const rasters = [
+  { file: 'icon-192.png', size: 192, svg: favicon },
+  { file: 'icon-512.png', size: 512, svg: favicon },
+  { file: 'icon-maskable-512.png', size: 512, svg: icon('maskable') },
+  { file: 'apple-touch-icon.png', size: 180, svg: icon('fullBleed') },
+]
+
+for (const { file, size, svg } of rasters) {
+  // Rasterise from the vector at the target size, never by scaling a bitmap.
+  const out = await sharp(Buffer.from(svg), { density: (72 * size) / BOX })
+    .resize(size, size)
     .png({ compressionLevel: 9 })
     .toBuffer()
   await writeFile(resolve(ROOT, 'public', file), out)
-  console.log(`${file}  ${size}x${size}  ${out.length} bytes  on ${ink}`)
+  console.log(`${file.padEnd(22)} ${size}x${size}  ${out.length} bytes`)
 }
