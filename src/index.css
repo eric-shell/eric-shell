@@ -606,37 +606,51 @@
   /* ═══════════════════════════════════════════════════════════════
      PRINT / PDF
      The "Download PDF" button calls window.print(), so this sheet is
-     the PDF design. Chrome ships "Background graphics" OFF by default,
-     so nothing here may depend on a background fill to stay legible —
-     every accent is ink (text colour) or a border, both of which always
-     print. Site kinship comes from the type system, not from colour: the
-     Display face on the name and company names, and the Eyebrow treatment
-     (sans / uppercase / tracked) on section labels.
+     the PDF design. It is the screen page at paper scale: a Luminous
+     Blue masthead bleeding to the paper edge, and the white sheet
+     rising over it with rounded top corners, then ink on white with
+     lum-deep labels and dates.
 
-     Colourway is greyscale — hierarchy is carried by weight, size and rule
-     strength alone. Every colour routes through the five --print-* tokens
-     below, so restoring the site blues is a one-block edit. Note if you do:
-     blue-600 lands near 3.8:1 on white, which is under AA and reads thin at
-     8.4pt on paper, so the ink ramp wants to stop at blue-700
-     (ink → blue-950, ink-muted → blue-800, ink-subtle → blue-700,
-     rule → blue-400, rule-soft → blue-200).
+     THE MASTHEAD IS A FILL WITH WHITE TYPE ON IT, so it has to print
+     with "Background graphics" off (Chrome's default). It does because
+     of `print-color-adjust: exact` below, which Chromium and Safari both
+     honour over that checkbox. Remove that rule and the name prints
+     white on white. Verified with page.pdf({ printBackground: false }).
+
+     The resume's @page has no margin so the band can bleed; the paper margins are
+     --print-margin-x / -y, applied as padding on the masthead and the
+     sheet. That also leaves Chrome's date/URL header nowhere to print.
+
+     Every colour is a theme token, through the --print-* names below.
+     lum-deep (7.0:1 on white) carries text accents; lum itself is used
+     only as the field and for rules, since it reads thin as 7pt text.
      ═══════════════════════════════════════════════════════════════ */
   @media print {
     @page {
       size: letter;
       margin: 0.5in 0.55in;
     }
+    /* Named, so only the resume loses its margins: /privacy has no
+       masthead to bleed and keeps the default box above. */
+    @page resume {
+      margin: 0;
+    }
 
     .resume-root {
-      /* The only fill in the layout was white-on-white — dropping it means
-         the sheet renders identically with background graphics on or off. */
+      page: resume;
       background: none !important;
 
-      --print-ink:        #000000;  /* name, company, body copy      */
-      --print-ink-muted:  #3d3d3d;  /* headline, role, section label */
-      --print-ink-subtle: #575757;  /* dates, value descriptions     */
-      --print-rule:       #9a9a9a;  /* section-label underline       */
-      --print-rule-soft:  #d0d0d0;  /* entry separators              */
+      --print-margin-x: 0.55in;
+      --print-margin-y: 0.45in;
+      --print-sheet-rise: 0.22in;  /* how far the sheet overlaps the band */
+
+      --print-field:      var(--color-lum);       /* the masthead band          */
+      --print-ink:        var(--color-ink);       /* company, body copy         */
+      --print-ink-muted:  var(--color-ink-soft);  /* role lines                 */
+      --print-ink-subtle: var(--color-ink-mute);  /* value descriptions, degree */
+      --print-accent:     var(--color-lum-deep);  /* section labels, dates      */
+      --print-rule:       var(--color-lum);       /* section-label underline    */
+      --print-rule-soft:  color-mix(in srgb, var(--color-ink) 14%, white); /* entry separators */
 
       /* Six deliberate steps. Everything sizes off these — no one-off
          values, so parallel elements can't drift a few hundredths apart
@@ -698,20 +712,19 @@
     }
 
     /* ─────────────────────────────────────────────
-       MASTHEAD
+       MASTHEAD — the lum field, full bleed
          ERIC SHELL              ericjshell@gmail.com
          headline…               eric.sh
                                  linkedin.com/in/…
                                  github.com/…
-         ══════════════════════════════════════════
+         ╭────────────── white sheet ─────────────╮
        ───────────────────────────────────────────── */
     .resume-hero {
-      background: none !important;
-      color: var(--print-ink) !important;
-      padding: 0 0 0.4rem 0 !important;
-      /* Borders print even with background graphics disabled. */
-      border-bottom: 2.25pt solid var(--print-ink) !important;
-      margin: 0 0 0.62rem 0 !important;
+      background: var(--print-field) !important;
+      color: white !important;
+      /* The bottom padding includes the strip the sheet rises over. */
+      padding: var(--print-margin-y) var(--print-margin-x) calc(0.32in + var(--print-sheet-rise)) !important;
+      margin: 0 !important;
       overflow: visible !important;
     }
     .resume-masthead {
@@ -723,13 +736,15 @@
       max-width: 100% !important;
     }
     .resume-name {
-      color: var(--print-ink) !important;
+      color: white !important;
       font-size: var(--print-size-name) !important;
       line-height: 0.92 !important;
       letter-spacing: -0.005em !important;
     }
+    /* White, not glow: glow is under 4:1 on lum. Rank on the field is carried
+       by size and weight (5.5:1 is the only contrast available there). */
     .resume-headline {
-      color: var(--print-ink-muted) !important;
+      color: white !important;
       font-size: var(--print-size-lead) !important;
       line-height: 1.38 !important;
       font-weight: 400 !important;
@@ -750,13 +765,22 @@
       font-family: var(--font-sans);
       font-size: var(--print-size-meta) !important;
       line-height: 1.55 !important;
-      color: var(--print-ink-muted) !important;
+      color: white !important;
       white-space: nowrap;
     }
-    /* Email leads the stack — give it the ink the others don't get. */
+    /* Email leads the stack — give it the weight the others don't get. */
     .resume-contact li:first-child {
       font-weight: 600 !important;
-      color: var(--print-ink) !important;
+    }
+
+    /* The sheet rising over the band: the screen page's Sheet at paper
+       scale. Overrides Sheet's own `print:mt-0 print:rounded-none`, which
+       still applies on routes without a masthead (/privacy). */
+    .resume-root > .print-grid {
+      background: white !important;
+      margin-top: calc(-1 * var(--print-sheet-rise)) !important;
+      border-radius: 0.24in 0.24in 0 0 !important;
+      padding: 0.3in var(--print-margin-x) var(--print-margin-y) !important;
     }
 
     /* ─────────────────────────────────────────────
@@ -796,14 +820,14 @@
       align-items: stretch !important;
     }
 
-    /* Rank 1 — section head: darker ink, full-width rule. */
+    /* Rank 1 — section head: accent ink, full-width lum rule. */
     .resume-root h2 {
-      color: var(--print-ink-muted) !important;
+      color: var(--print-accent) !important;
       margin: 0 0 0.4rem 0 !important;
       padding-bottom: 0.28rem !important;
       border-bottom: 0.75pt solid var(--print-rule) !important;
     }
-    /* Rank 2 — sub-head inside a section: lighter ink, no rule. */
+    /* Rank 2 — sub-head inside a section: muted ink, no rule. */
     .credentials-grid h3 {
       color: var(--print-ink-subtle) !important;
       margin-bottom: 0.24rem !important;
@@ -936,7 +960,7 @@
       grid-column: 2;
       grid-row: 1;
       justify-self: end;
-      color: var(--print-ink-subtle) !important;
+      color: var(--print-accent) !important;
       font-size: var(--print-size-meta) !important;
       font-weight: 500 !important;
       padding: 0 !important;
@@ -955,7 +979,8 @@
       flex-direction: column !important;
       gap: 0.3rem !important;
       padding-left: 0.6rem !important;
-      border-left: 0.5pt solid var(--print-rule-soft) !important;
+      /* The screen's ice rule is invisible on paper; lum at print weight. */
+      border-left: 0.75pt solid var(--print-rule) !important;
     }
     .work-section .entry-contracts .entry-identity:last-child {
       margin-bottom: 0;

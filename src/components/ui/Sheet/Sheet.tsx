@@ -28,7 +28,8 @@ const ROUND = 'rounded-t-4xl md:rounded-t-sheet'
  * element itself is the surface, which keeps a document page's sections as
  * direct children: the resume's print sheet depends on that depth.
  *
- * Square and flush in print, where the field above is a plain masthead.
+ * Square and flush in print by default. The resume's print sheet overrides
+ * this to rise over its blue masthead the way it does on screen (index.css).
  */
 export default function Sheet({ tone, as: Tag = 'div', widen = false, className, children, ...props }: SheetProps) {
   if (widen) {
