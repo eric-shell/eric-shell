@@ -54,7 +54,7 @@
     "@storybook/react": "^10.3.5",
     "@storybook/react-vite": "^10.3.5",
     "@tailwindcss/vite": "^4.2.4",
-    "@types/node": "^24.12.2",
+    "@types/node": "^26.6.6",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
     "@vercel/node": "^5.7.13",
@@ -72,5 +72,8 @@
     "typescript-eslint": "^8.58.2",
     "vite": "^8.0.9",
     "vitest": "^5.1.0"
+  },
+  "engines": {
+    "node": "26.x"
   }
 }

@@ -12,7 +12,7 @@ There is no third-party analytics and no cookies on the public site. What the si
 
 ## Running it
 
-Requires Node 22 (see `.nvmrc`).
+Requires Node 26 (see `.nvmrc`).
 
 ```bash
 npm install
