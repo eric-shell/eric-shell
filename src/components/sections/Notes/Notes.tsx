@@ -3,7 +3,7 @@ import { ArrowUpRight, CalendarArrowDown, CalendarArrowUp, ArrowDownAZ, ArrowUpZ
 import { notes, repoUrl } from '@/data/notes-index'
 import { useTagFilter } from '@/hooks'
 import { Button, Card, CascadeGroup, CascadeItem, FilterBar, Label, Lead, Page, PageHero, SectionTitle, descDelay } from '../../ui'
-import { formatNoteDate } from './formatDate'
+import { formatDate } from '@/lib/formatDate'
 
 type SortOrder = 'newest' | 'oldest' | 'asc' | 'desc'
 
@@ -135,7 +135,7 @@ export default function Notes() {
                 title={note.title}
                 titleAs="h2"
                 description={note.summary}
-                meta={<Label as="time" dateTime={note.date} className="text-ink-mute">{formatNoteDate(note.date)}</Label>}
+                meta={<Label as="time" dateTime={note.date} className="text-ink-mute">{formatDate(note.date)}</Label>}
                 arrow="right"
                 tags={note.tags}
                 activeTags={activeTags}

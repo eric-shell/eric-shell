@@ -2,6 +2,8 @@ import type { ReactNode } from 'react'
 import { ArrowLeft } from 'lucide-react'
 import { cn } from '@/components/ui/cn'
 import { Button, CascadeGroup, CascadeItem, Code, Container, Label, Lead, Page, PageHero, Section, SectionTitle, Sheet, TextLink, descDelay } from '../../ui'
+import { PAGES } from '@/data/pages'
+import { formatDate } from '@/lib/formatDate'
 import { useHydrated } from '@/lib/hydration'
 import { peekVisitorId } from '@/lib/visitorId'
 
@@ -50,6 +52,9 @@ export default function Privacy() {
             <Lead size="lg" className="max-w-2xl pt-8">
               Plain-language summary of what eric.sh collects, why, and how to ask for it to be removed.
             </Lead>
+            <Label as="p" className="pt-6">
+              Last updated <time dateTime={PAGES.privacy.updated}>{formatDate(PAGES.privacy.updated)}</time>
+            </Label>
           </CascadeItem>
         </SectionTitle>
       </PageHero>

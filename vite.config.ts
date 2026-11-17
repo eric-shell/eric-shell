@@ -5,6 +5,7 @@ import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 import { workItems } from './src/data/work.ts'
 import { notes } from './src/data/notes.ts'
+import { PAGES } from './src/data/pages.ts'
 
 const SITE = 'https://eric.sh'
 
@@ -123,7 +124,7 @@ function noteDocument(note: (typeof notes)[number]): string {
         headline: note.title,
         description: note.summary,
         datePublished: note.date,
-        dateModified: note.date,
+        dateModified: modified(note),
         keywords: note.tags.join(', '),
         inLanguage: 'en',
         isPartOf: { '@id': `${SITE}/notes#blog` },
@@ -164,6 +165,7 @@ function noteDocument(note: (typeof notes)[number]): string {
     <meta property="og:image:alt" content="Eric Shell, AI Design Systems Engineer" />
     <meta property="og:site_name" content="Eric Shell" />
     <meta property="article:published_time" content="${note.date}" />
+    <meta property="article:modified_time" content="${modified(note)}" />
     <meta property="article:author" content="Eric Shell" />
 ${note.tags.map((t) => `    <meta property="article:tag" content="${attr(t)}" />`).join('\n')}
 
@@ -207,20 +209,26 @@ ${JSON.stringify(ld, null, 2).replace(/</g, '\\u003c')}
  * than in a dated data file. Bump when the page's copy actually changes —
  * `/notes` is derived from the newest entry and needs no maintenance.
  */
+/** `lastmod` comes from PAGES (src/data/pages.ts), the same date the page's JSON-LD and footer show. */
 const STATIC_ROUTES = [
-  { path: '/', lastmod: '2026-08-03', changefreq: 'monthly', priority: '1.0' },
-  { path: '/resume', lastmod: '2026-08-01', changefreq: 'monthly', priority: '0.8' },
-  { path: '/privacy', lastmod: '2026-08-01', changefreq: 'yearly', priority: '0.2' },
+  { path: '/', lastmod: PAGES.home.updated, changefreq: 'monthly', priority: '1.0' },
+  { path: '/resume', lastmod: PAGES.resume.updated, changefreq: 'monthly', priority: '0.8' },
+  { path: '/privacy', lastmod: PAGES.privacy.updated, changefreq: 'yearly', priority: '0.2' },
 ]
 
+/** When a note last changed: its revision date if it has one, else its date. */
+const modified = (n: (typeof notes)[number]) => n.updated ?? n.date
+
+/** The notes index changes whenever any entry does. */
+const notesModified = () => notes.reduce((a, n) => (modified(n) > a ? modified(n) : a), '1970-01-01')
+
 function sitemap(): string {
-  const newest = notes.reduce((a, n) => (n.date > a ? n.date : a), '1970-01-01')
   const urls = [
     ...STATIC_ROUTES,
-    { path: '/notes', lastmod: newest, changefreq: 'weekly', priority: '0.7' },
+    { path: '/notes', lastmod: notesModified(), changefreq: 'weekly', priority: '0.7' },
     ...notes.map((n) => ({
       path: `/notes/${n.slug}`,
-      lastmod: n.date,
+      lastmod: modified(n),
       changefreq: 'yearly',
       priority: '0.6',
     })),
@@ -297,6 +305,32 @@ function notesEntries(): Record<string, string> {
  * summary, and URL, and the entry document at that URL is where a crawler
  * should read the article itself.
  */
+/**
+ * Fills each static page's dates into its hand-written JSON-LD: the
+ * `__PAGE_UPDATED__` and `__PAGE_PUBLISHED__` placeholders become the dates in
+ * PAGES (src/data/pages.ts), which the footer shows and the sitemap uses. One
+ * source, so the visible date and the structured one cannot drift apart.
+ *
+ * A placeholder in a file PAGES does not list fails the build rather than
+ * shipping the literal string to a crawler.
+ */
+function pageDates(): Plugin {
+  const byFile = new Map(Object.values(PAGES).map((page) => [page.file, page]))
+  return {
+    name: 'page-dates',
+    transformIndexHtml: {
+      order: 'pre',
+      handler(html, ctx) {
+        if (!html.includes('__PAGE_')) return
+        const file = ctx.filename.replace(/\\/g, '/').split('/').pop() ?? ''
+        const page = byFile.get(file as (typeof PAGES)[keyof typeof PAGES]['file'])
+        if (!page) throw new Error(`${file} uses a __PAGE_*__ date placeholder but has no entry in src/data/pages.ts`)
+        return html.replaceAll('__PAGE_UPDATED__', page.updated).replaceAll('__PAGE_PUBLISHED__', page.published)
+      },
+    },
+  }
+}
+
 function notesSchema(): Plugin {
   return {
     name: 'notes-blog-schema',
@@ -316,6 +350,7 @@ function notesSchema(): Plugin {
           author: { '@id': `${SITE}/#person` },
           publisher: { '@id': `${SITE}/#person` },
           isPartOf: { '@id': `${SITE}/#website` },
+          dateModified: notesModified(),
           blogPost: notes.map((n) => ({
             '@type': 'BlogPosting',
             '@id': `${SITE}/notes/${n.slug}#post`,
@@ -323,6 +358,7 @@ function notesSchema(): Plugin {
             headline: n.title,
             description: n.summary,
             datePublished: n.date,
+            dateModified: modified(n),
             keywords: n.tags.join(', '),
             author: { '@id': `${SITE}/#person` },
           })),
@@ -406,7 +442,7 @@ function notesData(): Plugin {
 }
 
 export default defineConfig({
-  plugins: [react(), tailwindcss(), workSchema(), notesSchema(), notesData()],
+  plugins: [react(), tailwindcss(), workSchema(), notesSchema(), pageDates(), notesData()],
   resolve: {
     alias: {
       '@': resolve(import.meta.dirname, 'src'),

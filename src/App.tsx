@@ -4,6 +4,7 @@ import { Header, Footer } from './components/layout'
 import { Hero, Work, Testimonials, Visuals, Contact } from './components/sections'
 import { Button, ErrorBoundary, Page, Section, Toaster } from './components/ui'
 import { useTitleCycle } from './hooks'
+import { PAGES } from './data/pages'
 
 const Resume = lazy(() => import('./components/sections/Resume'))
 const Privacy = lazy(() => import('./components/sections/Privacy'))
@@ -116,7 +117,9 @@ export default function App({ pathname }: AppProps) {
           <ErrorBoundary name="Contact" fallback={<ContactFallback />}><Contact /></ErrorBoundary>
         </Page>
       )}
-      <Footer />
+      {/* Note routes carry their own dates in the masthead; the static pages
+          show theirs here. */}
+      <Footer updated={route.kind === 'home' || route.kind === 'resume' || route.kind === 'privacy' ? PAGES[route.kind].updated : undefined} />
       <Toaster />
     </div>
   )

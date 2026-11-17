@@ -2,6 +2,7 @@ import { cn } from '@/components/ui/cn'
 import { CascadeGroup, CascadeItem, Container, Label, Section, SocialLink, useCascade } from '../../ui'
 import DisplayLink from '../DisplayLink'
 import { navLinks, connectLinks, socialLinks } from '@/data'
+import { formatDate } from '@/lib/formatDate'
 
 /** The hairline above the copyright, drawn left to right when the footer comes into view. */
 function Rule() {
@@ -38,12 +39,23 @@ function LinkGroup({ label, links }: { label: string; links: { label: string; hr
   )
 }
 
-/**
- * `className` merges onto the `<footer>` itself, per the convention every
- * component here follows. The admin is the only caller passing one: the
- * dashboard ends in a panel and needs the gap stated rather than inherited.
- */
-export default function Footer({ className }: { className?: string }) {
+interface FooterProps {
+  /**
+   * `className` merges onto the `<footer>` itself, per the convention every
+   * component here follows. The admin is the only caller passing one: the
+   * dashboard ends in a panel and needs the gap stated rather than inherited.
+   */
+  className?: string
+  /**
+   * When the current page last changed (ISO), from `PAGES` in src/data/pages.ts.
+   * Shown beside the copyright, and the same date the page's JSON-LD
+   * `dateModified` carries: Google reads the two together. Omitted where the
+   * page carries its own dates (the notes) and in the admin.
+   */
+  updated?: string
+}
+
+export default function Footer({ className, updated }: FooterProps) {
   const year = new Date().getFullYear()
 
   return (
@@ -78,14 +90,19 @@ export default function Footer({ className }: { className?: string }) {
 
         <CascadeGroup className="pt-14" threshold={0.2}>
           <Rule />
-          <CascadeItem index={1} className="pt-5 leading-none">
+          <CascadeItem index={1} className="flex flex-col gap-3 pt-5 font-sans text-xs leading-none tracking-[0.06em] text-ice/65 sm:flex-row sm:justify-between">
             {/* The year is baked into the prerendered HTML at build time and
                 read from the clock in the browser. They differ only between New
                 Year and the next deploy; without this, that one stale digit
                 would make React discard the whole prerendered page. */}
-            <span suppressHydrationWarning className="font-sans text-xs leading-none tracking-[0.06em] text-ice/65">
+            <span suppressHydrationWarning>
               <span className="align-baseline font-mono">©</span> {year} Eric Shell. All Rights Reserved.
             </span>
+            {updated && (
+              <span>
+                Updated <time dateTime={updated}>{formatDate(updated)}</time>
+              </span>
+            )}
           </CascadeItem>
         </CascadeGroup>
       </Container>

@@ -4,7 +4,7 @@ import type { NoteMeta } from '@/data/notes-index'
 import { commitUrl, noteBody, noteBySlug, noteNeighbours } from '@/data/notes-index'
 import { loadMarkdown, noteMdComponents } from '@/lib/markdown'
 import { Button, Card, CascadeGroup, CascadeItem, Container, Label, Lead, Markdown, Page, PageHero, Pill, SectionTitle, Sheet, descDelay } from '../../ui'
-import { formatNoteDate } from './formatDate'
+import { formatDate } from '@/lib/formatDate'
 
 /*
  * Started at module scope, not in an effect and not on idle.
@@ -46,7 +46,12 @@ export default function Note({ slug }: NoteProps) {
           */}
           <CascadeItem index={0}>
             <div className="flex flex-wrap items-center gap-x-4 gap-y-3">
-              <Label as="time" dateTime={note.date}>{formatNoteDate(note.date)}</Label>
+              <Label as="time" dateTime={note.date}>{formatDate(note.date)}</Label>
+              {note.updated && (
+                <Label as="p">
+                  Updated <time dateTime={note.updated}>{formatDate(note.updated)}</time>
+                </Label>
+              )}
               <div className="flex flex-wrap items-center gap-1.5">
                 {note.tags.map((t) => (
                   <Pill key={t}>{t}</Pill>
@@ -220,7 +225,7 @@ function NotePagerLink({
       titleAs="span"
       description={note.summary}
       clampDescription
-      meta={<Label as="time" dateTime={note.date} className="text-ink-mute">{formatNoteDate(note.date)}</Label>}
+      meta={<Label as="time" dateTime={note.date} className="text-ink-mute">{formatDate(note.date)}</Label>}
       arrow={false}
       tags={note.tags}
       bar="lum"
