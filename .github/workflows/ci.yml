@@ -1,13 +1,11 @@
 # Lint, typecheck, test and build on every push to main and every pull request.
 #
-# The build step is the important one: `npm run build` ends by prerendering
-# every public route (scripts/prerender.mjs) and fails if any of them renders
-# wrong, so a green run means each page's HTML was produced, not just that the
-# bundle compiled.
+# The same file in eric-shell, street-scene, classifieds-mcp and local-foodie: keep it identical and
+# change it in all four at once. Each step is `--if-present`, so a repo runs whichever of the four
+# scripts it defines, and Node comes from the repo's .nvmrc, the same version Vercel builds on.
 #
-# No secrets are needed. Nothing here talks to Neon, Groq, Resend or Upstash:
-# the tests stub the model locally and every database path soft-fails without
-# POSTGRES_URL.
+# No secrets: nothing here may need a database, an API key or the network beyond npm. A test that
+# does has to skip itself without its env var, as it would on a fresh clone.
 name: CI
 
 on:
@@ -27,13 +25,13 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with:
           node-version-file: .nvmrc
           cache: npm
       - run: npm ci
-      - run: npm run lint
-      - run: npm run typecheck
-      - run: npm test
-      - run: npm run build
+      - run: npm run lint --if-present
+      - run: npm run typecheck --if-present
+      - run: npm test --if-present
+      - run: npm run build --if-present
