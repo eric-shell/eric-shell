@@ -11,15 +11,17 @@ const ParticlesLarge = lazy(() => import('./ParticlesLarge'))
 /**
  * Height of the chat panel with no conversation in it, in px.
  *
- * Measured, not designed: 432 from 1024 up, where the hero shows it beside
- * the copy (on narrower screens the panel is below the fold and the
- * suggestions wrap, 394 to 486). The thread has a fixed minimum height and the
- * empty state never outgrows it. The
+ * Measured, not designed: 394 from 1024 up, where the hero shows it beside
+ * the copy and the three suggestions fit one row (471px of chips in a 534px
+ * row; the column is 560px at every width from 1024). On narrower screens the
+ * panel is below the fold and the suggestions may wrap. Longer suggestions
+ * that wrap to a second row at 1024 change this number. The thread has a
+ * fixed minimum height and the empty state never outgrows it. The
  * placeholder that stands in for the chat until hydration is this tall, so the
  * panel replaces it without moving anything. If the chat's resting layout
  * changes, re-measure `.genie-panel` and update this.
  */
-const CHAT_RESTING_HEIGHT = 432
+const CHAT_RESTING_HEIGHT = 394
 
 /**
  * A 1x1 transparent GIF, for the `<source>` that keeps the subject photo off
@@ -222,9 +224,9 @@ export default function Hero() {
                 onSubmit={send}
                 onPrompt={send}
                 suggestions={[
-                  'What is your experience with design systems?',
-                  'Have you led teams?',
-                  'What stack do you work in?',
+                  "What's your stack?",
+                  'What AI have you built?',
+                  'What do colleagues say?',
                 ]}
                 placeholders={[
                   'Ask me anything…',

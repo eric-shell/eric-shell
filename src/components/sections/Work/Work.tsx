@@ -28,17 +28,20 @@ const TAG_OPTIONS = [...new Set(workItems.flatMap(item => item.tags))]
  * work. This is the one hand-kept list here: the tags themselves don't say
  * which is which. A new framework tag needs adding to it to be counted.
  */
-const PLATFORM_TAGS = new Set(['Drupal', 'React', 'React Native', 'Expo', 'Vite', 'Angular', 'TeamSite', 'Backbone', 'Custom Framework'])
+const PLATFORM_TAGS = new Set(['Drupal', 'React', 'React Native', 'Next.js', 'Three.js', 'Expo', 'Vite', 'Angular', 'TeamSite', 'Backbone', 'Custom Framework'])
 
 /**
- * Counted from the data, never typed: the numbers change when `work.ts` does.
- * "Food and drink brands" is the QSR tag, which also covers Kroger (in-store
- * ordering) and the coffee chains, hence the wider label.
+ * Which tags name an industry, as opposed to a platform or a kind of work
+ * (Community, Internal, Regional, Project, Game). Hand-kept for the same reason
+ * as PLATFORM_TAGS: a new industry tag needs adding here to be counted.
  */
+const INDUSTRY_TAGS = new Set(['QSR', 'Government', 'Commerce', 'Entertainment', 'Healthcare', 'Data Hardware', 'DMO', 'Education', 'Charity', 'Landscaping', 'Agency'])
+
+/** Counted from the data, never typed: the numbers change when `work.ts` does. */
 const STATS = [
   { value: workItems.length, suffix: '', label: 'Projects' },
   { value: 15, suffix: '+', label: 'Years' },
-  { value: workItems.filter(item => item.tags.includes('QSR')).length, suffix: '', label: 'Food and drink brands' },
+  { value: new Set(workItems.flatMap(item => item.tags.filter(t => INDUSTRY_TAGS.has(t)))).size, suffix: '', label: 'Industries' },
   { value: new Set(workItems.flatMap(item => item.tags.filter(t => PLATFORM_TAGS.has(t)))).size, suffix: '', label: 'Platforms and frameworks' },
 ]
 

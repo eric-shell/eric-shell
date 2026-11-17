@@ -27,9 +27,10 @@ interface CardProps {
  * A white project card. With no `image` it is type-only: label and arrow, the
  * title set like every other Display heading, the description, then tag pills.
  *
- * On hover it lifts, tilts toward the pointer and catches a cyan glow where the
- * pointer is. The tilt and glow read `--tx` / `--ty` / `--mx` / `--my` (and
- * the arrow `--ax` / `--ay`), which a parent sets from pointer position (see
+ * On hover it lifts, tilts toward the pointer and catches a faint cyan glow
+ * where the pointer is (kept at 8% so it never competes with the text). The
+ * tilt and glow read `--tx` / `--ty` / `--mx` / `--my` (and the arrow
+ * `--ax` / `--ay`), which a parent sets from pointer position (see
  * useWaveGrid); without them the card just lifts.
  */
 export default function Card({
@@ -54,7 +55,7 @@ export default function Card({
       >
         <span
           aria-hidden="true"
-          className="absolute inset-0 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-[radial-gradient(280px_circle_at_var(--mx,50%)_var(--my,50%),rgba(143,232,255,0.35),transparent_65%)]"
+          className="absolute inset-0 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-[radial-gradient(280px_circle_at_var(--mx,50%)_var(--my,50%),rgba(143,232,255,0.08),transparent_65%)]"
         />
         {image && (
           <div className="relative aspect-[16/10] overflow-hidden bg-ice">
