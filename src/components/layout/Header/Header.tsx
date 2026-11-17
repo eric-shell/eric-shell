@@ -1,6 +1,7 @@
 import { useState, useCallback, useEffect, useRef } from 'react'
 import { Menu, X } from 'lucide-react'
 import { CascadeGroup, CascadeItem, Button, Label, RiseText, SocialLink } from '../../ui'
+import { cn } from '@/components/ui/cn'
 import DisplayLink from '../DisplayLink'
 import { navLinks, homeLink, connectLinks, socialLinks } from '@/data'
 
@@ -58,6 +59,7 @@ interface HeaderProps {
  */
 export default function Header({ isHome }: HeaderProps) {
   const [echoes, setEchoes] = useState<number[]>([])
+  const [spins, setSpins] = useState(0)
   const [atTop, setAtTop] = useState(true)
   const [activeSection, setActiveSection] = useState('hero')
   const [menuOpen, setMenuOpen] = useState(false)
@@ -168,6 +170,7 @@ export default function Header({ isHome }: HeaderProps) {
 
   const handleLogo = useCallback(() => {
     playE()
+    setSpins(n => n + 1)
 
     const id = Date.now()
     setEchoes(prev => [...prev, id])
@@ -193,18 +196,28 @@ export default function Header({ isHome }: HeaderProps) {
                 aria-label="Eric Shell, back to top"
                 className="group grid place-items-center text-white cursor-pointer"
               >
-                <span className="relative grid place-items-center w-9 h-9 rounded-tile bg-lum transition-transform duration-500 ease-spring group-hover:-rotate-12 group-hover:scale-110">
+                <span className="relative grid place-items-center w-9 h-9 transition-transform duration-500 ease-spring group-hover:-rotate-12 group-hover:scale-110">
+                  {/* The squircle is its own layer: the mask would clip the echoes. */}
+                  <span aria-hidden className="absolute inset-0 squircle bg-lum" />
                   {echoes.map(id => (
                     <img
                       key={id}
                       src="/icon.svg"
                       alt=""
                       aria-hidden
-                      className="absolute w-4 pointer-events-none origin-center"
+                      className="absolute w-4.5 pointer-events-none origin-center"
                       style={{ animation: 'icon-echo 2s cubic-bezier(0.16, 1, 0.3, 1) forwards' }}
                     />
                   ))}
-                  <img src="/icon.svg" alt="" aria-hidden className="w-4" />
+                  {/* Keyed by the play count, so every click remounts it and
+                      replays the spin; 0 (never clicked) doesn't spin on load. */}
+                  <img
+                    key={spins}
+                    src="/icon.svg"
+                    alt=""
+                    aria-hidden
+                    className={cn('relative w-4.5', spins > 0 && 'animate-logo-spin')}
+                  />
                 </span>
               </button>
             </CascadeItem>

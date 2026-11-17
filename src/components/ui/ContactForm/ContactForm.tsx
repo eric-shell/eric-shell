@@ -131,9 +131,9 @@ export default function ContactForm({ className, onSuccess }: ContactFormProps) 
       variant="outline"
       className={cn('focus-on-paper relative flex flex-col rounded-2xl overflow-hidden', className)}
     >
-      <header className={cn('flex items-center justify-between gap-2 px-3 py-2.5 border-b', RULE)}>
-        <span className="flex items-center gap-2 pl-1 font-sans text-sm font-semibold text-ink">
-          <span aria-hidden="true" className="grid place-items-center w-7 h-7 rounded-lg bg-lum">
+      <header className={cn('flex items-center justify-between gap-2 pl-2.5 pr-3 py-2.5 border-b', RULE)}>
+        <span className="flex items-center gap-2 font-sans text-sm font-semibold text-ink">
+          <span aria-hidden="true" className="grid place-items-center w-7 h-7 squircle bg-lum">
             <img src="/icon.svg" alt="" className="w-3.5" />
           </span>
           Send me a message
