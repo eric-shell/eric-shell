@@ -10,7 +10,7 @@ import { useSpeechInput, useTypedPlaceholder } from '@/hooks'
 import { sendEvent } from '@/lib/telemetry'
 import Markdown from '../Markdown'
 import { chatMdComponents, prefetchMarkdown } from '@/lib/markdown'
-import { GENIE_OUT_MS } from './timings'
+import { GENIE_LAUNCH_MS, GENIE_OUT_MS } from './timings'
 
 interface ChatProps {
   value: string
@@ -35,9 +35,11 @@ interface ChatProps {
   /**
    * The panel's home (the hero) is scrolled out of view. The panel tucks itself
    * into the floating "Start a Chat" button at the bottom right; clicking that
-   * opens the panel right there, fixed, rather than scrolling back. When the
-   * home comes back into view, a panel that was tucked away by docking returns
-   * to it. One the visitor closed themselves stays closed.
+   * launches the button up and away and scrolls the page back to the top, where
+   * the panel opens in its home. There is no second, fixed copy of the panel.
+   * When the home comes back into view, a panel that was tucked away by docking
+   * returns to it. One the visitor closed themselves stays closed until the
+   * button is pressed.
    */
   docked?: boolean
 }
@@ -134,6 +136,8 @@ export default function Chat({
   // scroll, not the visitor, that put the panel away.
   const [prevDocked, setPrevDocked] = useState(docked)
   const [autoDocked, setAutoDocked] = useState(false)
+  // The button is mid-launch: flying off while the page scrolls up to the hero.
+  const [launching, setLaunching] = useState(false)
   if (docked !== prevDocked) {
     setPrevDocked(docked)
     if (docked && isOpen && !isClosing) {
@@ -142,6 +146,7 @@ export default function Chat({
     } else if (!docked && autoDocked) {
       setIsOpen(true)
       setAutoDocked(false)
+      setLaunching(false)
     }
   }
   const threadRef = useRef<HTMLDivElement>(null)
@@ -163,10 +168,17 @@ export default function Chat({
       requestAnimationFrame(() => {
         document.querySelector<HTMLElement>('.genie-button')?.focus()
       })
-    } else if (wasClosedRef.current) {
+    } else if (wasClosedRef.current && !onTouchDevice()) {
+      // Not on touch: the panel can reopen mid-scroll, and focusing the field
+      // there would raise the keyboard over the page as it moves.
       textareaRef.current?.focus({ preventScroll: true })
     }
   }, [isOpen])
+
+  // The launch outlives the click: a timer to open an undocked panel, and a
+  // listener that brings the button back if the scroll home was interrupted.
+  const launchCleanupRef = useRef<() => void>(undefined)
+  useEffect(() => () => launchCleanupRef.current?.(), [])
 
   const hasMessages = messages.length > 0
 
@@ -284,21 +296,59 @@ export default function Chat({
     if (!onTouchDevice()) textareaRef.current?.focus({ preventScroll: true })
   }
 
+  /**
+   * The button flies up and away while the page scrolls back to the top, and
+   * the panel opens in its home in the hero. Docked, the reopen is left to the
+   * `docked` adjustment above (the hero coming back into view), so the panel
+   * never opens off screen; undocked, the home is already near, and it opens
+   * once the launch has played.
+   */
+  const handleLaunch = () => {
+    if (launching) return
+    launchCleanupRef.current?.()
+    setLaunching(true)
+    const reduced = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches === true
+    window.scrollTo({ top: 0, behavior: reduced ? 'auto' : 'smooth' })
+
+    if (!docked) {
+      const t = setTimeout(() => {
+        setIsOpen(true)
+        setLaunching(false)
+      }, reduced ? 0 : GENIE_LAUNCH_MS)
+      launchCleanupRef.current = () => clearTimeout(t)
+      return
+    }
+
+    setAutoDocked(true)
+    // If the scroll ends (or is cut short by the visitor) with the hero still
+    // out of view, the button comes back rather than leaving nothing on screen.
+    // `scrollend` where it exists; the timer covers browsers without it.
+    const settle = () => {
+      cleanup()
+      setLaunching(false)
+    }
+    const t = setTimeout(settle, 2500)
+    window.addEventListener('scrollend', settle, { once: true })
+    const cleanup = () => {
+      clearTimeout(t)
+      window.removeEventListener('scrollend', settle)
+    }
+    launchCleanupRef.current = cleanup
+  }
+
   const mdComponents = chatMdComponents(handleClose)
 
   if (!isOpen) {
     return createPortal(
       <Button
-        onClick={() => {
-          setIsOpen(true)
-          setAutoDocked(false)
-          // Docked, the panel opens where the button is. Otherwise its home is
-          // on screen or nearby, so take the visitor to it.
-          if (!docked) document.getElementById('hero')?.scrollIntoView({ behavior: 'smooth' })
-        }}
+        onClick={handleLaunch}
         variant="luminous"
         size="md"
-        className="genie-button fixed bottom-6 right-6 shadow-float animate-genie-button-in z-[900]"
+        aria-disabled={launching || undefined}
+        className={cn(
+          'genie-button fixed bottom-6 right-6 shadow-float z-[900]',
+          launching ? 'animate-genie-launch pointer-events-none' : 'animate-genie-button-in'
+        )}
         rightIcon={<MessagesSquare size={15} strokeWidth={2.5} aria-hidden="true" />}
       >
         Start a Chat
@@ -538,19 +588,6 @@ export default function Chat({
       <div role="status" className="sr-only">{announcement}</div>
     </Panel>
   )
-
-  // Docked and opened from the button: the same panel, fixed at the bottom
-  // right over whatever the visitor is reading. Portalled because the panel's
-  // home sits inside transformed ancestors (the hero's CascadeItems), which
-  // would otherwise be what `fixed` positions it against.
-  if (docked) {
-    return createPortal(
-      <div className="fixed bottom-5 right-5 z-[900] w-[min(420px,calc(100vw-40px))] origin-bottom-right animate-dock-in shadow-float rounded-2xl">
-        {panel}
-      </div>,
-      document.body,
-    )
-  }
 
   return panel
 }

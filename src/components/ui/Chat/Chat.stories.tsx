@@ -117,8 +117,8 @@ export const Interactive: Story = {
 /**
  * When the Chat panel is dismissed, it portals a floating "Start a Chat"
  * trigger to `document.body`. In Storybook, that button appears in the
- * Storybook UI body rather than inside the story canvas — click it to
- * re-open the panel, which will also render outside the canvas frame.
+ * Storybook UI body rather than inside the story canvas. Clicking it plays
+ * the launch animation, scrolls to the top and re-opens the panel in place.
  */
 export const Closed: Story = {
   decorators,
