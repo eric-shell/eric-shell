@@ -272,14 +272,17 @@ export default function Visuals() {
                           <span className="block font-mono text-[11px] tracking-[0.1em] text-glow">{number} / {String(instagramPosts.length).padStart(2, '0')}</span>
                           <span className="block font-sans font-semibold truncate">{shortTitle(post)}</span>
                         </span>
-                        <a
+                        <Button
                           href={post.url}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="shrink-0 inline-flex items-center gap-1 font-sans text-sm font-semibold text-glow hover:text-white"
+                          variant="white"
+                          size="sm"
+                          className="shrink-0 border-0"
+                          rightIcon={<ArrowUpRight size={15} strokeWidth={2.5} aria-hidden="true" />}
                         >
-                          View post <ArrowUpRight size={14} strokeWidth={2.5} aria-hidden="true" />
-                        </a>
+                          View post
+                        </Button>
                       </div>
                     </div>
                   </CascadeItem>
