@@ -443,6 +443,9 @@ function notesData(): Plugin {
 
 export default defineConfig({
   plugins: [react(), tailwindcss(), workSchema(), notesSchema(), pageDates(), notesData()],
+  // Each local project has its own ports (site 3000 via vercel dev, storybook 6006, preview 4170);
+  // strict, so a clash fails instead of hopping to a port nothing points at.
+  preview: { port: 4170, strictPort: true },
   resolve: {
     alias: {
       '@': resolve(import.meta.dirname, 'src'),

@@ -154,7 +154,7 @@ Pattern:
 npm run dev       # vercel dev + storybook in parallel; site at http://localhost:3000, storybook at :6006
 npm run dev:site  # vercel dev only (site at http://localhost:3000) — runs Vite under the hood and serves /api/* serverless functions
 npm run build     # production build → dist/, then prerenders every public route into its HTML (scripts/prerender.mjs)
-npm run preview   # preview production build locally
+npm run preview   # preview production build locally, at http://localhost:4170
 npm run lint      # ESLint (src/, api/, scripts/, tests/)
 npm run typecheck # tsc -b across the app, api, node and test projects
 npm test          # Vitest, tests/ only — see below
