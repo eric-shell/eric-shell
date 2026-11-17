@@ -1,4 +1,5 @@
 import { useEffect, useLayoutEffect, useRef, useState, type RefObject } from 'react'
+import { canTilt, clearTilt, tiltToward } from './usePointerTilt'
 
 /** How far each column drifts across the grid's pass through the viewport, in px. Odd columns lead, the middle lags. */
 const DRIFT: Record<number, number[]> = { 1: [0], 2: [-36, 44], 3: [-50, 70, -20], 4: [-50, 70, -20, 40] }
@@ -102,27 +103,18 @@ export function useWaveGrid(gridRef: RefObject<HTMLElement | null>, itemsKey: st
     }
   }, [gridRef])
 
-  // Pointer tilt, on hover-capable pointers only.
+  // Pointer tilt, on hover-capable pointers only. One delegated listener for
+  // the grid rather than usePointerTilt on every card.
   useEffect(() => {
     const grid = gridRef.current
-    if (!grid || reducedMotion() || !window.matchMedia('(hover: hover)').matches) return
-    const VARS = ['--tx', '--ty', '--ax', '--ay']
+    if (!grid || !canTilt()) return
     const move = (e: PointerEvent) => {
       const card = (e.target as Element).closest<HTMLElement>('[data-card]')
-      if (!card || !grid.contains(card)) return
-      const r = card.getBoundingClientRect()
-      const x = (e.clientX - r.left) / r.width
-      const y = (e.clientY - r.top) / r.height
-      card.style.setProperty('--tx', `${((x - 0.5) * 12).toFixed(2)}deg`)
-      card.style.setProperty('--ty', `${((0.5 - y) * 10).toFixed(2)}deg`)
-      card.style.setProperty('--mx', `${(x * 100).toFixed(1)}%`)
-      card.style.setProperty('--my', `${(y * 100).toFixed(1)}%`)
-      card.style.setProperty('--ax', `${((x - 0.5) * 14).toFixed(1)}px`)
-      card.style.setProperty('--ay', `${((y - 0.5) * 10).toFixed(1)}px`)
+      if (card && grid.contains(card)) tiltToward(card, e)
     }
     const out = (e: PointerEvent) => {
       const card = (e.target as Element).closest<HTMLElement>('[data-card]')
-      if (card && !card.contains(e.relatedTarget as Node | null)) VARS.forEach(v => card.style.removeProperty(v))
+      if (card && !card.contains(e.relatedTarget as Node | null)) clearTilt(card)
     }
     grid.addEventListener('pointermove', move)
     grid.addEventListener('pointerout', out)

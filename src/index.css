@@ -434,9 +434,10 @@
   }
 }
 
-/* A Card's hover lift, and its tilt toward the pointer when a parent sets
-   `--tx` / `--ty` (see useWaveGrid). One transform, because the two have to
-   compose: the card sets `--lift` on hover, the grid sets the tilt. */
+/* A Card's hover lift, and its tilt toward the pointer when something sets
+   `--tx` / `--ty` (useWaveGrid for the Work grid, usePointerTilt for the hero
+   chat and the contact form). One transform, because the two have to compose:
+   the card sets `--lift` on hover, the grid sets the tilt. */
 @utility card-lift {
   transform: perspective(900px) rotateX(var(--ty, 0deg)) rotateY(var(--tx, 0deg)) translateY(var(--lift, 0px));
 

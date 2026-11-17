@@ -6,7 +6,7 @@ import Input from '../Input'
 import Panel from '../Panel'
 import Textarea from '../Textarea'
 import { toast } from '../Toast'
-import { useIntersectionObserver, useTypedPlaceholder } from '@/hooks'
+import { useIntersectionObserver, usePointerTilt, useTypedPlaceholder } from '@/hooks'
 import { identityHeaders } from '@/lib/telemetry'
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
@@ -50,6 +50,8 @@ export default function ContactForm({ className, onSuccess }: ContactFormProps) 
   // this component ~20×/s. Gate it on the form actually being on screen so a
   // visitor reading the hero isn't paying for a placeholder nobody can see.
   const { ref: formRef, inView } = useIntersectionObserver<HTMLFormElement>({ threshold: 0.2 })
+  // The Work card's tilt, at half strength: the form is twice a card's size.
+  const tiltRef = usePointerTilt<HTMLDivElement>(0.5)
   const typedPlaceholder = useTypedPlaceholder(
     MESSAGE_PLACEHOLDERS,
     inView && !message && !isSubmitting
@@ -128,8 +130,9 @@ export default function ContactForm({ className, onSuccess }: ContactFormProps) 
   // the action and a one-line disclosure. Fields are the chat composer's pill.
   return (
     <Panel
+      ref={tiltRef}
       variant="outline"
-      className={cn('focus-on-paper relative flex flex-col rounded-2xl overflow-hidden', className)}
+      className={cn('card-lift focus-on-paper relative flex flex-col rounded-2xl overflow-hidden transition-transform duration-300 ease-out', className)}
     >
       <header className={cn('flex items-center justify-between gap-2 pl-2.5 pr-3 py-2.5 border-b', RULE)}>
         <span className="flex items-center gap-2 font-sans text-sm font-semibold text-ink">

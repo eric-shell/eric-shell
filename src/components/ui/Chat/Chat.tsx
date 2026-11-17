@@ -6,7 +6,7 @@ import Button from '../Button'
 import Panel from '../Panel'
 import { toast } from '../Toast'
 import type { ChatMessage } from '@/hooks/useChat'
-import { useSpeechInput, useTypedPlaceholder } from '@/hooks'
+import { usePointerTilt, useSpeechInput, useTypedPlaceholder } from '@/hooks'
 import { sendEvent } from '@/lib/telemetry'
 import Markdown from '../Markdown'
 import { chatMdComponents, prefetchMarkdown } from '@/lib/markdown'
@@ -150,6 +150,8 @@ export default function Chat({
     }
   }
   const threadRef = useRef<HTMLDivElement>(null)
+  // The Work card's tilt, at half strength: the panel is twice a card's size.
+  const tiltRef = usePointerTilt<HTMLDivElement>(0.5)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const wasClosedRef = useRef(false)
 
@@ -368,9 +370,10 @@ export default function Chat({
   // makes the blur snap. With no blur anywhere there is nothing to keep apart.
   const panel = (
     <Panel
+      ref={tiltRef}
       variant="outline"
       className={cn(
-        'genie-panel focus-on-paper relative flex flex-col rounded-2xl overflow-hidden',
+        'genie-panel card-lift focus-on-paper relative flex flex-col rounded-2xl overflow-hidden transition-transform duration-300 ease-out',
         isClosing ? 'animate-genie-out pointer-events-none' : 'animate-panel-in',
         className
       )}
