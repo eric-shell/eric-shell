@@ -5,8 +5,17 @@ import Button from '../Button'
 import type { DropdownOption } from '../Dropdown'
 import type { Variant } from '../variants'
 
+export interface MultiSelectOption extends DropdownOption {
+  /**
+   * How many items carry this option, shown right-aligned in its row. Kept out
+   * of `label` because the label is also the trigger summary ("Drupal +2") and
+   * what the filter field matches: "Drupal (29)" would leak into both.
+   */
+  count?: number
+}
+
 export interface MultiSelectProps {
-  options: DropdownOption[]
+  options: MultiSelectOption[]
   /** Selected values, in the order they were selected. */
   values: string[]
   onChange: (values: string[]) => void
@@ -83,7 +92,7 @@ export default function MultiSelect({
   const listboxId = useId()
 
   const selected = useMemo(
-    () => values.map(v => options.find(o => o.value === v)).filter((o): o is DropdownOption => !!o),
+    () => values.map(v => options.find(o => o.value === v)).filter((o): o is MultiSelectOption => !!o),
     [values, options],
   )
 
@@ -332,6 +341,9 @@ export default function MultiSelect({
                   </span>
                   {option.icon && <span aria-hidden="true">{option.icon}</span>}
                   <span className="truncate">{option.label}</span>
+                  {option.count !== undefined && (
+                    <span className="ml-auto pl-4 font-normal tabular-nums text-blue-950/60">{option.count}</span>
+                  )}
                 </li>
               )
             })}
