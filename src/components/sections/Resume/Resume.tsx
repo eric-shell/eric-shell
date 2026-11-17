@@ -2,8 +2,10 @@ import type { ReactNode } from 'react'
 import { FileDown, Mail } from 'lucide-react'
 import { cn } from '@/components/ui/cn'
 import { Button, CascadeGroup, CascadeItem, Container, H3, Lead, Page, PageHero, Section, SectionTitle, Sheet, descDelay } from '../../ui'
-import { certifications, contact, education, headline, intros, jobs, summary, summaryPrint, values } from '@/data/resume'
+import { certifications, contact, education, headline, intros, jobs, summary, summaryPrint, updated, values } from '@/data/resume'
 import type { ResumeIdentity } from '@/data/resume'
+import { resumeQr } from '@/data/resumeQr'
+import { formatDate } from '@/lib/formatDate'
 
 /** The earliest year in the work history, so the section's eyebrow can't go stale. */
 const FIRST_YEAR = Math.min(...jobs.flatMap(job => (job.dates.match(/\d{4}/g) ?? []).map(Number)))
@@ -126,13 +128,19 @@ export default function Resume() {
           </CascadeItem>
         </SectionTitle>
 
-        {/* Print-only contact block — screen users get the buttons above. */}
+        {/* Print-only from here to the end of the masthead: the contact
+            block (screen users get the buttons above) and a QR code back to
+            the interactive page. Placed by the print grid's areas in
+            index.css, not by their order here. */}
         <ul className="resume-contact hidden print:block" aria-hidden="true">
-          <li>{contact.email}</li>
-          <li>{contact.site}</li>
-          <li>{contact.linkedin}</li>
-          <li>{contact.github}</li>
+          {/* In the order `contact` declares them, so the data file sets it. */}
+          {Object.values(contact).map(line => <li key={line}>{line}</li>)}
         </ul>
+        <div className="resume-qr hidden print:block" aria-hidden="true">
+          <svg viewBox={`0 0 ${resumeQr.size} ${resumeQr.size}`} className="text-ink" shapeRendering="crispEdges">
+            <path fill="currentColor" d={resumeQr.path} />
+          </svg>
+        </div>
       </PageHero>
 
       {/* Print: About + Values + Credentials stack in the left column;
@@ -268,6 +276,12 @@ export default function Resume() {
             </CascadeItem>
           </CascadeGroup>
         </ResumeSection>
+
+        {/* Print-only footer, pinned to the foot of the page by the print grid. */}
+        <p className="resume-footer hidden print:flex" aria-hidden="true">
+          <span>Interactive version at {contact.site}/resume</span>
+          <span>Updated {formatDate(updated)}</span>
+        </p>
 
       </Sheet>
 

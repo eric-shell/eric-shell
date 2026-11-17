@@ -34,22 +34,26 @@ export type ResumeEducation = {
 
 /** Contact details surfaced in the print/PDF masthead. */
 export const contact = {
+  site: 'https://eric.sh',
   email: 'ericjshell@gmail.com',
-  site: 'eric.sh',
   linkedin: 'linkedin.com/in/ericshell',
   github: 'github.com/eric-shell',
 } as const
+
+/** When the resume's content last changed, ISO. The PDF footer prints it. */
+export const updated = '2026-11-17'
 
 export const headline: string =
   'An AI Design Systems Engineer with over 15 years of professional experience developing modern web and mobile applications.'
 
 /**
- * Condensed profile for the print/PDF layout. Same facts as `summary`,
- * compressed to a single paragraph so the left rail has room to show the
- * `values` descriptions rather than bare labels.
+ * Condensed profile for the print/PDF layout, compressed to a single paragraph
+ * so the left rail has room to show the `values` descriptions rather than bare
+ * labels. It leaves out what the same page already prints: the role and years
+ * (the masthead's `headline`) and the Lehigh degree (Credentials).
  */
 export const summaryPrint: string =
-  'AI Design Systems Engineer with over 15 years building modern web and mobile applications. At MMGY Global I own front-end architecture across a portfolio of enterprise marketing platforms, integrating LLMs directly into how those systems are built and delivered. My track record spans Fortune 500 brands, financial institutions, federal agencies, and national restaurant chains. Formal education in Design from Lehigh University. Active DOI government clearance through March 2030.'
+  'At MMGY Global I own front-end architecture across a portfolio of enterprise marketing platforms, integrating LLMs directly into how those systems are built and delivered. My track record spans Fortune 500 brands, financial institutions, federal agencies, and national restaurant chains. Active DOI government clearance through March 2030.'
 
 export const summary: string[] = [
   "Over 15 years I've evolved from shipping pixel-perfect UIs to architecting the systems that produce them at scale, and now to integrating AI natively into how those systems are built and delivered. As an AI Design Systems Engineer at MMGY Global, I own front-end architecture for a portfolio of enterprise marketing platforms, treating large language models not just as productivity tools but as first-class collaborators in the development lifecycle.",
