@@ -1,3 +1,7 @@
+---
+name: chat
+description: "Reference for the Hero chat: file map, prompt structure, streaming protocol, persistence, vercel-dev gotchas. Use before touching useChat, api/chat.ts, the chat persona/context data, or the Chat component."
+---
 # Hero Chat — Reference
 
 The chat panel in the Hero section is a Groq-backed Q&A bot with persona-driven responses, streaming, persistence, and markdown link rendering. This file is the navigable reference; the implementation spans the client, the serverless function, and several content sources.

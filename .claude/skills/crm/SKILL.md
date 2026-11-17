@@ -1,3 +1,7 @@
+---
+name: crm
+description: "Reference for the admin CRM: schema, auth model, file map, adding endpoints, env-var gotchas. Use before touching src/admin, api/admin, api/track.ts, api/events.ts, telemetry, db/schema.sql or the function cap."
+---
 # Admin CRM — Reference
 
 A password-gated admin page at `/dashboard` (sign-in at `/login`) for viewing every chat thread and contact form submission, keyed by an anonymous client-generated visitor UUID. Persistence runs alongside the existing chat stream and contact email — they are best-effort and never block the public response.

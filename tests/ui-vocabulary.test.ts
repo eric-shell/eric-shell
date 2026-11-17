@@ -389,11 +389,11 @@ describe('ui vocabulary', () => {
     // for a variant that no longer exists is how old names get typed again.
     const union = readFileSync(join(ROOT, 'src/components/ui/variants.ts'), 'utf8')
     const declared = [.../export type Variant =([\s\S]*?)\n\nexport/.exec(union)![1].matchAll(/^\s*\| '([a-z-]+)'/gm)].map(m => m[1]).sort()
-    const doc = readFileSync(join(ROOT, '.claude/commands/ui.md'), 'utf8')
+    const doc = readFileSync(join(ROOT, '.claude/skills/ui/SKILL.md'), 'utf8')
     const table = /<!-- variants:start -->([\s\S]*?)<!-- variants:end -->/.exec(doc)?.[1] ?? ''
     const documented = [...table.matchAll(/^\| `([a-z-]+)` \|/gm)].map(m => m[1]).sort()
     expect(declared.length).toBeGreaterThan(0)
-    expect(documented, 'variant table in .claude/commands/ui.md vs the Variant union').toEqual(declared)
+    expect(documented, 'variant table in .claude/skills/ui/SKILL.md vs the Variant union').toEqual(declared)
   })
 
   it('references only theme variables that exist', () => {

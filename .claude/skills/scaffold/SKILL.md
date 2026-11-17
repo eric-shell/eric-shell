@@ -1,3 +1,7 @@
+---
+name: scaffold
+description: "Scaffold a new page section or reusable UI component from the system's primitives. Use when asked to create a section, route page or ui primitive."
+---
 Scaffold a new page section or reusable UI component.
 
 The user will specify what to create. Detect intent from the name or context:
@@ -111,7 +115,7 @@ export { default } from './<Name>'
 - If it sits on a field, it must work on that field's focus ring: white surfaces inside a field take `focus-on-paper`.
 - A file that exports a component may export only components (the fast-refresh lint rule). Put shared constants in a sibling `.ts` file, and mind that the filesystem is case-insensitive: `Thing.tsx` and `thing.ts` collide.
 - Add `<Name>.stories.tsx`. Show it on each field it is meant for.
-- Add a section to `.claude/commands/ui.md`.
+- Add a section to `.claude/skills/ui/SKILL.md`.
 - Keep it minimal: no placeholder logic beyond what the user specifies.
 
 ---

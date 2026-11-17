@@ -1,3 +1,7 @@
+---
+name: ui
+description: "Reference for the UI system in src/components/ui: tokens, surface variants, every primitive, and the rules the tests enforce. Use before building or editing anything a visitor sees."
+---
 Reference for the UI system in `src/components/ui/`: the tokens, the surface variants, and the primitives.
 
 Load this before building or editing anything a visitor sees. The system is closed on purpose: a colour, radius or shadow that is not a token does not compile, a surface that is not a variant does not typecheck, and `tests/ui-vocabulary.test.ts` fails on a hand-rolled value. Reach for what is here before writing classes.

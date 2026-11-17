@@ -1,3 +1,7 @@
+---
+name: contact
+description: "Contact section and form: layout, validation, spam protection, the API handler. Use before changing Contact, ContactForm or api/contact.ts."
+---
 # Contact Section
 
 Implemented across two files:

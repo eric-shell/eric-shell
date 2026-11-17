@@ -1,3 +1,7 @@
+---
+name: responsive-images
+description: "Add an image to the responsive-image pipeline (AVIF/WebP variants + <picture> markup). Use when adding a new img to a section; skip tiny icons and SVGs."
+---
 Add an image to the responsive-image pipeline (AVIF/WebP variants + `<picture>` markup).
 
 Use this when adding a new `<img>` to a section. Skip for decorative icons, SVGs, or images rendered tiny (< 200px on all viewports) — the overhead isn't worth it.

@@ -1,7 +1,11 @@
+---
+name: note
+description: "When a change earns a /notes entry, the house voice, and the screenshot pipeline. Use before writing or editing an entry in src/data/notes.ts."
+---
 # Notes — when to write one, and how
 
 Reference for `/notes`, the changelog of engineering decisions at
-[src/data/notes.ts](../../src/data/notes.ts). Read this before adding an entry.
+[src/data/notes.ts](../../../../src/data/notes.ts). Read this before adding an entry.
 
 ## When a change earns a note
 
@@ -78,7 +82,7 @@ new entry instead.
 Notes with only prose are a wall of text. Most entries about something visual
 should carry one image.
 
-**1. Add the shot** to [scripts/notes-shots.config.mjs](../../scripts/notes-shots.config.mjs).
+**1. Add the shot** to [scripts/notes-shots.config.mjs](../../../../scripts/notes-shots.config.mjs).
 Pick the viewport width that shows the thing being written about, not the widest
 one available; a 1440px grid squeezed into a 672px column is unreadable.
 

@@ -8,7 +8,9 @@
       "Bash(open http://localhost:3000*)",
       "Bash(open http://localhost:6006*)",
       "Bash(open http://localhost:4170*)",
-      "WebFetch(domain:eric.sh)"
+      "WebFetch(domain:eric.sh)",
+      "Bash(.claude/skills/*)",
+      "Bash(bash .claude/*)"
     ],
     "ask": [
       "Bash(npm run seed:crm*)"
@@ -17,6 +19,23 @@
       "Read(./dist/**)",
       "Read(./storybook-static/**)",
       "Read(./package-lock.json)"
+    ]
+  },
+  "env": {
+    "ENABLE_TOOL_SEARCH": "true"
+  },
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "startup|resume|clear|compact",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/session-start.sh",
+            "timeout": 10
+          }
+        ]
+      }
     ]
   }
 }
