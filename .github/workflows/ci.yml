@@ -1,7 +1,7 @@
 # Lint, typecheck, test and build on every push to main and every pull request.
 #
-# The same file in eric-shell, street-scene, classifieds-mcp and local-foodie: keep it identical and
-# change it in all four at once. Each step is `--if-present`, so a repo runs whichever of the four
+# The same file in eric-shell, classifieds-mcp and local-foodie: keep it identical and change it in
+# all three at once. street-scene has none on purpose (see its deploy skill). Each step is `--if-present`, so a repo runs whichever of the four
 # scripts it defines, and Node comes from the repo's .nvmrc, the same version Vercel builds on.
 #
 # No secrets: nothing here may need a database, an API key or the network beyond npm. A test that
