@@ -3,6 +3,11 @@
 // `loadMarkdown` below — keep it that way, or the parser lands back in the
 // initial bundle.
 import type { Components } from 'react-markdown'
+import { cn } from '@/components/ui/cn'
+// By path, not through the ui barrel: the barrel exports `Markdown`, which
+// imports this file.
+import Code from '@/components/ui/Code/Code'
+import { TEXT_LINK } from '@/components/ui/TextLink/linkTone'
 import NoteFigure from './NoteFigure'
 
 const EMAIL_RE = /(?<!\]\(mailto:)(?<!\[)([\w.+-]+@[\w-]+\.[\w.-]+)(?!\w)(?!\]\(mailto:)/g
@@ -11,14 +16,18 @@ export function linkifyEmail(text: string): string {
   return text.replace(EMAIL_RE, '[$1](mailto:$1)')
 }
 
-const linkClass = 'font-semibold underline underline-offset-2 hover:opacity-70 transition-opacity'
+/** A link in a chat bubble: the bubble's own colour, so it reads on either one. */
+const linkClass = cn('font-semibold', TEXT_LINK.inherit)
+
+/** A note's links: Luminous on the white sheet, the underline carrying the hover. */
+const noteLinkClass = TEXT_LINK.lum
 
 const baseComponents: Omit<Components, 'a'> = {
   p: ({ children }) => <p className="mb-2 last:mb-0">{children}</p>,
   ul: ({ children }) => <ul className="list-disc pl-5 mb-2 last:mb-0 [&_li>p]:mb-0">{children}</ul>,
   ol: ({ children }) => <ol className="list-decimal pl-5 mb-2 last:mb-0 [&_li>p]:mb-0">{children}</ol>,
   li: ({ children }) => <li className="mb-1.5 last:mb-0">{children}</li>,
-  code: ({ children }) => <code className="px-1 py-0.5 rounded bg-blue-100 font-mono text-xs">{children}</code>,
+  code: ({ children }) => <code className="px-1 py-0.5 rounded bg-ink/10 font-mono text-xs">{children}</code>,
   strong: ({ children }) => <span className="font-semibold">{children}</span>,
   // The prompt asks for no headings, quotes or rules, but the model doesn't
   // always comply, and Tailwind's preflight strips all three to bare unspaced
@@ -27,8 +36,8 @@ const baseComponents: Omit<Components, 'a'> = {
   h2: ({ children }) => <p className="mb-2 last:mb-0 font-semibold">{children}</p>,
   h3: ({ children }) => <p className="mb-2 last:mb-0 font-semibold">{children}</p>,
   h4: ({ children }) => <p className="mb-2 last:mb-0 font-semibold">{children}</p>,
-  blockquote: ({ children }) => <blockquote className="mb-2 last:mb-0 border-l-2 border-blue-200 pl-3">{children}</blockquote>,
-  hr: () => <hr className="my-3 border-blue-100" />,
+  blockquote: ({ children }) => <blockquote className="mb-2 last:mb-0 border-l-2 border-ink/20 pl-3">{children}</blockquote>,
+  hr: () => <hr className="my-3 border-ink/10" />,
 }
 
 export function chatMdComponents(onAnchorNavigate?: () => void): Components {
@@ -97,7 +106,7 @@ export const noteMdComponents: Components = {
     return <p className="font-sans text-base md:text-lg leading-relaxed mb-5 last:mb-0">{children}</p>
   },
   h2: ({ children }) => (
-    <h2 className="font-display font-bold uppercase leading-none tracking-tight text-2xl md:text-3xl mt-12 mb-4 first:mt-0">
+    <h2 className="font-display font-bold uppercase leading-[0.95] tracking-display text-ink text-[26px] md:text-[34px] mt-14 mb-5 first:mt-0">
       {children}
     </h2>
   ),
@@ -116,20 +125,18 @@ export const noteMdComponents: Components = {
   ),
   li: ({ children }) => <li className="mb-2 last:mb-0 pl-1">{children}</li>,
   blockquote: ({ children }) => (
-    <blockquote className="border-l-2 border-blue-950/20 pl-5 my-6 text-blue-950/70 [&_p]:mb-3 [&_p]:last:mb-0">
+    <blockquote className="border-l-[3px] border-lum pl-5 my-7 text-ink-soft [&_p]:mb-3 [&_p]:last:mb-0">
       {children}
     </blockquote>
   ),
   pre: ({ children }) => (
-    <pre className="mb-6 overflow-x-auto rounded-lg bg-blue-950 text-white p-4 font-mono text-xs md:text-sm leading-relaxed [&_code]:bg-transparent [&_code]:p-0 [&_code]:text-inherit [&_code]:text-[length:inherit]">
+    <pre className="mb-6 overflow-x-auto rounded-media bg-ink text-white p-5 font-mono text-xs md:text-sm leading-relaxed [&_code]:bg-transparent [&_code]:p-0 [&_code]:text-inherit [&_code]:text-[length:inherit]">
       {children}
     </pre>
   ),
-  code: ({ children }) => (
-    <code className="px-1.5 py-0.5 rounded bg-blue-100 font-mono text-[0.85em]">{children}</code>
-  ),
+  code: ({ children }) => <Code>{children}</Code>,
   strong: ({ children }) => <strong className="font-semibold">{children}</strong>,
-  hr: () => <hr className="my-10 border-blue-950/10" />,
+  hr: () => <hr className="my-12 border-ink/10" />,
   a: ({ href, children, ...props }) => {
     const isExternal = /^(https?|mailto):/.test(href ?? '')
     return (
@@ -137,7 +144,7 @@ export const noteMdComponents: Components = {
         href={href}
         target={isExternal ? '_blank' : undefined}
         rel={isExternal ? 'noopener noreferrer' : undefined}
-        className={linkClass}
+        className={noteLinkClass}
         {...props}
       >
         {children}

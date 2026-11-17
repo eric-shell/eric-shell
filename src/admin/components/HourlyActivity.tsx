@@ -1,5 +1,5 @@
 import { useCallback, useMemo } from 'react'
-import { twMerge } from 'tailwind-merge'
+import { cn } from '@/components/ui/cn'
 import { useTooltip, useTooltipInPortal, defaultStyles } from '@visx/tooltip'
 import { TOOLTIP_STYLE, formatHour, glowFor, localHourOffset, magnitudeStep } from '../lib/chartTheme'
 import { ChartEmpty } from './ChartFrame'
@@ -155,7 +155,7 @@ export default function HourlyActivity({ hourly }: { hourly: HourRow[] }) {
               // Driven off the tooltip's own state rather than CSS `:hover`, so
               // the wash and the readout can never disagree about which hour is
               // being pointed at.
-              className={twMerge(
+              className={cn(
                 'flex h-full min-w-0 flex-1 items-end rounded-sm transition-colors',
                 tooltipData?.displayHour === col.displayHour && 'bg-white/6',
               )}
@@ -166,7 +166,7 @@ export default function HourlyActivity({ hourly }: { hourly: HourRow[] }) {
               onPointerEnter={handleMove(col)}
             >
               <div
-                className="w-full rounded-t-[3px] transition-[height] duration-500 motion-reduce:transition-none"
+                className="w-full rounded-t-sm transition-[height] duration-500 motion-reduce:transition-none"
                 style={{
                   // An empty hour keeps a 2px stub so the reader can see the
                   // hour exists and was quiet, rather than guessing at a gap.

@@ -26,7 +26,7 @@ import type { InsightsPayload } from '@/../api/_lib/insights-types'
  *
  * `tone` marks a genuine signal, never decoration: `positive` is only for a
  * conversion. Semantic color always ships with an icon so it is never
- * color-alone. green-400 is 7.04:1 on the blue-950 canvas — AA text.
+ * color-alone. success-bright is 7.18:1 on the ink canvas — AA text.
  *
  * `meter` turns a tile whose sub-line is already a ratio into something
  * glanceable: the same single-proportion-against-its-own-track form the Action
@@ -35,7 +35,7 @@ import type { InsightsPayload } from '@/../api/_lib/insights-types'
  * which is what keeps the bar and the percentage from ever disagreeing.
  *
  * The meter is blue even on the `positive` tile. Marks and semantics are two
- * different systems here: every data mark in the admin is a step of the accent
+ * different systems here: every data mark in the admin is a step of the data
  * ramp, and green is reserved for the one callout that means something. Giving
  * the meter the tone would have merged them.
  */
@@ -53,14 +53,14 @@ function StatCard({ label, value, sub, icon: Icon, tone = 'neutral', meter }: {
   return (
     <Panel
       variant="raised-dark"
-      className="group relative flex min-w-[120px] flex-col justify-between overflow-hidden rounded-2xl p-4 shadow-sm transition-shadow hover:shadow-md"
+      className="group relative flex min-w-[120px] flex-col justify-between overflow-hidden rounded-2xl p-4 shadow-raised transition-shadow hover:shadow-popover"
     >
       <div className="flex items-center gap-1.5">
         {Icon && (
           <Icon
             size={11}
             strokeWidth={2.5}
-            className={positive ? 'text-green-400' : 'text-white/75'}
+            className={positive ? 'text-success-bright' : 'text-white/75'}
             aria-hidden="true"
           />
         )}
@@ -85,7 +85,7 @@ function StatCard({ label, value, sub, icon: Icon, tone = 'neutral', meter }: {
           />
         </div>
       )}
-      <p className={`mt-1 text-xs ${positive ? 'font-medium text-green-400' : 'text-white/85'}`}>{sub}</p>
+      <p className={`mt-1 text-xs ${positive ? 'font-medium text-success-bright' : 'text-white/85'}`}>{sub}</p>
     </Panel>
   )
 }
@@ -350,7 +350,7 @@ export default function Dashboard({ onLogout }: DashboardProps) {
           {lastLoaded && (
             <span className="flex items-center gap-1.5 pr-1 text-xs text-white/90">
               {/* Quietly signals the auto-refresh is alive. */}
-              <span className={`h-1.5 w-1.5 rounded-full ${loading ? 'bg-accent animate-pulse' : 'bg-green-400/70'}`} />
+              <span className={`h-1.5 w-1.5 rounded-full ${loading ? 'bg-data animate-pulse' : 'bg-success-bright/70'}`} />
               {lastLoaded.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
             </span>
           )}
@@ -360,7 +360,7 @@ export default function Dashboard({ onLogout }: DashboardProps) {
               looked like plain inline icons. No `size` needed: the CSS variable
               beats lucide's width/height attributes. */}
           <Button
-            variant="primary" size="sm" onClick={load} disabled={loading}
+            variant="luminous" size="sm" onClick={load} disabled={loading}
             leftIcon={<RefreshCw className={loading ? 'animate-spin' : ''} aria-hidden="true" />}
           >
             Refresh

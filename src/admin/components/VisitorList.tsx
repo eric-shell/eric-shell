@@ -8,7 +8,7 @@ import type { VisitorEdits } from '../hooks/useVisitorDetail'
 import { detailStamp } from '../lib/detailCache'
 import { clearUnsaved, confirmDiscard, setUnsaved } from '../lib/unsavedEdits'
 import { Button } from '../../components/ui'
-import { twMerge } from 'tailwind-merge'
+import { cn } from '@/components/ui/cn'
 import type { VisitorSummary } from '@/../api/_lib/types'
 import { formatDuration, formatLastSeen } from '../lib/dateFormat'
 import { resolveLocation } from '../lib/location'
@@ -47,7 +47,7 @@ const COLLAPSE_MS = 260
  */
 function DetailCollapse({ open, children }: { open: boolean; children: ReactNode }) {
   return (
-    <div className={twMerge('grid', open ? 'animate-detail-expand' : 'animate-detail-collapse')}>
+    <div className={cn('grid', open ? 'animate-detail-expand' : 'animate-detail-collapse')}>
       {/* What the 0fr row clips against. */}
       <div className="overflow-hidden">{children}</div>
     </div>
@@ -125,7 +125,7 @@ function MiddleTruncate({ text, tail = 4, className }: {
   className?: string
 }) {
   return (
-    <span className={twMerge('flex min-w-0', className)} title={text}>
+    <span className={cn('flex min-w-0', className)} title={text}>
       {/* Screen readers get it whole. The two visible halves read as one
           contiguous string and the ellipsis is generated content, which is never
           announced — so heard aloud, the truncated form isn't a shortened id,
@@ -170,7 +170,7 @@ function LocationValue({ location }: { location: ReturnType<typeof resolveLocati
 /**
  * "New since you last looked."
  *
- * `--color-accent` is admin-only and non-text-only, which is exactly what a 6px
+ * `--color-data` is admin-only and non-text-only, which is exactly what a 6px
  * dot is. Never color alone: it carries a title and an sr-only label, because
  * "this arrived while you were away" is not something a screen reader should
  * have to infer from a decorative span.
@@ -181,7 +181,7 @@ function NewDot({ filled }: { filled: boolean }) {
   return (
     <span
       title={filled ? 'New activity since you last opened the dashboard' : undefined}
-      className={twMerge('h-1.5 w-1.5 shrink-0 rounded-full', filled && 'bg-accent')}
+      className={cn('h-1.5 w-1.5 shrink-0 rounded-full', filled && 'bg-data')}
     >
       {filled && <span className="sr-only">New since your last visit. </span>}
     </span>
@@ -276,7 +276,7 @@ function ActivityValue({ v }: { v: VisitorSummary }) {
             </span>
           )}
           {v.contact_count > 0 && (
-            <span className="inline-flex items-center gap-1 font-semibold text-green-400">
+            <span className="inline-flex items-center gap-1 font-semibold text-success-bright">
               <MailCheck size={11} strokeWidth={2.5} aria-hidden="true" />
               <span className="sr-only">Contact submissions: </span>
               {v.contact_count}
@@ -329,13 +329,13 @@ function SortHeader({ label, sortKey, sort, onSort, className, align = 'left', t
     <th
       scope="col"
       aria-sort={active ? (sort.dir === 'asc' ? 'ascending' : 'descending') : 'none'}
-      className={twMerge('py-2 pr-4 font-semibold', className)}
+      className={cn('py-2 pr-4 font-semibold', className)}
     >
       <button
         type="button"
         onClick={() => onSort(sortKey)}
         title={title ?? `Sort by ${SORT_LABEL[sortKey]}`}
-        className={twMerge(
+        className={cn(
           'group inline-flex cursor-pointer items-center gap-1 uppercase tracking-wide transition-colors hover:text-white',
           align === 'right' && 'flex-row-reverse',
           active ? 'text-white' : 'text-white/85',
@@ -376,7 +376,7 @@ function SortBar({ sort, onSort, className }: {
 }) {
   const dirLabel = sort.dir === 'asc' ? 'ascending' : 'descending'
   return (
-    <div className={twMerge('mb-3 flex flex-col gap-1.5', className)}>
+    <div className={cn('mb-3 flex flex-col gap-1.5', className)}>
       <label htmlFor="visitor-sort" className="text-[10px] font-semibold uppercase tracking-wide text-white/75">
         Sort by
       </label>
@@ -387,12 +387,12 @@ function SortBar({ sort, onSort, className }: {
           id="visitor-sort"
           value={sort.key}
           onChange={e => onSort(e.target.value as SortKey)}
-          className="min-w-0 flex-1 rounded-lg border border-white/10 bg-white/[0.05] px-2.5 py-2 text-sm text-white outline-none focus:border-accent/60"
+          className="min-w-0 flex-1 rounded-lg border border-white/10 bg-white/[0.05] px-2.5 py-2 text-sm text-white outline-none focus:border-data/60"
         >
           {(Object.keys(SORT_LABEL) as SortKey[]).map(k => (
             // Native option lists can't be styled on Android, so give them an
             // explicit dark background rather than inheriting white-on-white.
-            <option key={k} value={k} className="bg-blue-950 text-white">
+            <option key={k} value={k} className="bg-ink text-white">
               {SORT_LABEL[k]}
             </option>
           ))}
@@ -457,7 +457,7 @@ function MobileList({
                 type="button"
                 onClick={() => onSelect(isOpen ? null : v.id)}
                 aria-expanded={isOpen}
-                className={twMerge(
+                className={cn(
                   'w-full cursor-pointer rounded-xl border border-white/10 p-3 text-left transition-colors',
                   isOpen ? 'rounded-b-none bg-black/[0.5]' : 'bg-white/[0.03] hover:bg-white/[0.06]',
                 )}
@@ -510,7 +510,7 @@ function MobileList({
                     <span className="sr-only">Chat messages: </span>
                     {v.chat_message_count || 0}
                   </span>
-                  <span className={twMerge('flex items-center gap-1', v.contact_count ? 'font-semibold text-green-400' : 'text-white/90')}>
+                  <span className={cn('flex items-center gap-1', v.contact_count ? 'font-semibold text-success-bright' : 'text-white/90')}>
                     <MailCheck size={12} aria-hidden="true" className={v.contact_count ? '' : 'text-white/70'} />
                     <span className="sr-only">Contact submissions: </span>
                     {v.contact_count || 0}
@@ -890,13 +890,13 @@ export default function VisitorList({ visitors, bursts, newSince, onVisitorDelet
               <Fragment key={v.id}>
                 <tr
                   onClick={() => handleSelect(isOpen ? null : v.id)}
-                  className={twMerge(
+                  className={cn(
                     'cursor-pointer border-b border-white/5 transition-colors',
                     // The row lights up when the button inside it has keyboard
                     // focus — that button is visually hidden, so this outline
                     // is the only focus indicator there is. Inset, because a
                     // table row clips an outline drawn outside its own box.
-                    'has-[:focus-visible]:outline-2 has-[:focus-visible]:-outline-offset-2 has-[:focus-visible]:outline-accent',
+                    'has-[:focus-visible]:outline-2 has-[:focus-visible]:-outline-offset-2 has-[:focus-visible]:outline-data',
                     isOpen ? 'bg-black/[0.65]' : 'hover:bg-black/[0.15]'
                   )}
                 >
@@ -954,10 +954,10 @@ export default function VisitorList({ visitors, bursts, newSince, onVisitorDelet
                   </td>
                   {/* Semantic color earns its place here: a submission is the
                       one real conversion signal in the table. Always paired with
-                      an icon, never color alone. green-400 is 7.04:1 on the canvas. */}
+                      an icon, never color alone. success-bright is 7.04:1 on the canvas. */}
                   <td className="hidden py-3 pr-4 text-right xl:table-cell">
                     {v.contact_count ? (
-                      <span className="inline-flex items-center gap-1 font-semibold text-green-400">
+                      <span className="inline-flex items-center gap-1 font-semibold text-success-bright">
                         <MailCheck size={12} strokeWidth={2.5} aria-hidden="true" />
                         {v.contact_count}
                       </span>
@@ -1013,13 +1013,13 @@ export default function VisitorList({ visitors, bursts, newSince, onVisitorDelet
           </p>
           <div className="flex gap-1">
             <Button
-              variant="primary" size="sm" onClick={() => goToPage(currentPage - 1)} disabled={currentPage === 1}
+              variant="luminous" size="sm" onClick={() => goToPage(currentPage - 1)} disabled={currentPage === 1}
               leftIcon={<ChevronLeft aria-hidden="true" />}
             >
               Prev
             </Button>
             <Button
-              variant="primary" size="sm" onClick={() => goToPage(currentPage + 1)} disabled={currentPage === totalPages}
+              variant="luminous" size="sm" onClick={() => goToPage(currentPage + 1)} disabled={currentPage === totalPages}
               rightIcon={<ChevronRight aria-hidden="true" />}
             >
               Next

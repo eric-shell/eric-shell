@@ -73,7 +73,7 @@ export default function VisitorDetail({ id, stamp, onClose, onDeleted, onSaved, 
         // failed load used to toast once and then sit here as a skeleton for as
         // long as the drawer stayed open, which reads as a hang.
         loadFailed ? (
-          <Panel variant="error-glass" role="alert" className="flex flex-wrap items-center justify-between gap-3 rounded-lg px-3 py-2 text-sm leading-snug">
+          <Panel variant="notice-error" role="alert" className="flex flex-wrap items-center justify-between gap-3 rounded-lg px-3 py-2 text-sm leading-snug">
             <span>This visitor's details didn't load.</span>
             <Button variant="raised-dark" size="sm" onClick={retryLoad}>Try again</Button>
           </Panel>
@@ -115,7 +115,7 @@ export default function VisitorDetail({ id, stamp, onClose, onDeleted, onSaved, 
               onChange={e => setLocationOverride(e.target.value)}
               placeholder={ipGuess ? `Correct the IP guess (${ipGuess})…` : 'Set a location…'}
               maxLength={120}
-              className="w-full rounded-lg border border-white/10 bg-white/[0.05] px-3 py-2 text-sm text-white placeholder:text-white/70 outline-none focus:border-accent/60 focus:bg-white/[0.08] transition"
+              className="w-full rounded-lg border border-white/10 bg-white/[0.05] px-3 py-2 text-sm text-white placeholder:text-white/70 outline-none focus:border-data/60 focus:bg-white/[0.08] transition"
             />
             <p className="mt-1 text-[10px] text-white/80">
               Overrides IP geolocation, which is approximate and can be off by hundreds of miles. Clear to fall back to the IP guess.
@@ -127,7 +127,7 @@ export default function VisitorDetail({ id, stamp, onClose, onDeleted, onSaved, 
               onChange={e => setNotes(e.target.value)}
               placeholder="Add private notes about this visitor…"
               rows={3}
-              className="w-full resize-y rounded-lg border border-white/10 bg-white/[0.05] px-3 py-2 text-sm text-white placeholder:text-white/70 outline-none focus:border-accent/60 focus:bg-white/[0.08] transition"
+              className="w-full resize-y rounded-lg border border-white/10 bg-white/[0.05] px-3 py-2 text-sm text-white placeholder:text-white/70 outline-none focus:border-data/60 focus:bg-white/[0.08] transition"
             />
             <div className="mt-2 flex items-center justify-end gap-2">
               {/* `error`, not a tinted neutral: this wipes the visitor, their

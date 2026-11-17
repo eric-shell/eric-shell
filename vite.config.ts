@@ -175,8 +175,8 @@ ${note.tags.map((t) => `    <meta property="article:tag" content="${attr(t)}" />
     <meta name="twitter:image" content="${SITE}/social.jpg" />
     <meta name="twitter:image:alt" content="Eric Shell, AI Design Systems Engineer" />
 
-    <!-- blue-950, the dark canvas every route opens on. -->
-    <meta name="theme-color" content="#111521" />
+    <!-- ink, as in index.html. -->
+    <meta name="theme-color" content="#0A1033" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <link rel="manifest" href="/site.webmanifest" />
 

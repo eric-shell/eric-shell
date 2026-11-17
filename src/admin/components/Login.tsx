@@ -127,14 +127,14 @@ export default function Login({ onSuccess }: LoginProps) {
 
         <Panel
           variant="raised-dark"
-          className="mx-auto w-full max-w-sm rounded-2xl p-6 text-left shadow-2xl shadow-black/40"
+          className="mx-auto w-full max-w-sm rounded-2xl p-6 text-left shadow-float"
         >
           {isCodeStep ? (
             <form onSubmit={submitCode} className="flex flex-col gap-4">
               <Input
                 id="admin-code"
                 label="Verification code"
-                theme="dark"
+                tone="dark"
                 value={code}
                 // Strip anything that isn't a digit as it's typed — pasting a
                 // code out of an email frequently brings a space with it.
@@ -151,7 +151,7 @@ export default function Login({ onSuccess }: LoginProps) {
                 disabled={submitting}
               />
               {error && (
-                <Panel variant="error-glass" role="alert" className="rounded-lg px-3 py-2 text-sm leading-snug">
+                <Panel variant="notice-error" role="alert" className="rounded-lg px-3 py-2 text-sm leading-snug">
                   {error}
                 </Panel>
               )}
@@ -159,7 +159,7 @@ export default function Login({ onSuccess }: LoginProps) {
                 <Button type="button" variant="raised-dark" size="sm" onClick={startOver} disabled={submitting}>
                   Start over
                 </Button>
-                <Button type="submit" variant="primary" disabled={submitting || code.length !== 6}>
+                <Button type="submit" variant="luminous" disabled={submitting || code.length !== 6}>
                   {submitting ? 'Verifying…' : 'Verify'}
                 </Button>
               </div>
@@ -170,7 +170,7 @@ export default function Login({ onSuccess }: LoginProps) {
                 id="admin-password"
                 label="Password"
                 type="password"
-                theme="dark"
+                tone="dark"
                 value={password}
                 onChange={v => { setPassword(v); setError('') }}
                 autoComplete="current-password"
@@ -178,11 +178,11 @@ export default function Login({ onSuccess }: LoginProps) {
                 disabled={submitting}
               />
               {error && (
-                <Panel variant="error-glass" role="alert" className="rounded-lg px-3 py-2 text-sm leading-snug">
+                <Panel variant="notice-error" role="alert" className="rounded-lg px-3 py-2 text-sm leading-snug">
                   {error}
                 </Panel>
               )}
-              <Button type="submit" variant="primary" disabled={submitting || !password} className="self-end">
+              <Button type="submit" variant="luminous" disabled={submitting || !password} className="self-end">
                 {submitting ? 'Signing in…' : 'Sign in'}
               </Button>
             </form>

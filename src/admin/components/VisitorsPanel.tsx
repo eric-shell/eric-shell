@@ -1,8 +1,7 @@
 import { useRef, useState } from 'react'
 import { type LucideIcon, Cpu, Handshake, Search, X } from 'lucide-react'
-import { twMerge } from 'tailwind-merge'
-import { Eyebrow, Panel } from '../../components/ui'
-import { SURFACE, SURFACE_HOVER } from '../../components/ui/variants'
+import { cn } from '@/components/ui/cn'
+import { Eyebrow, Panel, surface } from '../../components/ui'
 import VisitorList from './VisitorList'
 import { VisitorTableSkeleton } from './Skeleton'
 import { resolveLocation } from '../lib/location'
@@ -27,9 +26,9 @@ import type { VisitorSummary } from '@/../api/_lib/types'
  * Toolbar filter toggle. `aria-pressed` rather than a checkbox: it is a control
  * that changes the view, not a value being submitted.
  *
- * On is the `primary` fill, the same one `Pill` uses for an active chip — a
+ * On is the `luminous` fill, the same one `Pill` uses for an active chip — a
  * filter that is doing something is a solid mark, not a tinted outline. The
- * earlier accent ring was the wrong signal twice over: `--color-accent` is
+ * earlier accent ring was the wrong signal twice over: `--color-data` is
  * reserved for non-text marks, and on this canvas a 15%-alpha fill inside a
  * 40%-alpha ring read as *disabled* rather than active.
  *
@@ -52,7 +51,7 @@ function FilterChip({ active, onClick, icon: Icon, title, disabled, children }: 
       aria-pressed={active}
       disabled={disabled}
       title={title}
-      className={twMerge(
+      className={cn(
         // Taller and wider on a phone: at h-7 these are 28px of tappable height
         // sitting right next to each other, which is a miss waiting to happen.
         // Back to the compact size once there's a pointer driving them.
@@ -60,7 +59,7 @@ function FilterChip({ active, onClick, icon: Icon, title, disabled, children }: 
         disabled
           ? 'cursor-default border-white/10 text-white/40'
           : active
-            ? `cursor-pointer ${SURFACE.primary} ${SURFACE_HOVER.primary}`
+            ? `cursor-pointer ${surface('luminous', { hover: true })}`
             : 'cursor-pointer border-white/15 text-white/85 hover:bg-white/[0.06] hover:text-white',
       )}
     >
@@ -124,14 +123,14 @@ function TimeframeSegments({ value, onChange, labelledBy }: {
             }}
             data-timeframe={v}
             title={title}
-            className={twMerge(
-              // Same `primary` fill as the filter chips, and a transparent
+            className={cn(
+              // Same `luminous` fill as the filter chips, and a transparent
               // border on the unselected segments so selecting one doesn't
               // nudge the group's width. No hover on the selected segment:
               // it's a radio, so clicking it again does nothing.
               'flex h-6 cursor-pointer items-center rounded border px-2 text-xs font-semibold tabular-nums transition',
               active
-                ? SURFACE.primary
+                ? surface('luminous')
                 : 'border-transparent text-white/70 hover:bg-white/[0.06] hover:text-white',
             )}
           >
@@ -166,12 +165,12 @@ function TimeframeSelect({ value, onChange }: {
         id="visitor-timeframe"
         value={value}
         onChange={e => onChange(e.target.value as Timeframe)}
-        className="w-full rounded-lg border border-white/10 bg-white/[0.05] px-2.5 py-2 text-sm text-white outline-none focus:border-accent/60"
+        className="w-full rounded-lg border border-white/10 bg-white/[0.05] px-2.5 py-2 text-sm text-white outline-none focus:border-data/60"
       >
         {TIMEFRAMES.map(({ value: v, full }) => (
           // Native option lists can't be styled on Android, so give them an
           // explicit dark background rather than inheriting white-on-white.
-          <option key={v} value={v} className="bg-blue-950 text-white">
+          <option key={v} value={v} className="bg-ink text-white">
             {full}
           </option>
         ))}
@@ -301,11 +300,11 @@ export default function VisitorsPanel({
               than in the toolbar because it is not a filter — there is no "show
               only new" here, deliberately: the watermark is a reading aid, and
               turning it into a filter would make leaving the tab open change
-              which rows exist. The `accent` dot matches the row marker exactly,
+              which rows exist. The `data` dot matches the row marker exactly,
               so the two read as one idea. */}
           {newCount > 0 && (
             <span className="flex items-center gap-1.5 text-[11px] font-semibold text-white/85">
-              <span className="h-1.5 w-1.5 rounded-full bg-accent" aria-hidden="true" />
+              <span className="h-1.5 w-1.5 rounded-full bg-data" aria-hidden="true" />
               {newCount} new since your last visit
             </span>
           )}
@@ -322,7 +321,7 @@ export default function VisitorsPanel({
           flashing a skeleton — no layout jump. */}
       <Panel
         variant="raised-dark"
-        className={`rounded-2xl shadow-sm transition-opacity duration-300 ${
+        className={`rounded-2xl shadow-raised transition-opacity duration-300 ${
           loading && visitors !== null ? 'opacity-40' : 'opacity-100'
         }`}
       >
@@ -413,7 +412,7 @@ export default function VisitorsPanel({
                     The old active state swapped in `EyeOff`, which means
                     `Untracked` in the column right beside it. Nothing is lost by
                     dropping the swap: the pressed state already carries a solid
-                    `primary` fill and the label already changes to "N hidden",
+                    `luminous` fill and the label already changes to "N hidden",
                     so the glyph was a third telling of the same thing at the
                     cost of a chip that changed shape under the cursor. */}
                 <FilterChip

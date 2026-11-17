@@ -1,17 +1,17 @@
 # Contact Section
 
 Implemented across two files:
-- [src/components/sections/Contact/Contact.tsx](src/components/sections/Contact/Contact.tsx) — section shell (full-bleed photo background, parallax, particles, copy column)
+- [src/components/sections/Contact/Contact.tsx](src/components/sections/Contact/Contact.tsx) — section shell (a `lum` field, the copy column and the form)
 - [src/components/ui/ContactForm/ContactForm.tsx](src/components/ui/ContactForm/ContactForm.tsx) — the form itself, a standalone `components/ui` primitive (not Contact-specific — reusable anywhere)
 
-Positioned last in the home section stack, between Visuals and Footer. Wrapped in its own `ErrorBoundary` in `App.tsx` with a `mailto:` fallback if the section itself throws.
+Positioned last in the home section stack, between Visuals and Footer. Wrapped in its own `ErrorBoundary` in `App.tsx` with a `mailto:` fallback (`ContactFallback`, also a `lum` Section) if the section itself throws.
 
 ## Layout
 
-Two-column (`lg:grid-cols-2`, stacks on mobile) over a full-bleed photo background (`/contact/EJS01845-*`) with a parallax scrim, `Backdrop tone="photo"`, and the small/large particle layers reused from Hero.
+Two-column (`lg:grid-cols-2`, stacks on mobile) on `<Section tone="lum">`: a solid Luminous Blue field. The photo background, particles and frosted form it once had are gone; the hero is the page's one photographic moment.
 
-- **Left column** — Eyebrow "Say What's up" + H2 "Get in Touch" + two lines of copy + a `mailto:ericjshell@gmail.com` fallback line
-- **Right column** — `<ContactForm />`, a `Panel` (`variant="white"` or `"glass-light"`, toggle-able via an "ADA / WCAG" high-contrast switch in the corner)
+- **Left column** — a `SectionTitle` (eyebrow "Say What's up", heading "Get in Touch") with three description paragraphs, the last holding a `TextLink tone="field"` mailto fallback
+- **Right column** — `<ContactForm />`, a white card (`Panel variant="outline"`) with `shadow-float`. It has no theme: the old "ADA / WCAG" switch went with the glass it toggled away from
 
 ## Form fields
 
@@ -42,9 +42,10 @@ Re-validates everything server-side (never trust the client check alone), then:
 
 ## Styling
 
-- `Button` submit: `variant="primary"`, `rightIcon={<Send />}`.
-- Panel surface follows the theme toggle: `white` (light, high-contrast) or `glass-light` (frosted, matches the photo background) — see [/ui](ui.md) for what those variants mean.
-- Both columns use `CascadeGroup` + `CascadeItem` (`threshold={0.15}` left / `threshold={0.1}` right) per the scroll-animation rules in root CLAUDE.md.
+- `Button` submit: `variant="luminous"`, `rightIcon={<Send />}`.
+- The card carries `focus-on-paper`, so focus rings inside it are blue even though the section around it is a blue field (where rings are white). See [/ui](ui.md).
+- Fields are `Input` / `Textarea` at their default `tone="white"`.
+- The left column enters through `SectionTitle`; the form is its own `CascadeGroup threshold={0.15}` on the description's beat, per the scroll-animation rules in root CLAUDE.md.
 
 ## Footer nav
 

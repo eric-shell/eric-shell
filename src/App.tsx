@@ -2,7 +2,7 @@ import { lazy, Suspense, useEffect } from 'react'
 import './index.css'
 import { Header, Footer } from './components/layout'
 import { Hero, Work, Testimonials, Visuals, Contact } from './components/sections'
-import { Button, ErrorBoundary, Toaster } from './components/ui'
+import { Button, ErrorBoundary, Page, Section, Toaster } from './components/ui'
 import { useTitleCycle } from './hooks'
 
 const Resume = lazy(() => import('./components/sections/Resume'))
@@ -21,14 +21,14 @@ type Route =
 
 function ContactFallback() {
   return (
-    <section id="contact" className="min-h-[50vh] flex items-center justify-center bg-blue-950 text-white text-center px-6">
+    <Section id="contact" tone="lum" rhythm="none" className="min-h-[50vh] flex items-center justify-center text-center px-6">
       <div>
         <p className="font-sans text-lg mb-4">Something went wrong loading this section — but I'm still reachable.</p>
-        <Button href="mailto:ericjshell@gmail.com?subject=New%20Website%20Contact" variant="primary">
+        <Button href="mailto:ericjshell@gmail.com?subject=New%20Website%20Contact" variant="white">
           ericjshell@gmail.com
         </Button>
       </div>
-    </section>
+    </Section>
   )
 }
 
@@ -94,7 +94,7 @@ export default function App({ pathname }: AppProps) {
     <div>
       <a
         href="#main"
-        className="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-999 focus:px-4 focus:py-2 focus:rounded-lg focus:bg-blue-700 focus:text-white font-sans text-sm font-semibold"
+        className="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-999 focus:px-4 focus:py-2 focus:rounded-lg focus:bg-lum focus:text-white font-sans text-sm font-semibold"
       >
         Skip to content
       </a>
@@ -108,13 +108,13 @@ export default function App({ pathname }: AppProps) {
       ) : route.kind === 'note' ? (
         <Suspense fallback={null}><Note slug={route.slug} /></Suspense>
       ) : (
-        <main id="main">
+        <Page>
           <ErrorBoundary name="Hero"><Hero /></ErrorBoundary>
           <ErrorBoundary name="Work"><Work /></ErrorBoundary>
           <ErrorBoundary name="Testimonials"><Testimonials /></ErrorBoundary>
           <ErrorBoundary name="Visuals"><Visuals /></ErrorBoundary>
           <ErrorBoundary name="Contact" fallback={<ContactFallback />}><Contact /></ErrorBoundary>
-        </main>
+        </Page>
       )}
       <Footer />
       <Toaster />

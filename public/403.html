@@ -4,6 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="robots" content="noindex, nofollow" />
+    <meta name="theme-color" content="#0A1033" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <title>403 | Eric Shell</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -12,14 +13,16 @@
     <!--
       STANDALONE PAGE. Served straight out of /public (reachable at /403), so
       there is no React, no Tailwind build and no shared stylesheet available
-      here — the dark section vocabulary (Backdrop blobs, film grain, Display
-      headline, `primary` button) is hand-ported below.
+      here. The site's ink field, Display headline and `luminous` button are
+      hand-ported below.
 
-      404.html and src/admin/components/Login.tsx are the same layout. The CSS
-      is duplicated between the two static files ON PURPOSE: extracting it to a
-      shared asset would make an error page depend on a second network request
-      that may itself be what is failing, and two hand-written files do not
-      justify a template pipeline. Change one, change the other.
+      404.html and src/admin/components/Login.tsx are the same layout. The
+      style block is duplicated between the two static files ON PURPOSE:
+      extracting it to a shared asset would make an error page depend on a
+      second network request that may itself be what is failing, and two
+      hand-written files do not justify a template pipeline. The two blocks
+      must stay byte-identical (tests/ui-vocabulary.test.ts checks), so a
+      change to one is a paste into the other.
 
       COPY IS DELIBERATELY NON-SPECIFIC. This is what an unauthorized visitor
       sees, so it must not confirm what lives at the path they tried — no
@@ -35,29 +38,24 @@
       }
 
       :root {
-        /* Matches --color-blue-950 / --color-blue-600 / --color-blue-700 and
-           the `-vivid` hover steps in src/index.css. */
-        --canvas: oklch(0.198 0.025 269.84);
-        --blue-500: oklch(0.595 0.086 230.5);
-        --blue-600: oklch(0.546 0.091 231.5);
-        --blue-700: oklch(0.497 0.093 232.07);
-        --blue-600-vivid: oklch(0.546 0.107 231.5);
-        --blue-700-vivid: oklch(0.497 0.098 232.07);
-        /* feTurbulence grain, saturate(0) so it never tints the surface.
-           Identical to --noise-img in src/index.css. */
-        --noise-img: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='128' height='128'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='128' height='128' filter='url(%23n)'/%3E%3C/svg%3E");
+        /* The Luminous tokens this page needs, restated from @theme in
+           src/index.css. tests/ui-vocabulary.test.ts fails if they drift. */
+        --ink: #0A1033;
+        --lum: #2B54FF;
+        --lum-deep: #1D3FD6;
       }
 
       *, *::before, *::after { margin: 0; box-sizing: border-box; }
 
-      html { background: var(--canvas); }
+      html { background: var(--ink); }
 
+      /* The ink field, the same one the admin sign-in stands on. */
       body {
         min-height: 100svh;
         display: grid;
         place-items: center;
         padding: 3rem 1.5rem;
-        background: var(--canvas);
+        background: var(--ink);
         color: #fff;
         font-family: 'Google Sans', system-ui, sans-serif;
         font-weight: 550;
@@ -67,74 +65,8 @@
         text-align: center;
       }
 
-      /* ── Backdrop tone="dark" ─────────────────────────────────────────────
-         Three drifting radial blobs under a slow hue sweep, plus a grain film.
-         Positioned with inset only — the drift keyframes own `transform`. */
-      .backdrop {
-        position: fixed;
-        inset: 0;
-        overflow: hidden;
-        pointer-events: none;
-        z-index: 0;
-      }
-      .hue {
-        position: absolute;
-        inset: 0;
-        animation: ambient-hue 48s ease-in-out infinite alternate;
-      }
-      .blob {
-        position: absolute;
-        aspect-ratio: 1 / 1;
-        border-radius: 9999px;
-      }
-      /* Durations are co-prime-ish (26/34/42s) so the layers never sync.
-         `flip`ped relative to 404.html so the two pages don't read as copies. */
-      .blob-a {
-        top: 12%; left: -18%; width: 70%;
-        background: radial-gradient(circle at center, oklch(0.55 0.17 280 / 0.3) 0%, transparent 62%);
-        animation: ambient-a 26s ease-in-out infinite alternate;
-      }
-      .blob-b {
-        top: -22%; right: -16%; width: 55%;
-        background: radial-gradient(circle at center, oklch(0.6 0.15 300 / 0.2) 0%, transparent 62%);
-        animation: ambient-b 34s ease-in-out infinite alternate;
-      }
-      .blob-c {
-        bottom: -25%; right: 18%; width: 48%;
-        background: radial-gradient(circle at center, oklch(0.72 0.12 205 / 0.14) 0%, transparent 62%);
-        animation: ambient-c 42s ease-in-out infinite alternate;
-      }
-      .grain {
-        position: absolute;
-        inset: 0;
-        background-image: var(--noise-img);
-        background-size: 128px 128px;
-        mix-blend-mode: overlay;
-        opacity: 0.07;
-      }
-
-      @keyframes ambient-a {
-        from { transform: translate3d(0, 0, 0) scale(1) rotate(0deg); }
-        to   { transform: translate3d(5%, -7%, 0) scale(1.2) rotate(12deg); }
-      }
-      @keyframes ambient-b {
-        from { transform: translate3d(0, 0, 0) scale(1.15); }
-        to   { transform: translate3d(-7%, 5%, 0) scale(0.9); }
-      }
-      @keyframes ambient-c {
-        from { transform: translate3d(0, 0, 0) scale(0.9) rotate(0deg); }
-        to   { transform: translate3d(6%, 6%, 0) scale(1.15) rotate(-10deg); }
-      }
-      @keyframes ambient-hue {
-        from { filter: hue-rotate(-12deg); }
-        to   { filter: hue-rotate(18deg); }
-      }
-
-      /* ── Shared layout ────────────────────────────────────────────────────
-         Same vertical rhythm as 404.html and the admin Login. */
+      /* Same vertical rhythm as the other error page and the admin Login. */
       main {
-        position: relative;
-        z-index: 1;
         width: 100%;
         max-width: 30rem;
       }
@@ -146,6 +78,7 @@
       }
       .brand img { height: 2.5rem; }
 
+      /* Eyebrow */
       .eyebrow {
         display: block;
         margin-bottom: 0.75rem;
@@ -154,28 +87,30 @@
         text-transform: uppercase;
         letter-spacing: 0.05em;
         font-variation-settings: 'GRAD' 150;
-        color: rgba(255, 255, 255, 0.85);
+        color: rgb(255 255 255 / 0.85);
       }
 
+      /* Display heading: --tracking-display */
       h1 {
         margin-bottom: 1.25rem;
         font-family: 'Display', system-ui, sans-serif;
         font-weight: 700;
         text-transform: uppercase;
-        letter-spacing: -0.025em;
+        letter-spacing: -0.02em;
         line-height: 1;
         font-size: clamp(2.25rem, 9vw, 4.5rem);
       }
 
+      /* White at 65% on ink is 8.1:1. */
       .lede {
         margin: 0 auto 2rem;
         max-width: 26rem;
         font-size: 1rem;
         line-height: 1.6;
-        color: rgba(255, 255, 255, 0.65);
+        color: rgb(255 255 255 / 0.65);
       }
 
-      /* ── Button variant="primary" ─────────────────────────────────────── */
+      /* Button variant="luminous" */
       .cta {
         display: inline-flex;
         align-items: center;
@@ -183,47 +118,35 @@
         padding: 0.625rem 1.25rem;
         border: 1px solid transparent;
         border-radius: 0.5rem;
-        background-image: linear-gradient(to bottom right, var(--blue-600), var(--blue-700));
-        box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.16);
+        background: var(--lum);
         color: #fff;
         font-size: 0.875rem;
         font-weight: 600;
         text-decoration: none;
-        transition: background-image 200ms, box-shadow 200ms, transform 200ms;
+        transition: background-color 200ms, box-shadow 200ms, transform 200ms;
       }
-      /* Hover moves chroma, not lightness: darkening would walk the button
-         toward the canvas behind it. Mirrors SURFACE_HOVER.primary. */
+      /* Mirrors SURFACE_HOVER.luminous. The inset edge is what keeps the
+         button visible: its darker hover fill alone is 2.4:1 against ink. */
       .cta:hover {
-        background-image: linear-gradient(to bottom right, var(--blue-600-vivid), var(--blue-700-vivid));
+        background: var(--lum-deep);
         box-shadow:
-          inset 0 1px 0 0 rgba(255, 255, 255, 0.4),
-          inset 0 0 0 1px rgba(255, 255, 255, 0.22);
+          inset 0 1px 0 0 rgb(255 255 255 / 0.3),
+          inset 0 0 0 1px rgb(255 255 255 / 0.14);
         transform: scale(1.035);
       }
       .cta:active { transform: scale(0.985); }
 
-      ::selection { background: var(--blue-600); color: #fff; }
-      :focus-visible { outline: 2px solid var(--blue-500); outline-offset: 2px; }
+      ::selection { background: var(--lum); color: #fff; }
+      /* White, as on every ink field: a blue ring here would be 3.4:1. */
+      :focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
 
-      /* Drift freezes but stays visible — the blobs are the composition, not
-         the motion. Same treatment as src/index.css. */
       @media (prefers-reduced-motion: reduce) {
-        .hue, .blob { animation: none !important; }
         .cta { transition: none; }
         .cta:hover, .cta:active { transform: none; }
       }
     </style>
   </head>
   <body>
-    <div class="backdrop" aria-hidden="true">
-      <div class="hue">
-        <div class="blob blob-a"></div>
-        <div class="blob blob-b"></div>
-        <div class="blob blob-c"></div>
-      </div>
-      <div class="grain"></div>
-    </div>
-
     <main>
       <div class="brand">
         <img src="/icon.svg" alt="" />

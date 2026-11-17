@@ -83,8 +83,8 @@ A previous deploy stays aliased when a new one errors, so a rejection doesn't ta
 
 `/login`, `public/404.html` and `public/403.html` share **one layout**: logo pair, `Eyebrow`, Display headline on a single `clamp(2.25rem, 9vw, 4.5rem)`, lede, CTA — same vertical rhythm in all three, so they read as one system.
 
-- **The two static pages hand-port the design system.** Vercel serves them straight out of `/public`, so there is no React, no Tailwind build and no shared stylesheet: the dark `Backdrop` (three drifting blobs + 48s hue sweep), the film grain data-URI, the Display headline and the `primary` button gradient (including the chroma-not-lightness hover) are all rewritten as plain CSS. **Their CSS is duplicated between the two files on purpose** — extracting it would make an error page depend on a second network request that may itself be what is failing, and two hand-written files don't justify a template pipeline. Change one, change the other.
-- `prefers-reduced-motion` freezes the drift but keeps the blobs visible, matching what [src/index.css](src/index.css) does.
+- **The two static pages hand-port the design system.** Vercel serves them straight out of `/public`, so there is no React, no Tailwind build and no shared stylesheet: the ink field, the Display headline and the `luminous` button (including its inset-edge hover) are rewritten as plain CSS, with `--ink`, `--lum` and `--lum-deep` restated from `@theme`. **Their `<style>` blocks are duplicated between the two files on purpose** — extracting them would make an error page depend on a second network request that may itself be what is failing, and two hand-written files don't justify a template pipeline. The two blocks must be byte-identical and their three colours must equal the tokens; `tests/ui-vocabulary.test.ts` checks both, so a change to one is a paste into the other.
+- There is no ambient motion on these pages any more (the drifting blobs and grain went with the rest of the pre-Luminous UI); `prefers-reduced-motion` only has the button's hover scale to switch off.
 - **404 needs no rewrite** — Vercel serves `public/404.html` by convention for any unmatched path. **403 has no such convention**, so `vercel.json` gives it the clean `/403` URL. Nothing currently redirects there; it exists as the destination for any future edge deny, and as something to point at rather than leaking a raw 401 body.
 - **403's copy is deliberately non-specific.** It is what an unauthorized visitor sees, so it must never confirm what lives at the path they tried — no mention of an admin area, a dashboard, or a sign-in page.
 
@@ -107,12 +107,12 @@ Before this existed the CRM was really a *chat* log: every `visitors` row was a 
 
 ## Visual language
 
-The admin deliberately reuses the public site's design vocabulary rather than inventing admin chrome — it used to read as generic Tailwind scaffolding. **No new hues were added; the fixed palette decision in CLAUDE.md still holds, and there is no dark mode here either.**
+The admin deliberately reuses the public site's design vocabulary rather than inventing admin chrome — it used to read as generic Tailwind scaffolding. It stands on the site's `ink` field with `luminous` CTAs, the same pairing the public site uses on its dark sections. **No hues were added for it beyond the two `data` tokens for chart marks; the fixed palette decision in CLAUDE.md still holds, and this is not a dark mode.** Run `/ui` for the tokens and variants.
 
-- **Ambient canvas**: [src/admin/App.tsx](src/admin/App.tsx) renders `<Backdrop tone="light" className="fixed" />`. The `fixed` override matters — Backdrop defaults to `absolute`, which on a long scrolling visitor table would stretch the blobs to the full document height. It sits behind every panel, so it never reduces text contrast.
-- **Elevation over borders**: panels use `shadow-sm ring-1 ring-blue-950/4` for layered depth. The expanded visitor detail is tinted `bg-blue-50/60` with `shadow-inner` so it reads as a drawer off the selected row, not another flat top-level card.
+- **Canvas**: [src/admin/App.tsx](src/admin/App.tsx) is a flat `bg-ink` root carrying `focus-on-field`, which turns every focus ring inside it white (the default ring is Luminous Blue, 3.4:1 against ink). There is no `Backdrop`; that component was deleted.
+- **Panels**: every panel is `Panel variant="raised-dark"` (a faint white fill and border), with `shadow-raised`. The expanded visitor detail is recessed with `bg-black/25` so it reads as a drawer off the selected row, not another flat top-level card. Inline errors are `notice-error`.
 - **Type**: `Eyebrow` + `H2` pairing in the header and login, matching the site's section headers. Stat-tile labels stay **uppercase micro-type** to match the `Eyebrow` idiom — a deliberate departure from the dataviz skill's sentence-case stat-tile default, since casing is a design-system parameter.
-- **Semantic color is reserved for one thing**: a contact submission. Used on the "Converted" tile and the table's `Sent` column, always with a `MailCheck` icon so it is never color-alone. `green-700` is 5.96:1 on white (AA text).
+- **Semantic color is reserved for one thing**: a contact submission. Used on the "Converted" tile and the table's `Sent` column, always with a `MailCheck` icon so it is never color-alone. `success-bright` is 7.18:1 on ink (AA text).
 
 ### The insight cards need `min-w-0`, and it is load-bearing
 
@@ -138,17 +138,20 @@ elides. The harness now asserts this directly — see the gutter check below.
 
 ### Chart colors — validated, not eyeballed
 
-[VisitorsChart.tsx](src/admin/components/VisitorsChart.tsx) is a single series, so **it has no legend** (the caption names it). Colors come from the brand ramp and were run through the dataviz skill's `validate_palette.js`:
+[VisitorsChart.tsx](src/admin/components/VisitorsChart.tsx) is a single series, so **it has no legend** (the caption names it). Every chart colour comes from [src/admin/lib/chartTheme.ts](src/admin/lib/chartTheme.ts), which reads two tokens and is the source of truth for the figures below:
 
-| Role | Token | Hex | Result |
-|---|---|---|---|
-| Bar body (de-emphasis) | `blue-400` | `#64a3c0` | light-end contrast 2.78:1 vs white ✅ |
-| Current / hovered period (accent) | `blue-700` | `#186b8e` | ordinal pair: monotone L, ΔL ≥ 0.06, hue spread 3° ✅ |
+| Role | Token | Contrast on ink |
+|---|---|---|
+| Bright end of the ramp, single-series marks | `data` | 7.86:1 |
+| Deep end of the ramp (always labelled) | `data-deep` | 2.59:1 |
+| Canvas, for surface gaps and mark rings | `ink` | n/a |
 
-Two findings worth remembering before you touch these:
+Things worth remembering before you touch these:
 
-- **`blue-200` fails** the ordinal light-end floor at **1.60:1** vs white — bars would nearly vanish on a white panel. Don't reach for it as a "subtle" bar fill. `blue-300` (2.05:1) passes but `blue-400` is the comfortable choice.
-- **The brand blue is below the validator's chroma floor** (`blue-600` chroma 0.091, "reads gray"). That's fine for a lone series where no adjacent-pair discrimination is needed, but it means **this palette can't carry a multi-series categorical chart** — green↔red already fail CVD separation at ΔE 3.0. If you ever need more than one series, use small multiples or faceting, not more hues.
+- **`data` is for non-text marks only.** A white label on it is 2.36:1. A CTA on the ink canvas is `luminous`.
+- **The ordinal ramp (`ordinalStep`) was validated with the dataviz skill's `validate_palette.js` against the admin's previous canvas, `#111521`.** The canvas is now `ink` (`#0A1033`), whose luminance is almost identical, so the contrast figures moved up slightly, but the validator has not been re-run with `--surface "#0A1033"`. Re-run it before changing the ramp.
+- **`MAGNITUDE_FLOOR` is load-bearing**: it starts the ramp at 0.2 so the dimmest bar clears 3:1 against the canvas (3.29:1). See the comment in `chartTheme.ts`.
+- **This palette can't carry a multi-series categorical chart.** It is one hue. If you ever need more than one series, use small multiples or faceting, not more hues.
 
 Mark specs the chart implements (from the skill): bars capped at **24px** with the band's leftover left as air, **4px** rounded data-end and square at the baseline, hairline solid baseline (never dashed), the hit target is the full column (not the few-pixel bar), the direct label is selective (hovered/latest only), and every value is also in an `sr-only` list so nothing is gated behind hover. It's built from divs rather than SVG because the old `preserveAspectRatio="none"` stretched non-uniformly and distorted both the corner radius and the gaps.
 
@@ -160,9 +163,9 @@ That control is a plain `<select>` rather than the shared [Dropdown](src/compone
 
 - It is `md:hidden`, so it only ever renders on a phone. On Android a native select opens the **OS picker** — a full-width sheet with large touch targets — where `Dropdown` renders a `position: fixed` in-page listbox sized for a mouse.
 - `Dropdown`'s keyboard navigation is its main advantage, and it does nothing on a touch screen.
-- `Dropdown` hardcodes `variant="primary"` on its trigger (a solid blue CTA, far too loud beside a direction toggle) and a light listbox (`bg-white`, `text-blue-950`). Using it here would mean adding a trigger `variant` prop plus dark listbox styling to a shared component, for one mobile-only call site.
+- `Dropdown`'s listbox is light (`bg-white`, `text-ink`), built for the public site's blue field. Using it here would mean adding dark listbox styling to a shared component, for one mobile-only call site.
 
-Reconsider only if `Dropdown` picks up a dark variant for some other reason, or if a desktop sort control ever appears — sorting on desktop is the column headers.
+Reconsider only if `Dropdown` picks up a dark listbox for some other reason, or if a desktop sort control ever appears — sorting on desktop is the column headers.
 
 The direction toggle deliberately uses `ArrowUpNarrowWide` / `ArrowDownWideNarrow`, never a chevron: the native select draws its own chevron immediately to the left, and two side by side read as two dropdowns. It also carries the word Asc/Desc so it never depends on the glyph.
 
@@ -309,9 +312,9 @@ Six tones, ordered by how loudly they argue for attention. `TagTone` in [classif
 - **`danger` vs `reject` is one ring width** (`/25` vs `/15`) and nothing else, because a second red at 9px would read as the same colour anyway. That single step is the only visual separation, so don't merge them: `Spam?` asks you to go and read a message, the rejects ask for nothing. `TONE_RANK` keeps the same order, which is what stops fifteen machines floating above the one spam row in a Flags sort.
 - **Amber means "corroborates but cannot convict".** `VPN?` and `Burst` are the two halves of the `Proxy` rule, and that rule exists precisely because neither half is decisive alone — amber says "this is why the red row beside it is red". It is rare on purpose: three rows in the live table.
 - **`Bounce` is deliberately NOT amber.** It is a real person who left quickly, it is the most common honest outcome on the site, and it outnumbered the genuine warnings — amber on it would paint ordinary humans as suspects and drain the colour of meaning. It lives in `neutral` beside `Skimmed`, its actual neighbour: the two are adjacent points on one engagement scale, not different kinds of fact. **Moving it back into `warn` undoes the whole point of the amber tier.**
-- **Amber is not a new hue.** It is hue 75, the same as the existing `--color-warning`, which sits at L 0.546 — a button surface, too dark for ink on the dark canvas. `--color-amber-400` is the one ramp step added for that. Its L (0.750) sits above red-400 and green-400 (~0.69) on purpose: hue 75 is intrinsically lighter and matching their L reads brown.
+- **Amber is one token.** `--color-warning-bright` (hue 75, L 0.750) exists for these badges alone. Its L sits above `error-bright` and `success-bright` (~0.69) on purpose: hue 75 is intrinsically lighter and matching their L reads brown.
 - **Amber beside red is the classic CVD confusion pair.** Survivable here only because every badge carries an icon *and* a word, so colour is never the sole channel — keep it that way. (In the live table they never share a cell anyway: `Bounce` was the only warn tag that could sit next to a red nature, and it no longer does.)
-- **Alpha goes on the fill, never the ink.** Full `red-400` over the `reject` fill is 5.70:1 against the composited background — AA for 9px text. Dropping the text to `red-400/85` lands at 4.47:1 and fails. `amber-400` is 8.00:1 on the canvas and 7.24:1 over its own fill.
+- **Alpha goes on the fill, never the ink.** Full `error-bright` over the `reject` fill stays AA for 9px text; dropping the text itself to `/85` does not (measured on the previous canvas as 5.70:1 against 4.47:1, and ink is marginally darker, so both sit a little higher now). `warning-bright` is 8.13:1 on ink.
 - Verified by screenshotting one row per tone through `check:crm-ui`'s stubbing approach; green and red coexist legibly on a `Converted` + `Spam?` row.
 
 **Tags are derived at render time, never stored.** Changing a rule relabels the whole history on the next paint — there is nothing to backfill, and nothing to migrate if a rule turns out wrong.

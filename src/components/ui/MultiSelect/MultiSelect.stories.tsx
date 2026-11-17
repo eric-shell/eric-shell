@@ -52,7 +52,7 @@ function Controlled({
   return (
     <div className="flex w-[28rem] flex-col gap-4">
       <MultiSelect {...props} values={values} onChange={setValues} />
-      <p className="font-sans text-sm text-blue-950/60">
+      <p className="font-sans text-sm text-ink-mute">
         {values.length === 0 ? 'Nothing selected' : `Selected: ${values.join(', ')}`}
       </p>
     </div>
@@ -117,7 +117,7 @@ export const InAControlBar: Story = {
     const [tags, setTags] = useState<string[]>(['Performance', 'SEO', 'Tailwind', 'React'])
     const canReset = tags.length > 0 || sort !== 'newest'
     return (
-      <div className="w-[44rem] rounded-xl bg-gradient-to-br from-white to-blue-50 p-6">
+      <div className="w-[44rem] rounded-xl bg-gradient-to-br from-white to-ice p-6">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div className="flex flex-wrap items-center gap-2">
             <Dropdown
@@ -172,13 +172,13 @@ export const OpensUpwardNearViewportEdge: Story = {
  * itself stays light, same as `Dropdown`.
  */
 export const InDarkTheme: Story = {
-  parameters: { backgrounds: { default: 'blue-950' } },
+  parameters: { backgrounds: { default: 'ink' } },
   render: () => (
     <div className="p-8">
       <Controlled
         options={frameworks}
         placeholder="Frameworks"
-        variant="glass-light"
+        variant="tint-white"
         initial={['react']}
       />
     </div>

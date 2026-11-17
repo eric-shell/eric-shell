@@ -26,7 +26,7 @@ export default function Dropdown({
   onChange,
   placeholder = 'Select…',
   className = '',
-  variant = 'primary',
+  variant = 'white',
 }: DropdownProps) {
   const [open, setOpen] = useState(false)
   const [focusedIndex, setFocusedIndex] = useState(-1)
@@ -155,7 +155,7 @@ export default function Dropdown({
           // unmount. Same fix MultiSelect carries, for the same bug.
           onMouseDown={(e) => e.preventDefault()}
           style={{ top: coords.top, left: coords.left, minWidth: coords.minWidth }}
-          className="fixed z-[9999] overflow-hidden rounded-lg border border-blue-950/10 bg-white shadow-lg"
+          className="fixed z-[9999] overflow-hidden focus-on-paper rounded-lg border border-ink/10 bg-white shadow-popover"
         >
           {options.map((option, i) => {
             const isSelected = option.value === value
@@ -174,10 +174,10 @@ export default function Dropdown({
                   onMouseEnter={() => setFocusedIndex(i)}
                   className={`flex items-center gap-2 w-full px-4 py-2 text-left font-sans text-sm font-semibold transition cursor-pointer ${
                     isSelected
-                      ? 'text-white bg-blue-700'
+                      ? 'text-white bg-lum'
                       : isFocused
-                        ? 'text-blue-950 bg-blue-50'
-                        : 'text-blue-950 hover:bg-blue-50'
+                        ? 'text-ink bg-ice'
+                        : 'text-ink hover:bg-ice'
                   }`}
                 >
                   {option.icon && <span aria-hidden="true">{option.icon}</span>}

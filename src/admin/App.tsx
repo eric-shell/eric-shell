@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
-import { Backdrop, Toaster } from '../components/ui'
+import { Toaster } from '../components/ui'
 import Login from './components/Login'
 import Dashboard from './components/Dashboard'
 import { DashboardBoot, LoginBoot } from './components/BootSkeleton'
@@ -68,13 +68,10 @@ export default function App() {
   const ready = authed !== null && authed !== isLogin
 
   return (
-    <div className="relative min-h-screen bg-blue-950 text-white font-sans">
-      {/* The site's dark-section language (Testimonials, Footer), not a theme
-          flip: indigo/violet ambient blobs over a blue-950 canvas. `fixed`
-          (rather than Backdrop's default `absolute`) keeps the blobs
-          viewport-sized on a long scrolling table instead of stretching to the
-          document height. It sits behind every panel, never over text. */}
-      <Backdrop tone="dark" className="fixed" />
+    // The ink field, the same one the public site's hero and footer stand on.
+    // `focus-on-field` turns every focus ring in here white: the default ring
+    // is Luminous Blue, which is 3.4:1 against ink and loses to the panels.
+    <div className="relative min-h-screen bg-ink text-white font-sans focus-on-field">
       <div className="relative">
         <Toaster />
         {/* Shaped by the route, which is known synchronously — the probe is a

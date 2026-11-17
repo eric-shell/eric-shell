@@ -1,4 +1,4 @@
-import { twMerge } from 'tailwind-merge'
+import { cn } from '@/components/ui/cn'
 
 interface Props<T extends string> {
   tabs: ReadonlyArray<readonly [T, string]>
@@ -9,17 +9,17 @@ interface Props<T extends string> {
 
 export default function TabBar<T extends string>({ tabs, active, onChange, className }: Props<T>) {
   return (
-    <div className={twMerge('flex border-b border-white/10', className)} role="tablist">
+    <div className={cn('flex border-b border-white/10', className)} role="tablist">
       {tabs.map(([key, label]) => (
         <button
           key={key}
           role="tab"
           aria-selected={active === key}
           onClick={() => onChange(key)}
-          className={twMerge(
+          className={cn(
             'cursor-pointer px-4 py-2 text-xs font-semibold uppercase tracking-wide border-b-2 -mb-px transition-colors',
             active === key
-              ? 'border-accent text-white'
+              ? 'border-data text-white'
               : 'border-transparent text-white/80 hover:text-white'
           )}
         >

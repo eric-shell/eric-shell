@@ -1,4 +1,4 @@
-import { twMerge } from 'tailwind-merge'
+import { cn } from '@/components/ui/cn'
 import {
   AlertTriangle, BookOpen, Bot, EyeOff, FlaskConical, Footprints, Globe,
   MailCheck, MessageSquare, MoonStar, RotateCcw, Sparkles, VenetianMask, Waypoints,
@@ -18,8 +18,8 @@ import type { TagTone, VisitorTag } from '../lib/classify'
  * worse than no judgement.
  */
 const TONE: Record<TagTone, string> = {
-  // red-400 is 6.10:1 on the canvas — AA text.
-  danger: 'text-red-400 bg-red-400/10 ring-red-400/25',
+  // error-bright is 6.10:1 on the canvas — AA text.
+  danger: 'text-error-bright bg-error-bright/10 ring-error-bright/25',
   // Traffic to discount, given the same weight as `good` so the column reads
   // symmetrically: green means a person did something, red means don't bother.
   //
@@ -29,13 +29,13 @@ const TONE: Record<TagTone, string> = {
   // never be merged: `Spam?` asks you to go and read a message, while these ask
   // for nothing at all. `TONE_RANK` in sortVisitors.ts encodes the same order.
   //
-  // Full red-400 over this fill is 5.70:1 against the composited background,
+  // Full error-bright over this fill is 5.70:1 against the composited background,
   // clearing AA for the 9px badge text. Dropping the ink to /85 lands at 4.47:1
   // and fails it — keep the alpha on the fill, never on the text.
-  reject: 'text-red-400 bg-red-400/[0.07] ring-red-400/15',
-  // green-400 is 7.04:1 on the canvas — AA text. Paired with an icon, never
+  reject: 'text-error-bright bg-error-bright/[0.07] ring-error-bright/15',
+  // success-bright is 7.04:1 on the canvas — AA text. Paired with an icon, never
   // colour alone.
-  good:   'text-green-400 bg-green-400/10 ring-green-400/25',
+  good:   'text-success-bright bg-success-bright/10 ring-success-bright/25',
   // Amber, at the same hue as `--color-warning`. Corroborating evidence: it
   // explains a red row beside it, or asks you to keep an eye on this one.
   //
@@ -46,13 +46,13 @@ const TONE: Record<TagTone, string> = {
   // Rare on purpose — `VPN?` and `Burst` only, three rows in the live table.
   // `Bounce` was moved out to `neutral` in the same change; it outnumbered them
   // and is a real person, so leaving it here would have made amber mean
-  // "someone visited briefly". amber-400 is 8.00:1 on the canvas, 7.24:1 over
+  // "someone visited briefly". warning-bright is 8.00:1 on the canvas, 7.24:1 over
   // this fill — AA at 9px.
   //
   // Amber next to red is the classic red/green-blind confusion pair, which is
   // survivable here ONLY because every badge carries an icon and a word; colour
   // is never the sole channel. Keep it that way.
-  warn:   'text-amber-400 bg-amber-400/[0.07] ring-amber-400/20',
+  warn:   'text-warning-bright bg-warning-bright/[0.07] ring-warning-bright/20',
   // What's left after `reject` took the unwanted machines: the expected ones.
   // Googlebot indexing the site is the system working, and `Test` is our own
   // traffic — neither is a problem, so neither gets an alarm colour.
@@ -95,7 +95,7 @@ export default function VisitorTags({ tags, className }: { tags: VisitorTag[]; c
   return (
     // No margin of its own — it sits in a table cell on desktop and stacked
     // under the id on a phone, which want different spacing.
-    <span className={twMerge('flex flex-wrap items-center gap-1', className)}>
+    <span className={cn('flex flex-wrap items-center gap-1', className)}>
       {tags.map(t => {
         const Icon = ICON[t.label] ?? Bot
         return (

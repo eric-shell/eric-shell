@@ -7,10 +7,12 @@ const preview: Preview = {
     backgrounds: {
       default: 'white',
       values: [
+        // The four fields the site is built from. Keep in step with @theme in
+        // src/index.css (tests/ui-vocabulary.test.ts checks `ink`).
         { name: 'white', value: '#ffffff' },
-        { name: 'blue-50', value: '#e7f2f6' },
-        { name: 'blue-950', value: '#111521' },
-        { name: 'black', value: '#030407' },
+        { name: 'ice', value: '#EAF0FF' },
+        { name: 'lum', value: '#2B54FF' },
+        { name: 'ink', value: '#0A1033' },
       ],
     },
     layout: 'centered',

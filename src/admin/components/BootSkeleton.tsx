@@ -97,7 +97,7 @@ export function LoginBoot() {
           <Skeleton className="mx-auto mb-5 h-[clamp(2.25rem,9vw,4.5rem)] w-40" />
           <Skeleton className="mx-auto mb-2 h-4 w-full max-w-104" />
           <Skeleton className="mx-auto mb-8 h-4 w-3/5 max-w-104" />
-          <Panel variant="raised-dark" className="mx-auto w-full max-w-sm rounded-2xl p-6 shadow-2xl shadow-black/40">
+          <Panel variant="raised-dark" className="mx-auto w-full max-w-sm rounded-2xl p-6 shadow-float">
             {/* Input label, field, then the right-aligned submit. */}
             <Skeleton className="mb-1.5 h-3 w-20" />
             <Skeleton className="h-11 w-full rounded-lg" />

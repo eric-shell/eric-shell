@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react'
-import { twMerge } from 'tailwind-merge'
+import { cn } from '@/components/ui/cn'
 import { Markdown, Panel } from '../../components/ui'
 import { adminMdComponents } from '../../lib/markdown'
 import { formatLong } from '../lib/dateFormat'
@@ -75,12 +75,12 @@ export default function ConversationTimeline({ messages, clearEvents, scrollDep 
         ) : (
           <li
             key={item.data.id}
-            className={twMerge('flex flex-col', item.data.role === 'user' ? 'items-end' : 'items-start')}
+            className={cn('flex flex-col', item.data.role === 'user' ? 'items-end' : 'items-start')}
           >
             <Panel
-              variant={item.data.role === 'user' ? 'primary' : 'white'}
-              className={twMerge(
-                'max-w-[85%] rounded-2xl px-4 py-2.5 font-sans text-sm shadow-sm',
+              variant={item.data.role === 'user' ? 'luminous' : 'white'}
+              className={cn(
+                'max-w-[85%] rounded-2xl px-4 py-2.5 font-sans text-sm shadow-raised',
                 item.data.role === 'user' && 'whitespace-pre-wrap'
               )}
             >

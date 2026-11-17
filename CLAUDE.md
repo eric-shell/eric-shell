@@ -24,6 +24,7 @@ src/
 │   ├── layout/            # Site chrome shared across routes
 │   │   ├── Header/        # Floating capsule (logo + menu button naming the current section) + left sidebar with every footer link; icon echo easter egg
 │   │   ├── Footer/        # Social links, nav, copyright, privacy link
+│   │   ├── DisplayLink.tsx # Display-caps nav link with the hover arrow, shared by the menu and the footer
 │   │   └── index.ts
 │   ├── sections/          # Full-width page sections — each in its own directory with index.ts barrel
 │   │   ├── Hero/          # Above-the-fold: name, title, tagline, CTAs, particle effects
@@ -35,37 +36,46 @@ src/
 │   │   ├── Privacy/       # /privacy route — data-handling disclosure
 │   │   ├── Notes/         # /notes index (Notes.tsx) + /notes/<slug> article (Note.tsx)
 │   │   └── index.ts       # Barrel export for all sections
-│   └── ui/                # Reusable primitives — import from 'components/ui'
-│       ├── Backdrop/      # Ambient section background — drifting hue-shifting gradient blobs + film grain (tone: light|dark|photo)
-│       ├── Button/        # Polymorphic button/anchor — consumes variants.ts; size (sm|md|lg), shape (pill|square)
-│       ├── Card/          # <a> + Panel(white) + Pill composition for project/work-grid cards
+│   └── ui/                # The UI system — import from 'components/ui'. Run /ui before touching it
+│       ├── Button/        # Polymorphic button/anchor; required `variant`; size (sm|md|lg), shape (pill|square)
+│       ├── Card/          # The white card (Work grid, notes index, note pager): one stretched link, tag pills, hover lift
 │       ├── Cascade/       # CascadeGroup + CascadeItem + CascadeContext (scroll/mount entrance animation)
-│       ├── Chat/          # Genie-style panel (solid white card), textarea, submit
-│       ├── Colors/        # Storybook-only palette reference (not exported from the barrel)
+│       ├── Chat/          # Genie-style panel (white card), textarea, submit
+│       ├── Code/          # Inline code chip
 │       ├── Container/     # 1440px max-width + horizontal padding wrapper
 │       ├── ContactForm/   # Name/email/message form w/ validation + toast feedback — used by Contact section
 │       ├── Dropdown/      # Accessible select w/ full keyboard nav (arrows, Home/End, Enter)
 │       ├── ErrorBoundary/ # Per-section error boundary — name prop labels logs/analytics, optional fallback
-│       ├── Eyebrow/       # Small uppercase label above headings (font-sans, GRAD 150)
+│       ├── Eyebrow/       # The kicker above a section heading (font-sans, GRAD 150); used through SectionTitle
+│       ├── Field/         # field.ts — the styles Input and Textarea share (tone: white|dark). Not in the barrel
+│       ├── FilterBar/     # Sort + tag filter + announced count + Reset, for a filterable grid; pairs with useTagFilter
 │       ├── Heading/       # H1, H2, H3 display headings
 │       ├── Input/         # Text input primitive
+│       ├── Label/         # Small uppercase label (dates, stat captions, nav group heads); as span|p|dt|time
+│       ├── Lead/          # The paragraph after a heading; size md|lg
+│       ├── Markdown/      # The only react-markdown renderer, its own chunk
 │       ├── MultiSelect/   # Multi-value listbox dropdown — set selection, optional filter field, drop-up placement
-│       ├── Panel/         # Div-only wrapping surface — consumes variants.ts
+│       ├── PageHero/      # Inner-route masthead: a lum Section with a Container
+│       ├── Panel/         # Div with a variant's surface; required `variant`
 │       ├── Pill/          # Tag/filter chip — active state, optional dismiss X
-│       ├── Post/          # Instagram-grid tile — responsive <picture> + LQIP blur-up
 │       ├── RiseText/      # Display heading whose letters rise in order; kerned from src/lib/displayKerning.ts
-│       ├── SectionHeader/ # Eyebrow + H2 pair, optional action button slot (non-home pages)
-│       ├── SectionTitle/  # Home section header: eyebrow + RiseText H2 + description, one entrance rhythm (descDelay)
+│       ├── Section/       # Every <section> and <main>: Section (tone lum|ink|white|inherit, rhythm) and Page
+│       ├── SectionTitle/  # Every section header: eyebrow + RiseText heading + description, one entrance rhythm (descDelay); as h1|h2, size poster|compact, sticky
+│       ├── Sheet/         # A rounded sheet rising over the field above: white under a PageHero, lum + widen for Work
+│       ├── SocialLink/    # Round outlined profile link; tone lum|ink
+│       ├── TextLink/      # A link inside a sentence; tone lum|field|inherit
 │       ├── Textarea/      # Multiline text input primitive
 │       ├── Toast/         # Imperative toast queue — toast.success/error/info() + <Toaster/>
-│       ├── variants.ts    # Shared SURFACE + SURFACE_HOVER maps (single source of truth)
+│       ├── Tokens/        # Storybook-only: the palette, radii and shadows read out of index.css
+│       ├── cn.ts          # tailwind-merge taught the site's token names. The only file that may import tailwind-merge
+│       ├── variants.ts    # The surface variants (single source of truth). Private to components/ui
 │       └── index.ts       # Barrel export for all ui components
 ├── admin/                 # Admin CRM SPA (separate Vite entry; see /crm)
 │   ├── components/        # Dashboard, Login, VisitorList, VisitorDetail (orchestrator), VisitorMetaGrid, ConversationTimeline, ActivityTimeline, VisitorsChart, ContactSubmissionList, TabBar, Skeleton
 │   ├── hooks/             # useVisitorDetail (fetch + notes/location save + delete + dirty flag)
 │   └── lib/               # api.ts (apiCall helper), dateFormat.ts, location.ts (resolveLocation), lastVisit.ts, userAgent.ts
 ├── data/                  # Typed data files (work.ts, testimonials.ts, instagram.ts, navigation.ts, resume.ts, notes.ts, chat-context.ts)
-├── hooks/                 # useChat, useCarousel, useIntersectionObserver, useParallax, useTitleCycle, useWaveGrid, useCountUp
+├── hooks/                 # useChat, useCarousel, useIntersectionObserver, useParallax, useTitleCycle, useWaveGrid, useCountUp, useTagFilter
 ├── lib/                   # Browser-side helpers (visitorId.ts, telemetry.ts, markdown.tsx)
 ├── App.tsx                # Root component — assembles sections, routes /resume and /privacy
 ├── main.tsx               # React entry point
@@ -82,7 +92,7 @@ api/                       # Vercel serverless functions (auto-discovered)
 
 db/schema.sql              # Postgres schema (Neon) — apply manually, see /crm
 
-tests/                     # Vitest — house rules for notes, chat validation, visitor helpers, the CRM unsaved-edits guard
+tests/                     # Vitest — the UI vocabulary guard, house rules for notes, chat validation, visitor helpers, the CRM unsaved-edits guard
 ```
 
 Path alias: `@/*` → `src/*` is configured in `vite.config.ts` and `tsconfig.app.json`. Use `@/data`, `@/hooks`, `@/lib/...` rather than long `../../../` chains.
@@ -92,31 +102,38 @@ Path alias: `@/*` → `src/*` is configured in `vite.config.ts` and `tsconfig.ap
 - All components spread `...props` onto the root element and accept `className` for overrides.
 - Headings default to `color: inherit` — set text color on the parent or via `className`.
 - `Eyebrow` applies `fontVariationSettings: "'GRAD' 150"` for the optical weight effect used across the site.
-- **Variant system**: `Button`, `Panel`, and `Pill` all consume `SURFACE` / `SURFACE_HOVER` maps from [src/components/ui/variants.ts](src/components/ui/variants.ts). Variants: `primary | secondary | ghost | glass-light | glass-dark | error-glass | success-glass | white`. Run `/ui` for the full reference, rules, and examples. Never hand-roll surface color classes (`bg-blue-950 text-white`, `glass-blur bg-white/10 border-white/20`, etc.) at call sites — use the variant, or add one if needed.
-- `Button` defaults to `variant="secondary"`. Pass `href` to render as `<a>`. Two additional axes:
+- **The UI system is closed, and three things enforce it.** Run `/ui` for the full reference before building anything visible.
+  - **Tokens.** The `@theme` block in [src/index.css](src/index.css) opens with `--color-*: initial; --shadow-*: initial; --inset-shadow-*: initial`, which deletes Tailwind's own palette and shadow scale. The only colours are the ones declared there (`lum`, `lum-deep`, `ink`, `ink-soft`, `ink-mute`, `ice`, `glow`, the status and `data` tokens), so `bg-blue-950` or `shadow-lg` compiles to nothing. **Don't remove those three lines.** A new colour, radius or shadow is added there and in [cn.ts](src/components/ui/cn.ts).
+  - **Types and lint.** `Button` and `Panel` take a **required** `variant` from [variants.ts](src/components/ui/variants.ts): `luminous | white | outline | tint-white | tint-ink | raised-dark | notice-error | notice-success | notice-info | success | error`. There is no default, because no surface is right on every field. ESLint refuses importing the variant maps outside `components/ui` (use `surface()` from the barrel), importing `tailwind-merge` anywhere but `cn.ts` (use `cn`), a raw `<section>` / `<main>` / `<h2>` / `<h3>` in `sections/`, `layout/` and `App.tsx`, and colour, shadow or radius literals in an inline `style`.
+  - **`tests/ui-vocabulary.test.ts`.** It parses the source with the TypeScript compiler and fails on any palette class that is not a token, any hex / `rgb()` / `oklch()` literal, any arbitrary `rounded-[…]`, `shadow-[…]` or colour value, `backdrop-*`, `dark:`, and the names of removed variants and utilities. Sizes (`text-[clamp(…)]`, `w-[7.75rem]`, `calc()`) are untouched. The failure message names the token to use. A genuine exception goes in [tests/ui-vocabulary.allowlist.ts](tests/ui-vocabulary.allowlist.ts) with a reason; an unused entry fails the test.
+- **Which variant goes on which field**: on `lum`, `white` for the main action and `tint-white` for the second; on `ink`, `luminous` and `tint-ink`, with `raised-dark` panels; on white, `luminous` and `outline`. `white` has no border, so it is invisible on white: that is what `outline` is for.
+- **A field is a `Section` (or a `Sheet`), never classes.** `Section tone="lum|ink|white"` sets the background, the text colour and the focus-ring colour together; `rhythm` sets the vertical padding (`section` / `block` / `tight` / `none`). `Page` is a route's `<main>`.
+- **Focus rings follow the field.** One global ring, drawn in `--focus-ring` (default `lum`). `focus-on-field` makes it white on `lum` and `ink` (a blue ring on the blue field is 1.4:1); `focus-on-paper` sets it back on a white surface inside a field. `Section`, `Sheet`, `Card`, `Chat`, `ContactForm` and the dropdown panels apply these. Don't write `focus-visible:outline-*` at a call site.
+- **Repeated type has a primitive**: `Lead` (the paragraph after a heading), `Label` (small uppercase label), `TextLink` (a link in a sentence), `Code` (inline chip). `text-glow` is for `ink` only; on `lum` it is under 4:1, so labels there stay white.
+- `Button` axes besides `variant`:
   - `size` (`sm` | `md` | `lg`, default `md`) — controls text scale and padding.
   - `shape` (`pill` | `square`, default `pill`) — `pill` for text buttons; `square` for icon-only buttons.
-  - `as="span"` renders the button's appearance on a non-interactive `<span>`, for a button inside something already clickable (a whole-card `<a>`, where nesting a button or link is invalid HTML). It exists so those call sites can still use a variant instead of hand-rolling surface classes. Never for something clickable in its own right.
-- `Panel` is a div-only wrapping surface (default `variant="secondary"`). For clickable cards, wrap `<Panel>` in an `<a>` — it is not polymorphic. `Card` (in `components/ui`) already packages this pattern for image/title/description/tag-pill cards — prefer it over hand-rolling a new one.
-- `Dropdown` is light-theme by default; swap border/bg classes via `className` if needed in a dark section. Focus never enters its list: the trigger keeps it and uses `aria-activedescendant`, the list's `onMouseDown` prevents the default, and `selectAt` refocuses the trigger. Without those a mouse pick focuses an option that is about to unmount and drops focus on `<body>` (the same bug `MultiSelect` documents).
+  - `as="span"` renders the button's appearance on a non-interactive `<span>`, for a button inside something already clickable (a `Card`'s footer), where a real button would be a second control to the same place. Never for something clickable in its own right.
+- `Panel` is a div with a variant's surface, nothing more. **A card is a `Card`**: the Work grid, the notes index and the note pager all use it. Its title is one stretched link that covers the card, so the tag pills inside stay real buttons and the link's accessible name is the title; don't wrap a card in an `<a>`. `useWaveGrid` finds cards by their `data-card` attribute.
+- `FilterBar` + `useTagFilter` are the sort / tag-filter / count / reset controls and their state, shared by the Work grid and the notes index. A third filterable grid uses both.
+- `Dropdown`'s panel is always the white listbox; its trigger takes a `variant` (default `white`). Focus never enters its list: the trigger keeps it and uses `aria-activedescendant`, the list's `onMouseDown` prevents the default, and `selectAt` refocuses the trigger. Without those a mouse pick focuses an option that is about to unmount and drops focus on `<body>` (the same bug `MultiSelect` documents).
 - `MultiSelect` is the multi-value form of `Dropdown` — same trigger, portal, and keyboard model, but selection is a set and choosing an option keeps the panel open. Used by the `Work` grid and the notes index for tag filtering. Its option list is **derived** from the data in both places, never hand-listed. Run `/ui` before changing its focus handling, drop-up placement, or scroll re-measurement — each of those fixes a specific bug and the reasons are recorded there.
-- `Pill` is a tag/filter chip. Set `active` for filled state, `onClick` for interactive use (adds `aria-pressed`), `onDismiss` for a dismissible badge with X icon. Handles `e.preventDefault()` + `e.stopPropagation()` internally — safe inside card links.
+- `Pill` is a tag/filter chip (`outline` at rest, `luminous` when `active`). Set `active` for filled state, `onClick` for interactive use (adds `aria-pressed`), `onDismiss` for a dismissible badge with X icon. Handles `e.preventDefault()` + `e.stopPropagation()` internally — safe inside card links.
 - `CascadeGroup` wraps a group of elements and fires when it enters the viewport (`react-intersection-observer`, `triggerOnce: true`). Use `mountOnly` for above-the-fold content (Header, Hero) — animates on mount instead of scroll. Accepts `threshold` (default `0.1`) and `stagger` (default `75ms`). Use `as` to render as any HTML element (e.g. `as="ul"`).
 - `CascadeItem` wraps a single item inside a `CascadeGroup`. Reads `inView` from context and fades up (`opacity-0 translate-y-[6px]` → visible) with a delay of `Math.min(index, 7) * stagger`. Use `as="li"` inside `<ul>` grids to preserve semantic HTML. The stagger index caps at 7 so long lists don't wait seconds.
 - `Markdown` is the only component that renders react-markdown, and `loadMarkdown()` in [src/lib/markdown.tsx](src/lib/markdown.tsx) holds the **only** value import of it (a dynamic one). It carries micromark + hast (~35KB gzipped) and used to sit in the shared `ui` chunk that every homepage visit downloads before first paint; splitting it took that chunk from 61KB gzipped to 28KB. A plain `import ReactMarkdown from 'react-markdown'` anywhere puts it straight back. Render with `<Markdown components={…}>{rawText}</Markdown>` — it applies `linkifyEmail` itself, so callers must not pre-apply it. `prefetchMarkdown()` warms the chunk on idle; `Chat` already calls it. **`Markdown` reads the module with `use(loadMarkdown())`, not `React.lazy`, and that is deliberate** — a lazy component cannot be loaded ahead of its first render, and the prerendered note pages need the parser settled before the article hydrates (see Prerendering).
-- Import from the barrel: `import { Button, H2, Eyebrow, Pill, CascadeGroup, CascadeItem } from '../ui'`
+- Import from the barrel: `import { Button, Section, SectionTitle, Lead, CascadeGroup, CascadeItem } from '../ui'`. The one exception is `cn`, imported from `@/components/ui/cn`.
 
 ### CSS Utilities
 
-- **No glassmorphism.** Nothing on the site uses `backdrop-filter` (decision 2026-11, Luminous redesign). The `glass-*` variant names survive as flat translucent tints; `.glass-blur` is gone. The Chat and ContactForm are always the solid white card, so their old "ADA / WCAG" glass-to-white switch is gone too (the `ada_toggle` event type stays so the CRM can show past counts). Don't reintroduce blur.
-- **Luminous palette** (`index.css` `@theme`): `lum` #2B54FF (fields, primary fills; white text 5.5:1), `lum-deep`, `ink` (dark sections, scrolled header), `ice`, `glow` (non-text accents only). The `luminous` variant is the solid blue button.
-- `.tracking-display` — the −0.02em tracking every Display heading uses (`H1`/`H2`/`H3` apply it). `RiseText` splits headings into per-letter inline-blocks, which switches off the font's kerning, so it re-applies the font's own pair values plus the same tracking as margins from **`src/lib/displayKerning.ts` — generated, run `npm run kerning` after changing the font**. Don't hand-tune per-pair spacing: an optical pass was tried and made LL touch.
+- **`index.css` is the only home for raw CSS values.** A bespoke effect is a named `@utility` there, built from tokens (`hero-scrim`, `wordmark-outline`, `card-glow`, `card-lift`, `grid-split`, `sheet-widen`), not an arbitrary value at a call site.
+- **No glassmorphism.** Nothing on the site uses `backdrop-filter` (decision 2026-11, Luminous redesign), and the vocabulary test fails on it. The old `glass-*` variants are gone, renamed for what they are (`tint-white`, `tint-ink`, `notice-*`). The Chat and ContactForm are always the white card, with no theme prop (the `ada_toggle` event type stays so the CRM can show past counts). Don't reintroduce blur.
+- **Tailwind scans prose for class names.** `index.css` carries `@source not` lines for `src/data/notes.ts`, `CLAUDE.md`, `.claude/` and `tests/`, because documents that *describe* classes were making the build emit them (a real `backdrop-filter` utility among them). A new directory of prose about the codebase needs a line there too.
+- **Luminous palette** (`index.css` `@theme`): `lum` #2B54FF (fields, primary fills; white text 5.5:1), `lum-deep` (links and tags on white), `ink` #0A1033 (dark fields: hero surround, footer, admin), `ink-soft` (body copy on white), `ink-mute` (dates, captions, placeholders), `ice`, `glow` (non-text accents on `lum`; text only on `ink`). The `luminous` variant is the solid blue button. Named radii (`rounded-card`, `rounded-sheet`, …) and shadows (`shadow-card`, `shadow-float`, …) live in the same block.
+- `.tracking-display` — the −0.02em tracking every Display heading uses (`H1`/`H2`/`H3` apply it); a theme token (`--tracking-display`), like `tracking-label` for the uppercase `Label`. `RiseText` splits headings into per-letter inline-blocks, which switches off the font's kerning, so it re-applies the font's own pair values plus the same tracking as margins from **`src/lib/displayKerning.ts` — generated, run `npm run kerning` after changing the font**. Don't hand-tune per-pair spacing: an optical pass was tried and made LL touch.
 - `.rise-ch` — one RiseText letter; `data-out` is its pre-entrance state. The prerender's `<noscript>` style reveals it, like `.cascade-item`.
-- `.duotone-lum` (hero photo), `.lu-flash` (hero opening wipe), `.lu-wipe-in` (subject rise, on `translate` because the parallax owns `transform`), `.wave-grid` + `.work-sheet` (Work grid drift/lean and the blue sheet widening) — all off under reduced motion.
-- `.animate-ambient-a/b/c` + `.animate-ambient-hue` — slow transform-only blob drift (26/34/42s) and a 48s hue-rotate sweep, consumed by the `Backdrop` ui component. Frozen (static, still visible) under `prefers-reduced-motion`.
-- `.bg-noise` / `.noise-overlay` — SVG `feTurbulence` film grain from the shared `--noise-img` data-URI. `bg-noise` tiles it as a background (caller supplies opacity + blend mode); `noise-overlay` renders it as an `::after` film over an already-positioned panel (used by `Card` and the Chat glass panel).
+- `.duotone-lum` (hero photo), `.lu-flash` (hero opening wipe), `.lu-wipe-in` (subject rise, on `translate` because the parallax owns `transform`), `.wave-grid` (Work grid drift/lean), `.sheet-widen` (a `Sheet widen` growing to full bleed), `.card-lift` (a `Card`'s hover lift and pointer tilt) — all off under reduced motion.
 - `.icon-optical` — optical icon sizing for `Button`. The caller sets `--icon-size`, which fixes every icon's layout box; light geometric glyphs (lucide `arrow*`/`chevron*`/`corner*`/`move*`/`plus*`/`minus*`/`check*`/`x*`, matched on the `lucide-<name>` class lucide stamps on every svg) then get `scale: 1.25` so they don't read undersized next to dense pictograms. The bump is paint-only — it never changes a button's height or width, so icon-only buttons in a row stay identical. CSS beats lucide's `size`/`className` on the icon, so `size={14}` or `h-4 w-4` at a call site inside a Button has no effect.
-- `.animate-ambient-parallax` — scroll-linked blob drift via `animation-timeline: view()` inside an `@supports` guard; no-op (falls back to time-based drift only) where unsupported.
 - `.grad-hover` — optical-weight hover shift on the Google Sans `GRAD` axis (used on footer/contact links). Route changes cross-fade via `@view-transition` (MPA cross-document); the fixed header carries `view-transition-name: site-header` — keep that name unique. All of this is disabled under `prefers-reduced-motion` and print. (There is no heading weight animation: `display.woff2` is a single static black italic, every weight renders identically.)
 
 ### Scroll animation requirements
@@ -143,12 +160,13 @@ npm run typecheck # tsc -b across the app, api, node and test projects
 npm test          # Vitest, tests/ only — see below
 npm run lqip      # regenerate src/data/lqip.ts blur-up placeholders (run after `npm run images` adds Instagram posts)
 npm run kerning   # regenerate src/lib/displayKerning.ts from public/fonts/display.woff2 (needs Playwright's Chromium)
+npm run icons     # regenerate the PNG icons from public/favicon.svg on the ink token
 npm run seed:crm  # seed fake CRM visitors/sessions/page views (see /crm); :clean removes, :status counts
 npm run check:crm-ui -- http://localhost:3000 ./out   # screenshot the CRM at 4 widths, report overflow (no DB writes)
 npm run shots     # capture note screenshots into assets-source/notes/ (needs a server; see /note)
 ```
 
-- **Tests live in `tests/`, never under `api/`.** Vercel turns every file under `api/` into a function, and the project is one below the 12-function cap: a test file there fails the next production deploy. They run against a separate `vitest.config.ts` because evaluating `vite.config.ts` writes the notes documents and the sitemap. `tests/notes.test.ts` enforces the `/notes` house rules (no em dashes, slug shape, ISO dates, commit SHAs, summary length), so a failing run there usually means an entry, not the test, needs fixing.
+- **Tests live in `tests/`, never under `api/`.** Vercel turns every file under `api/` into a function, and the project is one below the 12-function cap: a test file there fails the next production deploy. They run against a separate `vitest.config.ts` because evaluating `vite.config.ts` writes the notes documents and the sitemap. `tests/notes.test.ts` enforces the `/notes` house rules (no em dashes, slug shape, ISO dates, commit SHAs, summary length), so a failing run there usually means an entry, not the test, needs fixing. `tests/ui-vocabulary.test.ts` is the UI system's guard (see UI Component conventions); a failure there means a class or value, not the test, needs fixing, and its message says what to use instead.
 - **CI** ([.github/workflows/ci.yml](.github/workflows/ci.yml)) runs lint, typecheck, test and build on every push to `main` and every PR, with no secrets. Node is pinned by `.nvmrc`.
 - [.env.example](.env.example) is the reference for every environment variable and what breaks without each one. Keep it in step when a function reads a new one.
 
@@ -160,8 +178,11 @@ Inherited from the existing site and maintained going forward:
 
 - **Content-first** — the work speaks; don't let chrome compete with it
 - **Motion with one rhythm** — the Luminous redesign (2026-11) chose more motion, but every section header enters the same way: eyebrow, then the heading's letters (RiseText, the hero wordmark's spring), then the description from 340ms (`descDelay`). Use `SectionTitle`; don't invent a per-section entrance.
+- **Inner routes share one frame** — `/resume`, `/privacy`, `/notes` and each note open on a `PageHero` (solid `lum` field; a `SectionTitle as="h1" mountOnly` at poster size, except a note, whose sentence-length title stays sans) and put their body on a `Sheet tone="white"`, the white sheet rising over the hero (the Work sheet is the same component, `tone="lum" widen`). The two document pages (resume, privacy) split each section 4/12 sticky head (`SectionTitle size="compact" sticky`) to 8/12 content with the `grid-split` utility. The notes index is the exception: one blue field with Work-style white cards, because it is the site's other filterable index and should read as Work does. A note's body is `max-w-2xl`, which is what `NOTE_IMAGE_SIZES` in `NoteFigure` assumes.
+- **The resume's print sheet is keyed to class hooks, not structure** (`resume-hero`, `resume-masthead`, `resume-identity`, `resume-name`, `resume-headline`, `resume-section-title`, `entry-identity`, `values-grid`, `credentials-grid`). Check a print preview after any change to `Resume.tsx` or `SectionTitle`: Chrome lays the printed page out wide enough to take `md:` classes, and it must stay one Letter sheet. `RiseText` prints its plain text, not its letters, so the PDF's text layer reads as words.
 - **Scannable** — tech tags on project cards, clear section hierarchy
-- **Fixed palette, no theme switching** — the site is intentionally light-first with deliberate dark sections (Testimonials, Footer, photo sections); there is no dark mode and no `dark:` variants. Decision made 2026-07 — don't reintroduce.
+- **Fixed palette, no theme switching** — three fields and nothing else: Luminous Blue, white, and ink (the hero's surround, Visuals, the footer, the admin). There is no dark mode and no `dark:` variants (the vocabulary test fails on one). Decision made 2026-07 — don't reintroduce.
+- **One system, enforced** — every colour, radius and shadow is a token, every surface a variant, every field a `Section`. The Luminous consolidation (2026-11) deleted the pre-redesign layer outright (the muted blue ramp, the gradient button, `Backdrop`, the glass variants) rather than leaving it beside the new one, and closed the palette so the old classes cannot come back by accident. Extend the system; don't route around it.
 - **Responsive** — mobile-first, 4xl max container width
 
 ## Routes & Sections
@@ -195,7 +216,7 @@ Home section order in `App.tsx`:
   - **`sizes` must be exact, `calc()` and all.** Plain `50vw` ignores Container's 48px padding and the 12px grid gaps — at 834px it claims 417px for a 387px card, and that 8% overestimate was enough to push tablets onto a bigger candidate and make them *worse* than before the srcSet existed. An inaccurate `sizes` doesn't degrade gracefully, it inverts the optimisation. Keep it in step with Work.tsx's `grid-cols-*` chain.
   - **`CARD_WIDTHS` is capped at 800.** A 3x phone wants 936px and will take a 1024 candidate — 51% more than the old flat `w=800`, on the most likely-metered device class. These are decorative thumbnails. Don't extend the ladder without re-measuring high-DPI mobile.
 - **No `twitter:creator` / `twitter:site`** — there is no X/Twitter account in `navigation.ts` or the JSON-LD `sameAs`. Don't add one speculatively; the Twitter card works without it.
-- Icons and `site.webmanifest` are generated from `public/favicon.svg` against `#111521` (blue-950, resolved from `oklch(0.198 0.025 269.84)` — the dark canvas every route opens on, which is also `theme-color`).
+- Icons are generated from `public/favicon.svg` on `ink` by `npm run icons` ([scripts/generate-icons.mjs](scripts/generate-icons.mjs), which reads the token from `index.css`). `ink` (#0A1033) is also the `theme-color` in every HTML entry, in `noteDocument()`, in the two static error pages and in `site.webmanifest`; `tests/ui-vocabulary.test.ts` fails if any of them drifts from the token. It matches the overscroll canvas at both ends of every route. The mark itself is still a purple-to-cyan gradient that predates Luminous.
 - **There is no Google Analytics, and no third-party analytics of any kind.** It was removed once measurement showed it cost 149KB, ~40ms of LCP and ~210ms of load, to collect a subset of what `lib/telemetry.ts` already records first-party and more precisely. The CSP was tightened to match — `connect-src` is now `'self'` alone. **Don't reintroduce a tag manager without re-widening the CSP**, and note the site now sets **no cookies at all** on the public routes, which [Privacy.tsx](src/components/sections/Privacy/Privacy.tsx) states plainly.
 - `script-src` still needs `'unsafe-inline'` even with GA gone: the JSON-LD blocks are inline `<script>` elements and CSP applies `script-src` to them. Removing it silently kills every structured-data block on the site.
 - **Adding a `VisitorEventType` is a three-file change plus a manual migration.** `src/lib/telemetry.ts` (the union), `api/events.ts` (`VALID_TYPES`), and the `type` check constraint on `visitor_events` in [db/schema.sql](db/schema.sql) — and the constraint has to be widened by hand in the Neon SQL editor, because `create table if not exists` will not alter a table that already exists. Until that ALTER runs, `/api/events` accepts the event and the insert is swallowed by its best-effort catch: **the event silently vanishes.** The ALTER is kept ready to paste at the bottom of schema.sql.
@@ -243,7 +264,7 @@ A password-gated admin page at `/dashboard` (sign-in at `/login`, both served fr
 - **Sign-in is two steps: password, then a 6-digit code emailed to `ADMIN_2FA_EMAIL`.** `POST /api/admin/login` sets no session — it stores an HMAC of the code in Upstash under a 5-minute TTL and returns an opaque `challengeId`; `POST /api/admin/verify` spends it (constant-time compare, 5 attempts, single use) and only then issues the cookie. Both sleep a constant 1500ms and both are rate-limited.
 - **The second factor deliberately fails open.** Missing `ADMIN_2FA_EMAIL` / `RESEND_API_KEY` / Upstash vars, or a Resend send that throws, all fall back to password-only sign-in with a log line. A third-party outage must never lock the owner out of their own dashboard. Verification does *not* fail open. Don't "fix" this without reading the tradeoff note in [api/_lib/auth.ts](api/_lib/auth.ts).
 - **The session cookie has two names on purpose**: `__Host-admin_session` everywhere deployed, plain `admin_session` on localhost where the prefix isn't dependable under `vercel dev`. Reads accept either. Max-age is 24 hours.
-- **`/login`, `public/404.html` and `public/403.html` share one layout.** The two static pages hand-port the dark vocabulary (Backdrop blobs, grain, Display headline, `primary` button) because Vercel serves them with no React and no Tailwind build; their CSS is duplicated between the two files deliberately. Restyle one, restyle all three.
+- **`/login`, `public/404.html` and `public/403.html` share one layout.** The two static pages hand-port the ink field, the Display headline and the `luminous` button because Vercel serves them with no React and no Tailwind build. Their `<style>` blocks are duplicated between the two files deliberately and **must be byte-identical**, with `--ink` / `--lum` / `--lum-deep` equal to the tokens; `tests/ui-vocabulary.test.ts` checks both. Restyle one, paste into the other, and match `/login`.
 - **`X-Visitor-Id` is client-controlled and pseudonymous only** — any caller can send any UUID. Never use it for authorization or any trusted decision; gate sensitive endpoints with `requireAdmin` instead.
 - **The session owns the identity.** Every visitor write resolves through the `visitor_sessions` row's `visitor_id` (`X-Session-Id`, sent alongside `X-Visitor-Id`), so a browser id that changes mid-visit can't fork one visit into two CRM rows. Persist against the id `upsertVisitor()` *returns*, never the header value. Run `/crm` before touching this.
 - Schema lives in [db/schema.sql](db/schema.sql) (apply manually via Neon SQL editor).
@@ -254,8 +275,8 @@ A password-gated admin page at `/dashboard` (sign-in at `/login`, both served fr
 - Optional env var: `ADMIN_2FA_EMAIL` — where the sign-in code is emailed. Absent → no second factor, the correct password alone signs you in. Same fallback if `RESEND_API_KEY` (already required by `/api/contact`) is absent or the send fails.
 - Adding admin endpoints: first line of every handler under `api/admin/` must be `if (!requireAdmin(req, res)) return`. **One deliberate exception:** the `DELETE` branch of `session.ts` (sign-out) runs before the guard, so a stale cookie can always be cleared — run `/crm` before touching it.
 - The admin SPA is a separate Vite entry (`dashboard.html`); admin code never ships to public visitors.
-- **The admin is dark**, using the site's dark-section vocabulary (`Backdrop tone="dark"` over `bg-blue-950`, `Eyebrow`+`H2`). This is not "dark mode" — the public site stays light-first; the admin is a separate bundle. Panel surfaces use the `raised-dark` variant and CTAs use `primary`; never hand-roll them.
-- **`--color-accent` (index.css) is admin-only.** Every step of the blue ramp is below the dataviz chroma floor and reads gray as a data mark, which is why charts from the ramp looked washed out. It is for **non-text marks only** (chart, focus rings, tab underline) — white ink on it is 2.36:1, so it must never back a label. The palette still cannot carry a multi-series categorical chart.
+- **The admin stands on `ink`**, the same dark field the public site's hero and footer use: a flat `bg-ink` root with `focus-on-field`, `Eyebrow`+`H2` headers, `raised-dark` panels and `luminous` CTAs. This is not "dark mode" — the public site stays light-first; the admin is a separate bundle. Never hand-roll its surfaces, and it is inside the vocabulary test's scope like everything else.
+- **`--color-data` / `--color-data-deep` (index.css) are admin-only.** They exist because a muted brand ramp reads gray as a data mark. They are for **non-text marks only** (chart series, the tab underline, the live dot) — white ink on `data` is 2.36:1, so it must never back a label. The palette still cannot carry a multi-series categorical chart. Named `data` rather than "accent" so nobody reaches for it as a UI colour.
 - **Telemetry is metered and tuned** — visible-only dashboard polling, one batched round trip per page view, backing-off heartbeats. Run `/crm` before changing any cadence; the cost table explains why each number is what it is.
 - **`api/` is one function below the Hobby plan's 12-function cap.** Adding a file under `api/` fails the production deploy *after* a green build, with the reason visible only in the Vercel REST API. Free a slot first — run `/crm`.
 - **`page_views` / `visitor_sessions` are pruned on a schedule** — [api/cron/prune.ts](api/cron/prune.ts), daily at 04:00 UTC via the `crons` block in `vercel.json`, 6-month window matching [db/schema.sql](db/schema.sql). Requires `CRON_SECRET`; **absent → it 503s and never runs**, deliberately, since the endpoint deletes data.
@@ -284,9 +305,9 @@ Static site + serverless functions on Vercel. `npm run build` produces `dist/` (
 
 | Command | What it does |
 |---|---|
-| `/scaffold` | Scaffold a new page section or reusable UI component |
-| `/ui` | Reference for the shared UI primitives + `variants.ts` system (Button / Panel / Pill) |
-| `/contact` | Placeholder — Contact section implementation notes |
+| `/scaffold` | Scaffold a new page section or reusable UI component from the system's primitives |
+| `/ui` | Reference for the UI system: tokens, surface variants, every primitive, and the rules the tests enforce |
+| `/contact` | Contact section and form: layout, validation, spam protection, the API handler |
 | `/chat` | Reference for the Hero chat: file map, prompt structure, streaming protocol, persistence, vercel-dev gotchas |
 | `/crm` | Reference for the admin CRM: schema, auth model, file map, adding endpoints, env-var gotchas |
 | `/note` | When a change earns a `/notes` entry, the house voice, and the screenshot pipeline |

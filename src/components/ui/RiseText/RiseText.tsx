@@ -46,8 +46,11 @@ export default function RiseText({
 
   return (
     <Tag {...props}>
-      <span className="sr-only">{text}</span>
-      <span aria-hidden="true">
+      {/* In print the plain text stands in for the letters: the font's own
+          kerning instead of per-letter margins, and a PDF whose text layer
+          reads "Eric Shell" rather than ten separate glyph runs. */}
+      <span className="sr-only print:not-sr-only">{text}</span>
+      <span aria-hidden="true" className="print:hidden">
         {text.split(' ').map((word, w) => (
           <Fragment key={w}>
             {w > 0 && ' '}

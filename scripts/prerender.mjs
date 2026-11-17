@@ -53,11 +53,11 @@ const EMPTY_ROOT = '<div id="root"></div>'
  * JavaScript would receive the whole page and see none of it. This puts it back
  * for them and only for them.
  *
- * `--cascade-fade` is the custom property glass panels fade themselves by (an
- * ancestor's opacity would break their backdrop-filter), so it needs the same
- * treatment. `!important` because both are set inline on the element.
+ * `!important` because the hidden state is set by classes on the element
+ * itself, and `.lu-flash` is the hero's opening wipe, which would otherwise
+ * cover the page forever.
  */
-const NOSCRIPT = '<noscript><style>.cascade-item,.rise-ch{opacity:1!important;translate:none!important;transform:none!important;--cascade-fade:1!important}.lu-flash{display:none!important}</style></noscript>'
+const NOSCRIPT = '<noscript><style>.cascade-item,.rise-ch{opacity:1!important;translate:none!important;transform:none!important}.lu-flash{display:none!important}</style></noscript>'
 
 /** [file under dist/, the pathname it is served at] */
 const documents = [

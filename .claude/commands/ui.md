@@ -1,144 +1,176 @@
-Reference for the shared UI primitives and variant system in `src/components/ui/`.
+Reference for the UI system in `src/components/ui/`: the tokens, the surface variants, and the primitives.
 
-Load this when building or editing anything that renders a surface, button, chip, or panel. Prefer reusing these over hand-rolling Tailwind class soup.
-
----
-
-## Variant system
-
-Single source of truth: [src/components/ui/variants.ts](src/components/ui/variants.ts). Consumed by `Button`, `Panel`, and `Pill`.
-
-```ts
-type Variant =
-  | 'primary'       // blue gradient fill (blue-600 → blue-700), white text — the CTA / active-pill fill
-  | 'secondary'     // white → blue-50 gradient, blue-800 text          (Button + Panel default)
-  | 'ghost'         // no fill, blue-950/60 text — minimal/tertiary actions
-  | 'glass-light'   // glass-blur + white/10 tint + white/20 border + white text — dark/photo sections
-  | 'glass-dark'    // glass-blur + blue-950/20 tint + blue-950/20 border + white text — dark/photo sections needing more contrast
-  | 'error-glass'   // glass-blur + red-950/85 tint + red-400/50 border + white text  (Toast error state)
-  | 'success-glass' // glass-blur + green-950/85 tint + green-400/50 border + white text (Toast success state)
-  | 'white'         // solid white, blue-950/10 border, blue-950 text — Card, inactive Pill
-  | 'raised-dark'   // white/5.5 fill + white/10 border — raised surface on a dark canvas, no blur (admin CRM)
-  | 'info'          // solid blue-600, white text — neutral/informational status
-  | 'success'       // solid green fill, white text
-  | 'warning'       // solid bronze fill, white text
-  | 'error'         // solid red fill, white text — destructive actions
-```
-
-Each variant has up to four exported tokens:
-
-- `SURFACE[variant]` — background + border + text color. Static surface styling.
-- `SURFACE_HOVER[variant]` — hover transition (e.g. `hover:from-blue-600-vivid`). Opt-in; a Panel does not apply hover by default, Button always does.
-- `SURFACE_ICON[variant]` / `SURFACE_ICON_HOVER[variant]` — the translucent slab behind a Button's `leftIcon`/`rightIcon`. Alpha-only, so it tracks whatever the surface beneath it is doing.
-
-### The hover rule
-
-**Hover moves chroma, not lightness.** `primary` and the four status variants hold their fill's OKLCH lightness across rest and hover and raise chroma to ~97% of the sRGB ceiling instead. Darkening on hover is a light-canvas idiom, and these variants land on both canvases — the old `primary` hover fell to 1.25:1 against the dark admin canvas, dissolving into the panel exactly when pointed at. Lightening fails the other way, dropping the white label below AA. Both accessibility gates are functions of lightness and pull in opposite directions, so lightness is the one axis a hover must not touch.
-
-Consequences worth knowing:
-
-- Neither `primary` nor `info` can hover one step down the ramp — the blue ramp only varies lightness. That is what `--color-blue-600-vivid` / `--color-blue-700-vivid` exist for.
-- Because the surface no longer supplies depth, these variants deepen their icon slab further (`/45` vs `/35`) and add an inset hairline ring on hover. The ring is what gives a hover cue to buttons the slab cannot reach — no icons, `iconSlab={false}`, or `shape="square"`.
-- `secondary` is exempt: it inverts white → blue-600 on hover, which *raises* its boundary against the light canvas from 1.14:1 to 4.85:1. Note that its hovered state equals `primary`'s resting fill, so avoid pairing the two in one button row.
-
-Pick a variant by **intent + surrounding surface**, not by color name:
-
-- Sits on a light section → `secondary`, `ghost`, `white`, or `primary` for the CTA.
-- Sits on a dark section or image → `glass-light` or `glass-dark`.
-- Is the primary call-to-action → `primary` (blue gradient fill).
-- Inactive chip / tag → `white`; active chip → `primary` (this is how `Pill` picks).
-- Toast feedback → `error-glass` / `success-glass` (and plain `glass-*` for info).
-- Carries status rather than emphasis → `info` / `success` / `warning` / `error`. Reach for `primary` for a CTA; `info` is the same blue but means "informational", not "main action here".
-- Sits on the admin's dark canvas → `raised-dark` for surfaces, `primary` for CTAs.
+Load this before building or editing anything a visitor sees. The system is closed on purpose: a colour, radius or shadow that is not a token does not compile, a surface that is not a variant does not typecheck, and `tests/ui-vocabulary.test.ts` fails on a hand-rolled value. Reach for what is here before writing classes.
 
 ---
 
-## Primitives
+## Tokens
 
-### Panel — [src/components/ui/Panel/Panel.tsx](src/components/ui/Panel/Panel.tsx)
-Div-only wrapping container. Use for any surface (card, overlay, tile) that is **not** a button. Defaults to `variant="secondary"`. No default radius/padding — caller provides layout via `className`. If the surface needs to be clickable, wrap `<Panel>` in an `<a>` — Panel is not polymorphic. (`Card`, below, is the packaged version of exactly this pattern — reach for it first before hand-rolling a new `<a><Panel>...` card.)
+All declared in the `@theme` block of [src/index.css](src/index.css). The block opens by clearing Tailwind's own colours and shadows (`--color-*: initial` and friends), so these are the only ones that exist.
 
-```tsx
-<a href={url} className="group block h-full">
-  <Panel variant="white" className="flex flex-col gap-3 h-full p-5 rounded-xl border border-blue-950/10 group-hover:border-blue-400/40 group-hover:shadow-md transition">
-    {/* card content */}
-  </Panel>
-</a>
-```
+| Kind | Tokens |
+|---|---|
+| Fields | `lum` (Luminous Blue, the site's one saturated colour), `ink` (dark field), `white`, `ice` (pale fill on white) |
+| Text | `ink` (headings), `ink-soft` (body copy on white, 12.3:1), `ink-mute` (dates, captions, placeholders, 6.2:1), `lum-deep` (links and tags on white, 7.0:1) |
+| Accent | `glow` (cyan). Non-text marks on `lum`; text only on `ink`. On `lum` it is under 4:1 |
+| Status | `success`, `error` (button fills, each with `-hover`); `success-bright`, `error-bright`, `warning-bright` (text and marks on ink); `success-deep`, `error-deep` (notice fills) |
+| Data | `data`, `data-deep`. Admin chart marks only. Never behind text |
+| Radius | `rounded-tile` 10px, `rounded-media` 14px, `rounded-card` 22px, `rounded-composer` 28px, `rounded-sheet` 48px. Tailwind's scale covers the rest (`rounded-2xl` 16, `rounded-3xl` 24, `rounded-4xl` 32) |
+| Shadow | `shadow-raised`, `shadow-popover`, `shadow-card`, `shadow-card-soft`, `shadow-float`, `shadow-capsule`, `shadow-drawer`, `shadow-beacon`; `inset-shadow-highlight(-strong)`; `text-shadow-poster(-strong)` |
+| Type and motion | `tracking-display`, `tracking-label`, `ease-spring`, `ease-settle` |
 
-For an absolute-positioned glass overlay inside an already-bordered container, strip the default glass border with `className="border-0"`.
+Rules:
 
-### Card — [src/components/ui/Card/Card.tsx](src/components/ui/Card/Card.tsx)
-Realized `<a>` + `Panel(variant="white")` + `Pill` composition for project/work-grid cards — renders the whole card as a single anchor. Props: `href`, `title`, `description`, `image?`, `tags?`, `activeTags?`, `onTagClick?`, `target?`, `rel?`. Currently used by [Work.tsx](src/components/sections/Work/Work.tsx) for the project grid; reach for it any time you need an image + title + description + tag-pill card rather than composing Panel/Pill by hand.
+- **A new value goes in `@theme`, and in [cn.ts](src/components/ui/cn.ts).** `cn` is tailwind-merge taught these names; a token missing from it merges wrongly and silently (both classes survive). The test checks the two lists agree.
+- **Use `cn`, never `tailwind-merge` directly.** ESLint refuses the import outside `cn.ts`.
+- **A bespoke effect is an `@utility` in `index.css`, built from tokens** (`hero-scrim`, `card-glow`, `wordmark-outline`, `grid-split`, `sheet-widen`, `card-lift`). `index.css` is the only place raw CSS values live.
+- **Sizes are free.** `text-[clamp(…)]`, `w-[7.75rem]`, `calc()` and opacity brackets (`bg-white/[0.055]`) are all fine. The test only refuses arbitrary colours, radii and shadows.
+- **A real exception goes in [tests/ui-vocabulary.allowlist.ts](tests/ui-vocabulary.allowlist.ts) with a reason.** Today there is one: the particle canvas, which cannot take CSS variables.
 
-### Backdrop — [src/components/ui/Backdrop/Backdrop.tsx](src/components/ui/Backdrop/Backdrop.tsx)
-Ambient section background: slow-drifting, hue-shifting radial gradient blobs plus an SVG film-grain layer. Render it as the first child of a `relative` section, before `Container`. It is `aria-hidden`, `pointer-events-none`, and self-clipping (`absolute inset-0 overflow-hidden`).
+### Focus rings
 
-- `tone="light"` — cyan/blue/violet blobs for light sections (Work, Visuals).
-- `tone="dark"` — indigo/violet/cyan blobs for dark sections (Testimonials).
-- `tone="photo"` — grain only, for sections with photographic backgrounds (Hero, Contact); pass a `z-*` class to sit above the scrim but below content.
-- `flip` — mirrors the blob layout so adjacent same-tone sections don't look identical.
+One ring for the whole site, drawn in `--focus-ring`. It defaults to `lum`, which is right on white and invisible on a blue field, so the field sets it: `focus-on-field` (white rings) on anything `lum` or `ink`, `focus-on-paper` (blue rings) on a white surface inside a field. `Section`, `Sheet`, `Card`, `Chat`, `ContactForm` and the dropdown panels apply these already. Do not write `focus-visible:outline-*` at a call site. `focus-ring-within` puts the ring on a card whose whole surface is one stretched link.
 
-Motion comes from the `animate-ambient-*` utilities in [src/index.css](src/index.css): transform-only drift keyframes (26/34/42s, never in sync) plus a 48s `hue-rotate` sweep on the blob layer. All of it is frozen under `prefers-reduced-motion` (blobs stay, statically). Blobs must be positioned with inset classes only — the drift animation owns `transform`, so `translate-*` classes on a blob are silently discarded.
+---
 
-Grain utilities (also in `index.css`, sharing the `--noise-img` data-URI):
+## Variants
 
-- `bg-noise` — tiles the grain as a background; combine with `absolute inset-0`, an opacity, and a blend mode.
-- `noise-overlay` — adds grain as an `::after` film over a panel surface (used by `Card` and the Chat glass panel). Does **not** set `position`; the element must already be positioned (`relative`/`absolute`) and the overlay inherits its border-radius.
+Single source of truth: [src/components/ui/variants.ts](src/components/ui/variants.ts). `Button` and `Panel` take a **required** `variant`: no surface is right on every field, so the call site says which it means.
 
-### Button — [src/components/ui/Button/Button.tsx](src/components/ui/Button/Button.tsx)
-Polymorphic (renders `<a>` when `href` is passed, else `<button>`). Props: `variant` (default `secondary`), `size` (`sm|md|lg`, default `md`), `shape` (`pill|square`, default `pill`). Applies `SURFACE[variant]` + `SURFACE_HOVER[variant]` + size/shape padding. `shape="square"` is the icon-only form.
+<!-- variants:start -->
+| Variant | Looks like | Use it for |
+|---|---|---|
+| `luminous` | solid Luminous Blue, white label | the main action on white or ink |
+| `white` | solid white, ink label, no border | the main action on a lum field; the fill of a card on a field |
+| `outline` | white with an ink hairline | a white control or card sitting on white |
+| `tint-white` | flat white tint, white label | the second action on a lum field |
+| `tint-ink` | flat ink tint, white label | a quiet control on a lum field or inside a notice |
+| `raised-dark` | faint white fill and border | a panel on the ink canvas (the admin) |
+| `notice-error` | deep red fill, bright border | an error toast or inline error panel |
+| `notice-success` | deep green fill, bright border | a success toast |
+| `notice-info` | ink fill, glow border | an info toast |
+| `success` | solid green, white label | a confirming action |
+| `error` | solid red, white label | a destructive action |
+<!-- variants:end -->
 
-`as="span"` renders the same appearance on a non-interactive `<span>` — for a button sitting inside something that is *already* a link, such as a whole-card `<a>`, where a nested `<button>`/`<a>` is invalid HTML and a second tab stop to the same destination. The wrapper's click is the real affordance. It exists so those call sites can still say `variant="primary"` rather than hand-rolling surface classes; `Pill` renders a `<span>` for the same reason. Never use it for something clickable in its own right — no role, no focus, no keyboard behaviour. Used by the notes index cards.
+Pairing by field:
 
-### Pill — [src/components/ui/Pill/Pill.tsx](src/components/ui/Pill/Pill.tsx)
-Tag/filter chip. Active state uses `SURFACE.primary`, inactive uses `SURFACE.white`. Handles `e.preventDefault()` + `e.stopPropagation()` internally — safe to nest inside a parent link. `onDismiss` renders a trailing X.
+| Field | Main action | Second action | Surface |
+|---|---|---|---|
+| `lum` | `white` | `tint-white` | `white` (cards) |
+| `ink` | `luminous` | `tint-ink` | `raised-dark` |
+| white | `luminous` | `outline` | `outline` |
 
-### Dropdown — [src/components/ui/Dropdown/Dropdown.tsx](src/components/ui/Dropdown/Dropdown.tsx)
-Single-select listbox: `Button` trigger + portalled `<ul role="listbox">`, full keyboard nav (arrows, Home/End, Enter, Escape). Props: `options: DropdownOption[]`, `value`, `onChange(value)`, `placeholder`. Light-theme panel; selecting closes it.
+- The maps (`SURFACE`, `SURFACE_HOVER`, `SURFACE_ICON`, `SURFACE_ICON_HOVER`) are private to `components/ui`; ESLint refuses the import elsewhere. For the rare element that is neither a `Button` nor a `Panel` but must look like one (the admin's segmented control), use `surface(variant, { hover })` from the barrel.
+- **Hover on a solid fill adds an inset edge** (a lit top line plus a hairline). `luminous` darkens to `lum-deep`, which alone is 2.4:1 against ink; the edge is what keeps it visible there. `success` and `error` hold their lightness and gain chroma instead, for the reason set out beside their tokens in `index.css`.
+- **There is no glass.** Nothing uses `backdrop-filter`, and the test fails on it.
 
-### MultiSelect — [src/components/ui/MultiSelect/MultiSelect.tsx](src/components/ui/MultiSelect/MultiSelect.tsx)
-`Dropdown`'s trigger/portal/keyboard model with a set-valued selection. Props: `options: DropdownOption[]` (shared type), `values: string[]`, `onChange(values)`, `placeholder` (also the accessible name), `searchable`, `searchPlaceholder`, `variant` (default `primary`). Choosing an option does **not** close the panel; the trigger summarises as `First +N`, and a Clear row appears once anything is on.
+### Adding a variant
 
-Reach for it wherever a filter can hold several values at once — it replaced the row of one dismissible `Button` per active tag in `Work` and the notes index, which grew a control per selection and wrapped the control bar. Things it does that `Dropdown` deliberately does not, all load-bearing:
+1. Add the name to the `Variant` union with a one-line doc comment saying which field it is for.
+2. Add its entry to all four maps (they are `Record<Variant, string>`, so TypeScript insists).
+3. Add its row to the table above. The test fails if the table and the union disagree.
+4. Check the label and the boundary against the field it is meant for, and write the ratios in the comment.
+
+---
+
+## Layout primitives
+
+### Section, Page — [Section.tsx](src/components/ui/Section/Section.tsx)
+Every `<section>` and `<main>`. `Section` takes a required `tone` (`lum | ink | white | inherit`) and a `rhythm` (`section` py-24/36, `block` py-16/24, `tight` py-12/16, `none`). The tone sets the background, the text colour and the focus-ring colour. `inherit` is for a block inside a field that is already set (a document section on a `Sheet`). `as` changes the element (`as="footer"`). No `Container` inside: add one. `Page` is a route's `<main id="main">`. ESLint refuses a raw `<section>` or `<main>` in `sections/`, `layout/` and `App.tsx`.
+
+### Sheet — [Sheet.tsx](src/components/ui/Sheet/Sheet.tsx)
+A sheet rising over the field above with a rounded top. `tone="white"` under a `PageHero` on every inner route; `tone="lum" widen` is the home page's Work sheet, which starts at 90% width and widens as it scrolls in. With `widen` the colour is a separate layer (the widening is a `scaleX`); without it the element is the surface, so a document page's sections stay direct children, which the resume's print sheet depends on.
+
+### PageHero — [PageHero.tsx](src/components/ui/PageHero/PageHero.tsx)
+The opening `lum` field of an inner route, with a `Container`. Usually holds a `SectionTitle as="h1" mountOnly`. `containerClassName` lands on the container.
+
+### SectionTitle — [SectionTitle.tsx](src/components/ui/SectionTitle/SectionTitle.tsx)
+Every section header: eyebrow, a Display heading whose letters rise (`RiseText`), an optional `action`, then description `CascadeItem`s as children, all on one `CascadeGroup`. `as` (`h1 | h2`), `size` (`poster | compact`), `mountOnly`, `sticky` (stays in view beside a long section from `lg`). Time a description with `descDelay(n)`.
+
+### grid-split (utility)
+The 4/12 to 8/12 split of a section head beside its content, one column until `lg`. A utility, not a component: the three places that use it put the grid on three different elements. Supply the gap (`grid-split gap-8 lg:gap-20`).
+
+### Container — [Container.tsx](src/components/ui/Container/Container.tsx)
+1440px max width plus the 24px gutter.
+
+---
+
+## Type primitives
+
+- **Heading** (`H1`, `H2`, `H3`): the Display face, uppercase, `tracking-display`. Colour inherits. A section's heading is a `SectionTitle`; `H3` is for sub-heads. ESLint refuses a raw `<h2>` / `<h3>` in sections.
+- **Eyebrow**: the kicker above a section heading. Appears through `SectionTitle` (and once, by hand, in the Hero).
+- **Lead** (`size: md | lg`): the paragraph after a heading that says what the page or section is. Type only; colour comes from the field, the call site sets `max-w-*`.
+- **Label** (`as: span | p | dt | time`): the small uppercase label. A date on a card, a stat caption, a nav group heading, a count. Type only. On `lum` keep it white.
+- **TextLink** (`tone: lum | field | inherit`): a link inside a sentence. `lum` in body copy on white, `field` on a lum or ink field, `inherit` in small print. A link that stands alone as an action is a `Button`.
+- **Code**: an inline code chip.
+- **RiseText**: a heading split into rising letters. Used by `SectionTitle`, the Hero wordmark and the menu. Kerning comes from `src/lib/displayKerning.ts` (generated; `npm run kerning`).
+
+---
+
+## Surfaces and controls
+
+### Panel — [Panel.tsx](src/components/ui/Panel/Panel.tsx)
+A `div` with a variant's surface. No radius or padding of its own.
+
+### Button — [Button.tsx](src/components/ui/Button/Button.tsx)
+Renders `<a>` when `href` is passed, else `<button>`. `variant` (required), `size` (`sm | md | lg`), `shape` (`pill | square`; `square` is the icon-only form), `leftIcon` / `rightIcon` (drawn on a tinted slab; `iconSlab={false}` to inline them). Icon size is set by the button (`icon-optical`), so `size={14}` on an icon inside one does nothing.
+
+`as="span"` renders the look on a non-interactive `<span>`, for a button inside something that is already a link (a `Card`'s footer), where a real button would be a second control to the same place. Never for something clickable in its own right.
+
+### Card — [Card.tsx](src/components/ui/Card/Card.tsx)
+The white card: the Work grid, the notes index, the pager under a note. One stretched link on the title covers the card, so tag pills inside stay real buttons and the link's accessible name is the title (or `linkLabel`). Do not wrap a card in an `<a>`.
+
+- `tone`: `field` (borderless, on `lum`) or `sheet` (hairline, on white).
+- Title: `title`, `titleAs` (`h2 | h3 | span`), `display` for the Display face (a project name; not a sentence).
+- Top row: `index` ("07") or `meta` (any node, e.g. a `<Label as="time">`), and `arrow` (`up-right | right | false`).
+- `description`, `clampDescription`, `tags` / `activeTags` / `onTagClick`, `footer`.
+- `bar` (`glow | lum`) and `barOrigin`: the colour bar that draws along the foot on hover.
+- Inside a grid driven by `useWaveGrid` it also tilts toward the pointer. The hook finds cards by `data-card`.
+
+### Pill — [Pill.tsx](src/components/ui/Pill/Pill.tsx)
+Tag chip. Inactive is `outline`, active is `luminous`. With `onClick` it is a button (`aria-pressed`) and stops propagation itself. `onDismiss` adds an X.
+
+### FilterBar + useTagFilter — [FilterBar.tsx](src/components/ui/FilterBar/FilterBar.tsx), [useTagFilter.ts](src/hooks/useTagFilter.ts)
+Sort, tag filter, an `aria-live` count and Reset, for a filterable grid on a lum field. `useTagFilter({ section, defaultSort })` holds the state and reports the settled selection to telemetry. Used by Work and the notes index; a third filterable grid should use both rather than rebuild them. **Tag options are derived from the data, never hand-listed**: a hand-listed tag that no item carries filters to an empty grid.
+
+### Dropdown — [Dropdown.tsx](src/components/ui/Dropdown/Dropdown.tsx)
+Single-select listbox: `Button` trigger plus a portalled `<ul role="listbox">`, full keyboard nav (arrows, Home/End, Enter, Escape). `options`, `value`, `onChange(value)`, `placeholder`, `variant` (the trigger's; default `white`). Focus never enters the list: the trigger keeps it and uses `aria-activedescendant`, the list's `onMouseDown` prevents the default, and `selectAt` refocuses the trigger. Without those a mouse pick focuses an option that is about to unmount and drops focus on `<body>`.
+
+### MultiSelect — [MultiSelect.tsx](src/components/ui/MultiSelect/MultiSelect.tsx)
+`Dropdown`'s trigger, portal and keyboard model with a set-valued selection. `options`, `values`, `onChange(values)`, `placeholder` (also the accessible name), `searchable`, `searchPlaceholder`, `variant` (default `white`). Choosing an option does not close the panel; the trigger summarises as `First +N`, and a Clear row appears once anything is on. Things it does that `Dropdown` deliberately does not, all load-bearing:
 
 - **Opens upward when there is more room above.** A 37-option list pinned below a trigger near the fold is unreachable.
 - **Re-measures on scroll and resize.** `position: fixed` coordinates taken once go stale as soon as the page moves, and this panel stays open long enough for that.
 - **`role="option"` sits on the `<li>`,** not on a `<button>` inside it. Focus never leaves the trigger (or the filter field), so an inner button only contributes a second, wrong accessibility tree.
-- **`searchable` moves focus into the filter field,** which is why Space types a space there instead of toggling, and why Home/End are left to the caret. Pass it past ~15 options.
-- **The Clear row refuses focus on mousedown.** It unmounts when it fires, and a focused element disappearing resets focus to `<body>` — outside the tree the key handler listens on, which kills Escape and the arrows.
+- **`searchable` moves focus into the filter field,** which is why Space types a space there instead of toggling, and why Home/End are left to the caret. Pass it past about 15 options.
+- **The Clear row refuses focus on mousedown.** It unmounts when it fires, and a focused element disappearing resets focus to `<body>`, outside the tree the key handler listens on, which kills Escape and the arrows.
 
-Option lists should be derived from the data (`[...new Set(items.flatMap(i => i.tags))].sort(...)`), never hand-listed: a hand-listed tag that no item carries filters to an empty grid.
+### Input, Textarea — [Field/field.ts](src/components/ui/Field/field.ts)
+Labelled fields sharing one set of styles. `tone`: `white` (default, on a white card) or `dark` (on ink, the admin sign-in). `valid`, `error`, `showCount`. Focus shows on the border, not the ring.
 
-### Toast — [src/components/ui/Toast/](src/components/ui/Toast/)
-Imperative toast queue, not variant-driven. Call `toast.success(message)` / `toast.error(message)` / `toast.info(message)` / `toast.dismiss(id)` from anywhere (`toastStore.ts`); mount `<Toaster />` once near the app root (already done in `App.tsx`) to render the queue. Max 3 visible at once, identical messages within 1s are deduped, error toasts linger longer (7s vs 4s). Error/success visuals map to the `error-glass`/`success-glass` variants above.
+### Toast — [Toast/](src/components/ui/Toast/)
+Imperative queue. `toast.success(message)` / `toast.error(message)` / `toast.info(message)` / `toast.dismiss(id)` from anywhere; `<Toaster />` is mounted once per app. Max 3 visible, identical messages within 1s are deduped, errors linger longer (7s vs 4s). Surfaces are the `notice-*` variants.
 
-### ContactForm — [src/components/ui/ContactForm/ContactForm.tsx](src/components/ui/ContactForm/ContactForm.tsx)
-Standalone name/email/message form with client-side validation, `POST /api/contact`, and toast feedback on submit. Props: `defaultTheme` (`'white' | 'dark'`, default `'dark'`), `showThemeToggle`, `onSuccess?`, `className?`. Used by the `Contact` section — pull this in directly rather than rebuilding form state/validation at a new call site.
+### Chat, ContactForm
+The two white cards (`outline` panels) that open and close the home page. Both are client-only after hydration where they read browser state; see the Prerendering section of CLAUDE.md. Neither has a theme.
 
-### Post — [src/components/ui/Post/Post.tsx](src/components/ui/Post/Post.tsx)
-Single Instagram-grid tile: `<picture>` with avif/webp/jpg srcSet at 320/640/960w, an LQIP blur-up placeholder from `src/data/lqip.ts`, and a caption reveal on hover. Takes one `InstagramPost` (from `src/data/instagram.ts`). Not variant-driven — image-specific, used only by `Visuals`.
+### SocialLink — [SocialLink.tsx](src/components/ui/SocialLink/SocialLink.tsx)
+A round outlined link to a profile elsewhere. `tone` (`lum | ink`), `label`, `path` (from `socialLinks`).
 
-### ErrorBoundary — [src/components/ui/ErrorBoundary/ErrorBoundary.tsx](src/components/ui/ErrorBoundary/ErrorBoundary.tsx)
-Class-component error boundary. Props: `name` (required — labels the console log and the `section_error` analytics event so a crash is identifiable), `fallback?` (rendered in place of children once caught; defaults to `null`). `App.tsx` wraps each home section individually so one section crashing can't take down the rest of the page.
+### Markdown — [Markdown.tsx](src/components/ui/Markdown/Markdown.tsx)
+The only component that renders react-markdown, loaded as its own chunk. Component maps live in [src/lib/markdown.tsx](src/lib/markdown.tsx), which imports `Code` and the link classes by path rather than through the barrel (the barrel exports `Markdown`, which imports that file).
 
-### Colors — [src/components/ui/Colors/Colors.stories.tsx](src/components/ui/Colors/Colors.stories.tsx)
-Storybook-only palette reference (blue-50 → blue-950 scale + white/black swatches with OKLCH values). Not exported from the barrel — it's documentation, not a component to import.
+### ErrorBoundary, Cascade
+`ErrorBoundary` (`name` required) wraps each home section. `CascadeGroup` / `CascadeItem` are the scroll entrance every section uses; the rules are in CLAUDE.md.
 
 ---
 
 ## Rules
 
-- **Never hand-roll surface color classes** (`bg-blue-950 text-white`, `bg-gradient-to-br from-blue-600 to-blue-700`, `glass-blur bg-white/10 border-white/20`, etc.) **at call sites on a button, panel, or pill.** Use the variant. If a needed color combo doesn't exist as a variant, add it to `variants.ts` rather than inlining at the call site.
-- `twMerge` is the composition tool — it lets `className` override variant classes cleanly.
-- `glass-blur` is a Tailwind v4 `@utility` in [src/index.css](src/index.css), not a Tailwind core class. Do not replace it with `backdrop-blur-*`.
-- Prefer `Card` over hand-rolling a new `<a><Panel>...</Panel></a>` composition for grid cards — it already encodes the image/title/description/tag-pill layout.
-
----
-
-## Adding a new variant
-
-1. Add the name to the `Variant` union in `variants.ts`.
-2. Add a `SURFACE` entry (bg + border + text).
-3. Add a `SURFACE_HOVER` entry (omit hover transition? still add an empty-ish string to satisfy `Record<Variant, string>`).
-4. TypeScript will surface every consumer that needs to handle the new case if you ever switch from maps to a `switch` — today the Record ensures exhaustiveness on write, and any existing consumer automatically gains access to the new variant.
+- **Name a surface, never spell it.** On a button, panel, pill or card, the colour comes from a variant. If no variant fits, add one.
+- **A field is a `Section` or a `Sheet`.** Do not write `bg-lum text-white py-24` on an element.
+- **Repeated type has a primitive.** A lead paragraph is a `Lead`, an uppercase label is a `Label`, an inline link is a `TextLink`.
+- **A card is a `Card`.** Extend its props before composing `Panel` and `Pill` into a new one.
+- **Do not reach around the guard.** If the test or the linter refuses something, the fix is a token, a primitive, or an allowlist entry with a reason, in that order.
+- **Storybook**: every primitive has a story, and `Design System/Tokens` reads the palette out of `index.css` so it cannot go stale. Add a story with a new primitive.

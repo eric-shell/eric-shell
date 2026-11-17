@@ -54,11 +54,11 @@ export default function NoteFigure({ src, alt, title }: { src?: string; alt?: st
           // from it, so a note never reflows as its images arrive.
           loading="lazy"
           decoding="async"
-          className="w-full rounded-lg border border-blue-950/10 bg-blue-50"
+          className="w-full rounded-media border border-ink/10 bg-ice"
         />
       </picture>
       {title && (
-        <figcaption className="mt-2.5 font-sans text-sm leading-relaxed text-blue-950/60">
+        <figcaption className="mt-3 font-sans text-sm leading-relaxed text-ink-mute">
           {title}
         </figcaption>
       )}

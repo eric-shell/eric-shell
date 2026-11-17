@@ -1,6 +1,6 @@
 import { lazy, Suspense, useEffect, useState } from 'react'
 import { ArrowRight, Mail } from 'lucide-react'
-import { Button, CascadeGroup, CascadeItem, Chat, Container, Eyebrow, RiseText } from '../../ui'
+import { Button, CascadeGroup, CascadeItem, Chat, Container, Eyebrow, RiseText, Section } from '../../ui'
 import { useChat, useParallax } from '@/hooks'
 import { useHydrated } from '@/lib/hydration'
 import type { RGB } from './particleSprite'
@@ -87,12 +87,14 @@ export default function Hero() {
   }, [sectionRef, hydrated])
 
   return (
-    <section
+    <Section
       id="hero"
       ref={sectionRef}
+      tone="ink"
+      rhythm="none"
       onMouseMove={handleMouseMove}
       onMouseLeave={handleMouseLeave}
-      className="hero-timeline relative isolate min-h-screen overflow-hidden bg-ink text-white"
+      className="hero-timeline isolate min-h-screen overflow-hidden"
     >
       <picture>
         <source
@@ -120,7 +122,7 @@ export default function Hero() {
       <div
         ref={gradientRef}
         aria-hidden="true"
-        className="absolute -inset-4 z-[1] pointer-events-none bg-[radial-gradient(60%_55%_at_72%_28%,rgba(143,232,255,0.28),transparent_70%),linear-gradient(180deg,rgba(10,16,51,0.5)_0%,transparent_26%,transparent_52%,rgba(10,16,51,0.82)_100%)]"
+        className="hero-scrim absolute -inset-4 z-[1] pointer-events-none"
       />
       {/* Mounted after hydration, never prerendered. A canvas has nothing to
           show until its effect draws on it, so there is no markup worth
@@ -182,23 +184,23 @@ export default function Hero() {
               text="Eric Shell"
               delayMs={550}
               stagger={45}
-              className={`${WORDMARK} hero-exit-drift relative z-[8] [text-shadow:0_18px_60px_rgba(5,10,60,0.35)]`}
+              className={`${WORDMARK} hero-exit-drift relative z-[8] text-shadow-poster`}
             />
             <RiseText
               text="Eric Shell"
               delayMs={550}
               stagger={45}
-              className={`${WORDMARK} hero-exit-drift absolute left-0 top-0 z-[11] text-transparent [-webkit-text-stroke:2px_rgba(255,255,255,0.92)] pointer-events-none`}
+              className={`${WORDMARK} hero-exit-drift wordmark-outline absolute left-0 top-0 z-[11] pointer-events-none`}
             />
           </div>
 
           <div className="relative z-20 mt-auto pt-10 grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_minmax(0,560px)] gap-8 lg:gap-16 items-end">
             <CascadeItem index={7} className="flex flex-col gap-6">
-              <p className="font-sans text-xl md:text-2xl leading-relaxed text-white text-shadow-xl max-w-[450px]">
+              <p className="font-sans text-xl md:text-2xl leading-relaxed text-white max-w-[450px]">
                 I'm an AI Design Systems Engineer with over 15 years of professional experience leading and developing modern web and mobile applications.
               </p>
               <div className="flex flex-wrap gap-2.5">
-                <Button href="#work" variant="white" className="border-0" rightIcon={<ArrowRight size={15} strokeWidth={2.5} aria-hidden="true" />}>
+                <Button href="#work" variant="white" rightIcon={<ArrowRight size={15} strokeWidth={2.5} aria-hidden="true" />}>
                   See the work
                 </Button>
                 <Button href="#contact" variant="luminous" rightIcon={<Mail size={15} strokeWidth={2.5} aria-hidden="true" />}>
@@ -254,6 +256,6 @@ export default function Hero() {
           Pure CSS, so it plays on the prerendered page before hydration; hidden
           entirely under reduced motion and with scripts off. */}
       <div aria-hidden="true" className="lu-flash absolute inset-0 z-40 bg-lum pointer-events-none" />
-    </section>
+    </Section>
   )
 }

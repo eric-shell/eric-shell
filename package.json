@@ -21,7 +21,8 @@
     "shots": "node scripts/capture-note-shots.mjs",
     "storybook": "storybook dev -p 6006",
     "build-storybook": "storybook build",
-    "kerning": "node scripts/display-kerning.mjs"
+    "kerning": "node scripts/display-kerning.mjs",
+    "icons": "node scripts/generate-icons.mjs"
   },
   "dependencies": {
     "@neondatabase/serverless": "^1.1.0",
