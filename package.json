@@ -22,7 +22,8 @@
     "storybook": "storybook dev -p 6006",
     "build-storybook": "storybook build",
     "kerning": "node scripts/display-kerning.mjs",
-    "icons": "node scripts/generate-icons.mjs"
+    "icons": "node scripts/generate-icons.mjs",
+    "social": "node scripts/generate-social.mjs"
   },
   "dependencies": {
     "@neondatabase/serverless": "^1.1.0",

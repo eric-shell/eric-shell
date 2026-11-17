@@ -52,3 +52,26 @@ describe('structured data', () => {
     })
   }
 })
+
+describe('share image', () => {
+  // Every document shares /social.jpg, so every one describes it the same way.
+  // Hand-copied into five places (the generated note pages take theirs from
+  // noteDocument in vite.config.ts); this is what keeps the copies in step
+  // when the image is regenerated (`npm run social`).
+  const files = ['index.html', 'resume.html', 'privacy.html', 'notes.html', 'vite.config.ts']
+  const alts = files.flatMap(file =>
+    [...readFileSync(join(ROOT, file), 'utf8').matchAll(/<meta (?:property="og:image:alt"|name="twitter:image:alt") content="([^"]*)"/g)]
+      .map(m => [file, m[1]] as const),
+  )
+
+  it('has an og and a twitter alt in every document', () => {
+    for (const file of files) expect(alts.filter(([f]) => f === file).length, file).toBe(2)
+  })
+
+  it('describes the image identically everywhere, without an em dash', () => {
+    const distinct = [...new Set(alts.map(([, alt]) => alt))]
+    expect(distinct, 'og:image:alt / twitter:image:alt differ between documents').toHaveLength(1)
+    // The note pages carry it too, and notes copy has no em dashes.
+    expect(distinct[0]).not.toContain('\u2014')
+  })
+})

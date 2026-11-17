@@ -35,7 +35,7 @@ const token = name => {
   if (!value) throw new Error(`could not read --color-${name} from src/index.css`)
   return value
 }
-const colours = { deep: token('lum-deep'), lum: token('lum'), glow: token('glow') }
+const colours = { lum: token('lum'), deep: token('lum-deep') }
 
 const markSvg = await readFile(resolve(ROOT, 'public/icon.svg'), 'utf8')
 const [, vbW, vbH] = /viewBox="0 0 ([\d.]+) ([\d.]+)"/.exec(markSvg) ?? []
@@ -71,14 +71,14 @@ function mark(share) {
 }
 
 /**
- * Deep blue at the bottom left, through Luminous Blue, to a glint of glow at
- * the top right. The glow stop is kept to the corner so the white mark always
- * sits on blue.
+ * Luminous Blue at the top left deepening to lum-deep at the bottom right: lit
+ * from above, and blue all the way across, so the white mark holds 5.5:1 at its
+ * lightest and 7.7:1 at its darkest. (An earlier version ran to a glint of
+ * `glow` in the corner; it read as a second colour.)
  */
-const gradient = `<linearGradient id="g" x1="0" y1="1" x2="1" y2="0">
-    <stop offset="0" stop-color="${colours.deep}"/>
-    <stop offset="0.55" stop-color="${colours.lum}"/>
-    <stop offset="1" stop-color="${colours.glow}"/>
+const gradient = `<linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+    <stop offset="0" stop-color="${colours.lum}"/>
+    <stop offset="1" stop-color="${colours.deep}"/>
   </linearGradient>`
 
 function icon(shape) {

@@ -162,7 +162,7 @@ function noteDocument(note: (typeof notes)[number]): string {
     <meta property="og:image" content="${SITE}/social.jpg" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
-    <meta property="og:image:alt" content="Eric Shell, AI Design Systems Engineer" />
+    <meta property="og:image:alt" content="Eric Shell looking up in a blue-toned forest, his name in large white letters behind him, with AI Design Systems Engineer and eric.sh" />
     <meta property="og:site_name" content="Eric Shell" />
     <meta property="article:published_time" content="${note.date}" />
     <meta property="article:modified_time" content="${modified(note)}" />
@@ -175,7 +175,7 @@ ${note.tags.map((t) => `    <meta property="article:tag" content="${attr(t)}" />
     <meta name="twitter:title" content="${attr(title)}" />
     <meta name="twitter:description" content="${attr(note.summary)}" />
     <meta name="twitter:image" content="${SITE}/social.jpg" />
-    <meta name="twitter:image:alt" content="Eric Shell, AI Design Systems Engineer" />
+    <meta name="twitter:image:alt" content="Eric Shell looking up in a blue-toned forest, his name in large white letters behind him, with AI Design Systems Engineer and eric.sh" />
 
     <!-- ink, as in index.html. -->
     <meta name="theme-color" content="#0A1033" />
