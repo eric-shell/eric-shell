@@ -7,6 +7,7 @@ paths:
   - "src/data/work.ts"
   - "src/data/testimonials.ts"
   - "src/data/instagram.ts"
+  - "vite.config.ts"
 ---
 # Sections, layout and the home page
 

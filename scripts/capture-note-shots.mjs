@@ -27,7 +27,7 @@ import { chromium } from 'playwright'
 import shots from './notes-shots.config.mjs'
 import { stubAdminRoutes } from './crm-stub.mjs'
 
-const BASE = process.argv[2] ?? 'http://localhost:4173'
+const BASE = process.argv[2] ?? 'http://localhost:4170'
 const OUT = 'assets-source/notes'
 /** 2x, so the widest variant in the ladder has real pixels behind it. */
 const SCALE = 2

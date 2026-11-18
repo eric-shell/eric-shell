@@ -50,8 +50,6 @@ The default is to run nothing. Each check must be earned by what this prompt cha
 - Never re-run a check that passed on code you have not touched since, and never run a broader check than the table calls for because a narrower one passed.
 - When you skip a check the user might expect, say so in one line (what and why).
 
-
-
 ## Project Structure
 
 ```
@@ -110,7 +108,6 @@ Path alias: `@/*` → `src/*` is configured in `vite.config.ts` and `tsconfig.ap
 - **Don't read browser state at render time in anything a public route renders**: gate it on `useHydrated()`, never `typeof window` (`.claude/rules/prerender.md`).
 - **Any new field the telemetry collects must be disclosed** in `Privacy.tsx` in the same commit; adding an `api/` file needs a free function slot (`.claude/rules/admin.md`).
 
-
 ## Design Principles
 
 Inherited from the existing site and maintained going forward:
@@ -125,7 +122,6 @@ Inherited from the existing site and maintained going forward:
 
 (The resume print sheet's class-hook rules live in `.claude/rules/resume.md`.)
 
-
 ## Routes & Sections
 
 Routing is handled by `App.tsx` reading `window.location.pathname`:
@@ -137,19 +133,16 @@ Routing is handled by `App.tsx` reading `window.location.pathname`:
 `Header` and `Footer` (from `components/layout/`) wrap every route.
 
 - **Each public route is its own HTML entry** — `index.html`, `resume.html`, `privacy.html`, all three registered in `vite.config.ts` and all three loading the same `/src/main.tsx`. They exist purely so each route can serve its own `<title>`, description, canonical, OG/Twitter tags, and JSON-LD. **Don't collapse them back into a rewrite onto `index.html`**: that made `/resume` and `/privacy` canonicalize themselves to the homepage, telling Google not to index them while `sitemap.xml` asked it to, and made every social share of `/resume` render the homepage card.
-- Head tags are therefore duplicated across the three files by hand, the same deliberate tradeoff as `public/404.html` / `public/403.html`. Change one, check all three. The Google Sans preload comment lives in `index.html`; the others point at it.
+- Head tags are therefore duplicated across the three files by hand, the same deliberate tradeoff as `public/404.html` / `public/403.html`. Change one, check them all (`notes.html` too). The Google Sans preload comment lives in `index.html`; the others point at it.
 - `getRoute()` matches both `/resume` and `/resume.html` (same for privacy). The bare path is what `vercel.json` rewrites to and what visitors see; the `.html` path is served directly as a static file, and without the second case it would render the *home* sections under the resume's title and canonical.
 - **Every static page is dated in [src/data/pages.ts](src/data/pages.ts)** (`published`, `updated`), and that one record feeds the footer's visible "Updated" line (plus the privacy masthead's "Last updated"), the page's JSON-LD `dateModified` / `datePublished` (the resume's ProfilePage uses `dateCreated`, which Google's profile-page docs ask for), and its sitemap `<lastmod>`. The HTML entries carry `__PAGE_UPDATED__` / `__PAGE_PUBLISHED__` placeholders that the `pageDates()` plugin in `vite.config.ts` fills; `tests/seo.test.ts` checks every JSON-LD block parses and that the page node uses the placeholders rather than a literal date. **Bump `updated` when a page's content or layout changes in a way a reader would notice**, not for a typo: Google compares the visible date with the structured one. A note is dated in `notes.ts` instead (`date`, plus `updated` once it is revised in substance).
-- **A new public route means a new HTML entry, a `vite.config.ts` input, a `vercel.json` rewrite, a `getRoute()` case, and a `sitemap.xml` entry.** Missing any one of them fails silently in a different way. The `/notes` route is the exception that proves it — all five are generated, see below.
+- **A new public route means a new HTML entry, a `vite.config.ts` input, a `vercel.json` rewrite, a `getRoute()` case, and a `sitemap.xml` entry.** Missing any one of them fails silently in a different way. The `/notes` route is the exception that proves it — all five are generated (`.claude/rules/notes.md`).
 - **`useTitleCycle` runs on the homepage only, and holds the static `<title>` for 15s first.** It used to run everywhere and start at 500ms by blanking the title — which meant JS-rendering crawlers could snapshot a half-typed title, and `/resume` never showed a resume title at all. `PHRASES[0]` must stay byte-identical to `index.html`'s `<title>`; the cycle opens by *erasing* it, so a mismatch makes the first frame jump.
-
-
 
 ## Invariants
 
 - **There is no Google Analytics, and no third-party analytics of any kind.** It was removed once measurement showed it cost 149KB, ~40ms of LCP and ~210ms of load, to collect a subset of what `lib/telemetry.ts` already records first-party and more precisely. The CSP was tightened to match — `connect-src` is now `'self'` alone. **Don't reintroduce a tag manager without re-widening the CSP**, and note the site now sets **no cookies at all** on the public routes, which [Privacy.tsx](src/components/sections/Privacy/Privacy.tsx) states plainly.
 - `script-src` still needs `'unsafe-inline'` even with GA gone: the JSON-LD blocks are inline `<script>` elements and CSP applies `script-src` to them. Removing it silently kills every structured-data block on the site.
-
 
 ## Deployment
 
@@ -158,7 +151,6 @@ Static site + serverless functions on Vercel. `npm run build` produces `dist/` (
 - **The deploy must run `npm run build`, not bare `vite build`** — the prerender is the last step of that script. A deploy that skips it still works (the pages client-render) but ships empty documents again. The build log line to look for is `prerendered N documents`.
 
 - **`public/` assets are cached by explicit `headers` rules in `vercel.json`** — Vercel's default for them is `max-age=0, must-revalidate`, so every repeat visit was revalidating ~8MB of photography. `/fonts/*` is a year + `immutable`; `/hero`, `/posts`, `/contact` get 30 days + `stale-while-revalidate` rather than `immutable`, because those filenames are stable across regeneration and `immutable` would pin a stale image until the name changed. Hashed `/assets/*` is handled by Vercel already.
-
 
 ## Working efficiently
 

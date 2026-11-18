@@ -2,9 +2,11 @@
 paths:
   - "src/components/ui/**"
   - "src/components/layout/**"
+  - "src/components/sections/**"
+  - "src/App.tsx"
+  - "src/admin/components/**"
   - "src/index.css"
   - "tests/ui-vocabulary*"
-  - "tests/ui-vocabulary.allowlist.ts"
   - ".storybook/**"
   - "**/*.stories.tsx"
 ---

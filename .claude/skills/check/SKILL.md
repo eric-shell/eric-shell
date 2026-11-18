@@ -1,6 +1,6 @@
 ---
 name: check
-description: Verify the code - typecheck (tsc -b), ESLint, then the Vitest suite (about 6 s in all), printing only failures and a one-line summary. Use only when CLAUDE.md's Checks table calls for it or when asked whether things pass; most prompts need none. Arguments narrow the tests (a file, -t "name"; lint is skipped) or "tsc" for typecheck only.
+description: Verify the code - typecheck (tsc -b), ESLint, then the Vitest suite (about 6 s in all), printing only failures and a one-line summary. Use only when CLAUDE.md's Checks table calls for it or when asked whether things pass; most prompts need none. Arguments narrow the tests (a file, -t "name"; typecheck still runs, lint is skipped) or "tsc" for typecheck only.
 argument-hint: [tests/file.test.ts] [-t name] | tsc
 allowed-tools: Bash(.claude/skills/check/check.sh *)
 ---
