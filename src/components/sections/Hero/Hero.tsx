@@ -166,7 +166,7 @@ export default function Hero() {
         <h1 className="sr-only">Eric Shell | AI Design Systems Engineer and Software Developer</h1>
         <CascadeGroup mountOnly className="flex flex-col flex-1">
           <CascadeItem index={6} className="relative z-[21]">
-            <Eyebrow size="lg" className="text-white text-shadow-md ml-6">What's up! My name is</Eyebrow>
+            <Eyebrow size="lg" className="text-white text-shadow-md md:ml-6">What's up! My name is</Eyebrow>
           </CascadeItem>
 
           {/* The drift is on each copy, not this wrapper: a transform here would
