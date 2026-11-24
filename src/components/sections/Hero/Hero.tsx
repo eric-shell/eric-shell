@@ -230,12 +230,14 @@ export default function Hero() {
                   'What AI have you built?',
                   'What do colleagues say?',
                 ]}
+                // Longest first: the composer types the longest variant that
+                // fits its one line, so phones get the short ones.
                 placeholders={[
                   'Ask me anything…',
-                  'What are you working on now?',
-                  'How do you use AI day to day?',
-                  'Tell me about your design system work.',
-                  'Are you available for contract work?',
+                  ['What are you working on now?', 'What are you building?', 'What’s your latest?'],
+                  ['How do you use AI day to day?', 'How do you use AI?'],
+                  ['Tell me about your design system work.', 'Your design system work?', 'Design systems?'],
+                  ['Are you available for contract work?', 'Open to contract work?', 'Open to contracts?'],
                 ]}
                 messages={messages}
                 isLoading={isLoading}

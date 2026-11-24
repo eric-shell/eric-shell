@@ -6,7 +6,8 @@ import Button from '../Button'
 import Panel from '../Panel'
 import { toast } from '../Toast'
 import type { ChatMessage } from '@/hooks/useChat'
-import { usePointerTilt, useSpeechInput, useTypedPlaceholder } from '@/hooks'
+import { useFittingPhrases, usePointerTilt, useSpeechInput, useTypedPlaceholder } from '@/hooks'
+import type { Phrase } from '@/hooks'
 import { sendEvent } from '@/lib/telemetry'
 import Markdown from '../Markdown'
 import { chatMdComponents, prefetchMarkdown } from '@/lib/markdown'
@@ -28,8 +29,13 @@ interface ChatProps {
    * Prompts typed and erased in the composer, one after another, in place of a
    * static placeholder. Falls back to `placeholder` when empty, under
    * `prefers-reduced-motion`, and once the conversation is under way.
+   *
+   * The composer is one line, so each prompt may list shorter variants after
+   * it (`['Tell me about your design system work.', 'Design systems?']`): the
+   * longest that fits the field's width is typed, and a prompt with none that
+   * fits is skipped. A phone has about 160px of line beside the controls.
    */
-  placeholders?: string[]
+  placeholders?: Phrase[]
   welcomeMessage?: string
   className?: string
   /**
@@ -265,8 +271,11 @@ export default function Chat({
 
   // Only animates while the composer is genuinely empty and idle: a visible
   // placeholder behind no text. Every other state falls back to the static one.
+  // The composer unmounts while the panel is tucked into its button, and
+  // comes back as a new element to measure.
+  const fittingPlaceholders = useFittingPhrases(textareaRef, placeholders, isOpen)
   const typedPlaceholder = useTypedPlaceholder(
-    placeholders,
+    fittingPlaceholders,
     !value && !hasMessages && !isLoading && !speech.listening
   )
 
